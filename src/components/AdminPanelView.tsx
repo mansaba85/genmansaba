@@ -153,7 +153,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'guru' as const,
         mapel: ['Matematika', 'Fisika'],
         pin: '123456',
-        email: 'hariyanto@manu01banyuputih.sch.id',
       },
       {
         name: 'Ibu Siti Fatimah, S.Ag.',
@@ -161,7 +160,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'guru' as const,
         mapel: ['Fiqih', 'Al-Qur\'an Hadits', 'Bahasa Arab'],
         pin: '654321',
-        email: 'sitifatimah@manu01banyuputih.sch.id',
       },
       {
         name: 'Bpk. M. Zainal Arifin, S.Pd.I.',
@@ -169,7 +167,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'guru' as const,
         mapel: ['Akidah Akhlak', 'Sejarah Kebudayaan Islam (SKI)', 'Aswaja / Ke-NU-an'],
         pin: '223344',
-        email: 'zainalarifin@manu01banyuputih.sch.id',
       },
       {
         name: 'Ibu Dra. Hj. Umi Kulsum, M.Pd.',
@@ -177,7 +174,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'guru' as const,
         mapel: ['Bahasa Indonesia', 'Seni Budaya'],
         pin: '334455',
-        email: 'umikulsum@manu01banyuputih.sch.id',
       },
       {
         name: 'Bpk. Ahmad Fauzi, S.Pd., M.Si.',
@@ -185,7 +181,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'guru' as const,
         mapel: ['Kimia', 'Biologi'],
         pin: '445566',
-        email: 'ahmadfauzi@manu01banyuputih.sch.id',
       },
       {
         name: 'Ibu Rina Lestari, S.Pd.',
@@ -193,7 +188,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'guru' as const,
         mapel: ['Bahasa Inggris'],
         pin: '556677',
-        email: 'rinalestari@manu01banyuputih.sch.id',
       },
       {
         name: 'Bpk. Joko Susilo, S.E., M.M.',
@@ -201,7 +195,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'guru' as const,
         mapel: ['Ekonomi', 'Sosiologi', 'Prakarya dan Kewirausahaan (PKWU)'],
         pin: '778899',
-        email: 'jokosusilo@manu01banyuputih.sch.id',
       },
       {
         name: 'Bpk. Hendra Gunawan, S.Kom.',
@@ -209,7 +202,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'guru' as const,
         mapel: ['Informatika'],
         pin: '889900',
-        email: 'hendragunawan@manu01banyuputih.sch.id',
       },
       {
         name: 'Admin',
@@ -217,7 +209,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'admin' as const,
         mapel: ['Informatika'],
         pin: '888888',
-        email: 'admin@manu01banyuputih.sch.id',
       },
       {
         name: 'Ibu Nur Hidayah, A.Md.',
@@ -225,7 +216,6 @@ export const PRESET_GURU_TEMPLATES = {
         role: 'operator' as const,
         mapel: ['Tata Usaha & Distribusi Dokumen'],
         pin: '111111',
-        email: 'operator@manu01banyuputih.sch.id',
       },
     ],
   },
@@ -274,7 +264,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     id: 'user-admin',
     name: 'Administrator MA NU 01',
     nip: '-',
-    email: 'admin@manu01banyuputih.sch.id',
     role: 'admin' as const,
     mapel: ['Informatika'],
     pin: '888888',
@@ -282,7 +271,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
   // Admin Account & Password Edit Form State
   const [adminFormName, setAdminFormName] = useState(adminAccount.name);
-  const [adminFormEmail, setAdminFormEmail] = useState(adminAccount.email);
   const [adminFormCurrentPin, setAdminFormCurrentPin] = useState('');
   const [adminFormNewPin, setAdminFormNewPin] = useState('');
   const [adminFormConfirmPin, setAdminFormConfirmPin] = useState('');
@@ -293,9 +281,8 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   useEffect(() => {
     if (adminAccount) {
       setAdminFormName(adminAccount.name);
-      setAdminFormEmail(adminAccount.email);
     }
-  }, [adminAccount.id, adminAccount.name, adminAccount.email]);
+  }, [adminAccount.id, adminAccount.name]);
 
   // Backup & Restore System State
   const backupFileInputRef = useRef<HTMLInputElement>(null);
@@ -367,7 +354,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   // New Guru form states
   const [newGuruName, setNewGuruName] = useState('');
   const [newGuruNip, setNewGuruNip] = useState('');
-  const [newGuruEmail, setNewGuruEmail] = useState('');
   const [newGuruRole, setNewGuruRole] = useState<'guru' | 'admin' | 'operator'>('guru');
   const [newGuruPin, setNewGuruPin] = useState('');
   const [newGuruMapel, setNewGuruMapel] = useState<string[]>([]);
@@ -375,7 +361,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   // Edit Guru form states
   const [editGuruName, setEditGuruName] = useState('');
   const [editGuruNip, setEditGuruNip] = useState('');
-  const [editGuruEmail, setEditGuruEmail] = useState('');
   const [editGuruRole, setEditGuruRole] = useState<'guru' | 'admin' | 'operator'>('guru');
   const [editGuruPin, setEditGuruPin] = useState('');
   const [editGuruMapel, setEditGuruMapel] = useState<string[]>([]);
@@ -521,22 +506,22 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     const csvContent = [
       '# TEMPLATE IMPORT DATA GURU & PLOTTING MAPEL MA NU 01 BANYUPUTIH',
       '# Panduan: Pisahkan mata pelajaran dengan titik koma (;), Hak Akses pilih (guru / operator / admin), PIN harus 6 digit angka',
-      'Nama Lengkap,NIP/NUPTK,Hak Akses,Mata Pelajaran,PIN Akses,Email',
-      '"Bpk. Hariyanto, S.Pd.","198604122011011008","guru","Matematika; Fisika","123456","hariyanto@manu01banyuputih.sch.id"',
-      '"Ibu Siti Fatimah, S.Ag.","198208152009122004","guru","Fiqih; Al-Qur\'an Hadits; Bahasa Arab","654321","sitifatimah@manu01banyuputih.sch.id"',
-      '"Bpk. M. Zainal Arifin, S.Pd.I.","198903142015041003","guru","Akidah Akhlak; Sejarah Kebudayaan Islam (SKI); Aswaja / Ke-NU-an","223344","zainalarifin@manu01banyuputih.sch.id"',
-      '"Ibu Dra. Hj. Umi Kulsum, M.Pd.","197510202003122002","guru","Bahasa Indonesia; Seni Budaya","334455","umikulsum@manu01banyuputih.sch.id"',
-      '"Admin","-","admin","Informatika","888888","admin@manu01banyuputih.sch.id"',
-      '"Ibu Nur Hidayah, A.Md.","199311052019032015","operator","Tata Usaha & Distribusi Dokumen","111111","operator@manu01banyuputih.sch.id"',
+      'Nama Lengkap,NIP/NUPTK,Hak Akses,Mata Pelajaran,PIN Akses',
+      '"Bpk. Hariyanto, S.Pd.","198604122011011008","guru","Matematika; Fisika","123456"',
+      '"Ibu Siti Fatimah, S.Ag.","198208152009122004","guru","Fiqih; Al-Qur\'an Hadits; Bahasa Arab","654321"',
+      '"Bpk. M. Zainal Arifin, S.Pd.I.","198903142015041003","guru","Akidah Akhlak; Sejarah Kebudayaan Islam (SKI); Aswaja / Ke-NU-an","223344"',
+      '"Ibu Dra. Hj. Umi Kulsum, M.Pd.","197510202003122002","guru","Bahasa Indonesia; Seni Budaya","334455"',
+      '"Admin","-","admin","Informatika","888888"',
+      '"Ibu Nur Hidayah, A.Md.","199311052019032015","operator","Tata Usaha & Distribusi Dokumen","111111"',
     ].join('\n');
     triggerFileDownload(csvContent, 'template_data_guru.csv');
   };
 
   const handleExportGuru = () => {
-    const header = 'Nama Lengkap,NIP/NUPTK,Hak Akses,Mata Pelajaran,PIN Akses,Email';
+    const header = 'Nama Lengkap,NIP/NUPTK,Hak Akses,Mata Pelajaran,PIN Akses';
     const rows = users.map((u) => {
       const mapelsStr = (u.mapel || []).join('; ');
-      return `"${u.name.replace(/"/g, '""')}","${u.nip || '-'}","${u.role}","${mapelsStr.replace(/"/g, '""')}","${u.pin || '123456'}","${u.email || ''}"`;
+      return `"${u.name.replace(/"/g, '""')}","${u.nip || '-'}","${u.role}","${mapelsStr.replace(/"/g, '""')}","${u.pin || '123456'}"`;
     });
     const csvContent = [header, ...rows].join('\n');
     triggerFileDownload(csvContent, `data_guru_manu01_${Date.now()}.csv`);
@@ -551,7 +536,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       role: g.role,
       mapel: g.mapel,
       pin: g.pin,
-      email: g.email,
       avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(g.name)}`,
       lastLogin: 'Template Preset',
     }));
@@ -614,7 +598,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           .filter((m) => m.length > 0);
 
         const pin = cols[4]?.trim() || '123456';
-        const email = cols[5]?.trim() || `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}@manu01banyuputih.sch.id`;
 
         parsedGurus.push({
           id: `user-import-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -623,7 +606,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           role,
           mapel: mapels.length > 0 ? mapels : ['Umum'],
           pin,
-          email,
           avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
           lastLogin: 'Baru diimport',
         });
@@ -785,7 +767,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   const handleOpenAddGuru = () => {
     setNewGuruName('');
     setNewGuruNip('');
-    setNewGuruEmail('');
     setNewGuruRole('guru');
     setNewGuruPin(Math.floor(100000 + Math.random() * 900000).toString()); // Random 6 digit
     setNewGuruMapel([]);
@@ -802,15 +783,10 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     e.preventDefault();
     if (!newGuruName.trim()) return;
 
-    // Generate safe email identifier internally based on name or timestamp
-    const safeSlug = newGuruName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const generatedEmail = `${safeSlug || 'guru'}${Date.now().toString().slice(-4)}@manu01banyuputih.sch.id`;
-
     const newUser: User = {
       id: `user-${Date.now()}`,
       name: newGuruName.trim(),
       nip: newGuruNip.trim() || '-',
-      email: generatedEmail,
       role: newGuruRole,
       mapel: newGuruMapel.length > 0 ? newGuruMapel : ['Umum'],
       pin: newGuruPin.trim() || '123456',
@@ -826,10 +802,9 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     setEditingGuruId(u.id);
     setEditGuruName(u.name);
     setEditGuruNip(u.nip);
-    setEditGuruEmail(u.email);
     setEditGuruRole(u.role);
     setEditGuruPin(u.pin || '123456');
-    setEditGuruMapel(u.mapel);
+    setEditGuruMapel(u.mapel || []);
   };
 
   const handleEditGuruMapelCheckbox = (mapel: string) => {
@@ -849,7 +824,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
             ...u,
             name: editGuruName.trim(),
             nip: editGuruNip.trim() || '-',
-            email: editGuruEmail.trim(),
             role: editGuruRole,
             pin: editGuruPin.trim() || '123456',
             mapel: editGuruMapel.length > 0 ? editGuruMapel : ['Umum'],
@@ -890,10 +864,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       setAdminSaveMessage({ type: 'error', text: 'Nama admin tidak boleh kosong.' });
       return;
     }
-    if (!adminFormEmail.trim()) {
-      setAdminSaveMessage({ type: 'error', text: 'Email / Username admin tidak boleh kosong.' });
-      return;
-    }
 
     let updatedPin = adminAccount.pin || '888888';
 
@@ -917,7 +887,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     const updatedAdmin: User = {
       ...adminAccount,
       name: adminFormName.trim(),
-      email: adminFormEmail.trim(),
       pin: updatedPin,
     };
 
@@ -2119,7 +2088,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                       Kredensial & PIN / Password Login Admin
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Perbarui identitas username, email, dan kode PIN akses administrator utama.
+                      Perbarui nama akun administrator dan kode PIN / password akses login utama.
                     </p>
                   </div>
                 </div>
@@ -2134,7 +2103,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                   {/* Nama Admin */}
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Nama Administrator
+                      Nama Lengkap Administrator
                     </label>
                     <div className="relative">
                       <input
@@ -2144,23 +2113,6 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                         onChange={(e) => setAdminFormName(e.target.value)}
                         placeholder="Nama Lengkap Administrator"
                         className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 focus:bg-white focus:border-[#1e4d7b] transition outline-hidden"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Email / Username */}
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Email / Username Administrator
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        value={adminFormEmail}
-                        onChange={(e) => setAdminFormEmail(e.target.value)}
-                        placeholder="admin@manu01banyuputih.sch.id"
-                        className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 font-mono text-xs focus:bg-white focus:border-[#1e4d7b] transition outline-hidden"
                       />
                     </div>
                   </div>
@@ -2706,12 +2658,15 @@ services:
     container_name: manu01_merdeka_app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # Port mapping: Ganti HOST_PORT (misal: 3080, 8085, dll) jika port 3000 sudah dipakai container lain
+      - "\${HOST_PORT:-3000}:\${PORT:-3000}"
     environment:
       - NODE_ENV=production
-      - PORT=3000
-      - GEMINI_API_KEY=\${GEMINI_API_KEY}
+      - PORT=\${PORT:-3000}
+      - OPENAI_BASE_URL=\${OPENAI_BASE_URL:-https://9router.manubanyuputih.id/v1}
       - OPENAI_API_KEY=\${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=\${OPENAI_MODEL:-komoboku}
+      - GEMINI_API_KEY=\${GEMINI_API_KEY:-}
     networks:
       - proxmox_lan
 
@@ -2735,12 +2690,15 @@ services:
     container_name: manu01_merdeka_app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # Port mapping: Ganti HOST_PORT (misal: 3080, 8085) jika port 3000 sudah dipakai
+      - "\${HOST_PORT:-3000}:\${PORT:-3000}"
     environment:
       - NODE_ENV=production
-      - PORT=3000
-      - GEMINI_API_KEY=\${GEMINI_API_KEY}
+      - PORT=\${PORT:-3000}
+      - OPENAI_BASE_URL=\${OPENAI_BASE_URL:-https://9router.manubanyuputih.id/v1}
       - OPENAI_API_KEY=\${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=\${OPENAI_MODEL:-komoboku}
+      - GEMINI_API_KEY=\${GEMINI_API_KEY:-}
     networks:
       - proxmox_lan
 
@@ -2757,11 +2715,20 @@ networks:
                     <span>File <strong>.env</strong> di root project atau masukkan pada Environment Variables di Portainer Stack:</span>
                     <button
                       type="button"
-                      onClick={() => copyToClipboard(`PORT=3000
+                      onClick={() => copyToClipboard(`# Port Konfigurasi
+PORT=3000
+HOST_PORT=3000
+
+# Mode Produksi
 NODE_ENV=production
-GEMINI_API_KEY=AIzaSy...your-gemini-api-key-here
-# Opsional jika menggunakan OpenAI / 9router
-# OPENAI_API_KEY=sk-...`, 'env')}
+
+# 9router / OpenAI Gateway (MA NU 01)
+OPENAI_BASE_URL=https://9router.manubanyuputih.id/v1
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=komoboku
+
+# Gemini Fallback (Opsional)
+# GEMINI_API_KEY=AIzaSy...`, 'env')}
                       className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-sans transition cursor-pointer"
                     >
                       {copiedKey === 'env' ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -2769,11 +2736,20 @@ GEMINI_API_KEY=AIzaSy...your-gemini-api-key-here
                     </button>
                   </div>
                   <pre className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-emerald-300 overflow-x-auto text-[11px] leading-relaxed">
-{`PORT=3000
+{`# Port Konfigurasi (Bebas disesuaikan agar tidak bentrok)
+PORT=3000
+HOST_PORT=3000
+
+# Mode Produksi
 NODE_ENV=production
-GEMINI_API_KEY=AIzaSy...your-gemini-api-key-here
-# Opsional jika menggunakan OpenAI / 9router gateway
-# OPENAI_API_KEY=sk-...`}
+
+# 9router / OpenAI Gateway (MA NU 01)
+OPENAI_BASE_URL=https://9router.manubanyuputih.id/v1
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=komoboku
+
+# Gemini Fallback (Opsional)
+# GEMINI_API_KEY=AIzaSy...`}
                   </pre>
                 </div>
               )}
@@ -2787,19 +2763,19 @@ GEMINI_API_KEY=AIzaSy...your-gemini-api-key-here
                       onClick={() => copyToClipboard(`FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci || npm install
 COPY . .
 RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/dist ./dist
+ENV PORT=3000
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/server.ts ./
-RUN npm install --omit=dev && npm install -g tsx
+COPY --from=builder /app/dist ./dist
+RUN npm install --omit=dev
 EXPOSE 3000
-CMD ["npx", "tsx", "server.ts"]`, 'dockerfile')}
+CMD ["node", "dist/server.cjs"]`, 'dockerfile')}
                       className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-sans transition cursor-pointer"
                     >
                       {copiedKey === 'dockerfile' ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -2810,19 +2786,19 @@ CMD ["npx", "tsx", "server.ts"]`, 'dockerfile')}
 {`FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci || npm install
 COPY . .
 RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/dist ./dist
+ENV PORT=3000
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/server.ts ./
-RUN npm install --omit=dev && npm install -g tsx
+COPY --from=builder /app/dist ./dist
+RUN npm install --omit=dev
 EXPOSE 3000
-CMD ["npx", "tsx", "server.ts"]`}
+CMD ["node", "dist/server.cjs"]`}
                   </pre>
                 </div>
               )}
@@ -2981,6 +2957,120 @@ CMD ["npx", "tsx", "server.ts"]`}
                   className="px-4 py-2 rounded-lg bg-[#1e4d7b] hover:bg-[#153a5e] text-white font-medium shadow-2xs cursor-pointer"
                 >
                   Buat Akun Guru
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT GURU DIALOG / MODAL */}
+      {editingGuruId !== null && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-xl border border-slate-100 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-heading font-bold text-slate-900 text-sm flex items-center space-x-2">
+                <span className="p-1.5 rounded bg-blue-50 text-[#1e4d7b]">
+                  <Edit2 className="w-4 h-4" />
+                </span>
+                <span>Edit Profil & Plotting Guru</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingGuruId(null)}
+                className="text-slate-400 hover:text-slate-600 text-base font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditGuru} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="space-y-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Nama Lengkap & Gelar</label>
+                  <input
+                    type="text"
+                    required
+                    value={editGuruName}
+                    onChange={(e) => setEditGuruName(e.target.value)}
+                    placeholder="Contoh: Bpk. Ahmad Dahlan, S.Pd.I."
+                    className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">NIP / NUPTK</label>
+                  <input
+                    type="text"
+                    value={editGuruNip}
+                    onChange={(e) => setEditGuruNip(e.target.value)}
+                    placeholder="Contoh: 198501012015011001"
+                    className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50/50 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Akses Peran</label>
+                  <select
+                    value={editGuruRole}
+                    onChange={(e) => setEditGuruRole(e.target.value as any)}
+                    className="w-full p-2.5 rounded-lg border border-slate-200 bg-white"
+                  >
+                    <option value="guru">Guru Mapel</option>
+                    <option value="operator">Operator TU</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">PIN Akses Login (6-Digit)</label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    required
+                    value={editGuruPin}
+                    onChange={(e) => setEditGuruPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="6-Digit angka login"
+                    className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50/50 font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 border-l border-slate-100 pl-0 md:pl-4">
+                <span className="block font-semibold text-slate-700 mb-1">
+                  Plotting Mata Pelajaran (Ceklis yang Diampu)
+                </span>
+                <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-lg p-2.5 bg-slate-50/40 grid grid-cols-1 sm:grid-cols-2 gap-1.5 scrollbar-thin">
+                  {mapelList.map((mapel) => (
+                    <label
+                      key={mapel}
+                      className="flex items-center space-x-2 p-1.5 rounded hover:bg-slate-100 cursor-pointer text-[11px]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editGuruMapel.includes(mapel)}
+                        onChange={() => handleEditGuruMapelCheckbox(mapel)}
+                        className="rounded border-slate-300 text-[#1e4d7b] focus:ring-[#1e4d7b]"
+                      />
+                      <span>{mapel}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="md:col-span-2 flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingGuruId(null)}
+                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-[#1e4d7b] hover:bg-[#153a5e] text-white font-medium shadow-2xs cursor-pointer"
+                >
+                  Simpan Perubahan
                 </button>
               </div>
             </form>

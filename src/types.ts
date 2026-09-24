@@ -4,7 +4,7 @@ export interface User {
   id: string;
   name: string;
   nip: string;
-  email: string;
+  email?: string;
   role: Role;
   mapel: string[];
   avatar?: string;

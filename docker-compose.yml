@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  manu01-merdeka-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: manu01_merdeka_app
+    restart: unless-stopped
+    ports:
+      # Format: "HOST_PORT:CONTAINER_PORT"
+      # Ganti HOST_PORT (misal: 3080, 8085, dll) di file .env atau langsung di Portainer
+      # agar tidak bentrok dengan port container lain di server Anda.
+      - "${HOST_PORT:-3000}:${PORT:-3000}"
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT:-3000}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-komoboku}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - APP_URL=${APP_URL:-}
