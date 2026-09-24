@@ -1,0 +1,6 @@
+{
+  "name": "AI Madrasah — MA NU 01 Banyuputih",
+  "description": "Aplikasi Web AI MA NU 01 Banyuputih Batang untuk Generator Soal Ujian (ASTS, ASESGA, ASAS) dan Perangkat Administrasi Pembelajaran Guru (RPP Kurikulum Merdeka, CP, ATP, Prota, Prosem, KKTP, Modul Ajar Deep Learning & KBC).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
