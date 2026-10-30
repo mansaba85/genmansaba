@@ -37,6 +37,7 @@ import {
   Trash2,
   FileText,
   AlertCircle,
+  AlertTriangle,
   Sliders,
   Code,
   Languages,
@@ -121,6 +122,9 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
 }) => {
   const [formData, setFormData] = useState<ExamFormConfig>(currentPackage.config);
   const [questions, setQuestions] = useState<QuestionItem[]>(currentPackage.questions);
+  const [isFallbackMode, setIsFallbackMode] = useState<boolean>(Boolean(currentPackage.isFallback));
+  const [fallbackReason, setFallbackReason] = useState<string>(currentPackage.fallbackReason || '');
+  const [packageSource, setPackageSource] = useState<string>(currentPackage.source || '');
   const [cbtText, setCbtText] = useState<string>(() =>
     formatExamToCbtText(currentPackage.config, currentPackage.questions)
   );
@@ -516,6 +520,9 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
   React.useEffect(() => {
     setFormData(currentPackage.config);
     setQuestions(currentPackage.questions);
+    setIsFallbackMode(Boolean(currentPackage.isFallback));
+    setFallbackReason(currentPackage.fallbackReason || '');
+    setPackageSource(currentPackage.source || '');
     setCbtText(
       formatExamToCbtText(currentPackage.config, currentPackage.questions, {
         equationAsImage: equationAsImageInText,
@@ -626,6 +633,11 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
         setQuestions(data.questions);
         const formatted = formatExamToCbtText(formData, data.questions);
         setCbtText(formatted);
+        const isEmergency = Boolean(data.isFallback);
+        setIsFallbackMode(isEmergency);
+        setFallbackReason(data.fallbackReason || '');
+        setPackageSource(data.source || '');
+
         const updatedPackage: ExamPackage = {
           ...currentPackage,
           id: `exam-${Date.now()}`,
@@ -635,15 +647,22 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
           createdAt: new Date().toISOString(),
           createdBy: currentUser.name,
           nip: currentUser.nip,
+          source: data.source,
+          isFallback: isEmergency,
+          fallbackReason: data.fallbackReason,
         };
         onSavePackage(updatedPackage);
-        setStatusMessage(`Berhasil generate ${data.questions.length} butir soal (${data.source})`);
+        if (isEmergency) {
+          setStatusMessage(`⚠️ Perhatian: AI gagal (${data.fallbackReason || 'Koneksi Gateway'}), beralih ke Bank Template Darurat.`);
+        } else {
+          setStatusMessage(`✨ Berhasil menghasilkan ${data.questions.length} butir soal (${data.source || 'AI'})`);
+        }
       } else {
         throw new Error(data.error || 'Gagal menghasilkan soal');
       }
     } catch (err: any) {
       console.error(err);
-      setStatusMessage(`Catatan: Menggunakan bank soal terstandar internal.`);
+      setStatusMessage(`Catatan: Terjadi kesalahan koneksi (${err?.message || 'Error'}).`);
     } finally {
       clearInterval(intervalId);
       setIsGenerating(false);
@@ -1142,6 +1161,51 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
             RIGHT PANEL: Interactive CBT Text Box & Paper Preview
         ======================================================== */}
         <div className="lg:col-span-7 space-y-4">
+          {/* Amber Warning Banner if AI Failed & Emergency Template Was Used */}
+          {isFallbackMode && (
+            <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-400 text-amber-950 space-y-2 shadow-xs no-print animate-in fade-in duration-200">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-amber-400 text-amber-950 shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-950" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="text-sm font-bold text-amber-950">
+                      Mode Darurat: Bank Soal Template Digunakan (Bukan Hasil AI)
+                    </h4>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 border border-amber-300">
+                      Emergency Fallback
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    AI Gateway tidak dapat merespons permintaan pembuatan soal
+                    {fallbackReason ? <span className="font-semibold"> ({fallbackReason})</span> : ''}.
+                    Soal di bawah ini dimuat dari <strong>Bank Soal Template Darurat</strong> agar naskah tetap tersedia, namun <strong>belum disesuaikan secara dinamis dengan Capaian Pembelajaran (CP)</strong> yang Anda ketik.
+                  </p>
+                  <div className="pt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-amber-800">
+                    <span className="font-semibold">Solusi Admin/Guru:</span>
+                    <span>Pastikan API Key remote 9router (<code className="px-1 py-0.5 bg-amber-100 rounded text-amber-900 font-mono text-[10px]">OPENAI_API_KEY</code>) atau <code className="px-1 py-0.5 bg-amber-100 rounded text-amber-900 font-mono text-[10px]">GEMINI_API_KEY</code> terpasang valid di konfigurasi server (Portainer/Docker).</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Genuine AI Success Badge */}
+          {!isFallbackMode && questions.length > 0 && (
+            <div className="px-4 py-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between text-xs font-medium shadow-2xs no-print">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>
+                  <strong>Soal Asli AI ({packageSource || '9router / Gemini AI'})</strong> — Disesuaikan secara dinamis dengan Capaian Pembelajaran & materi target.
+                </span>
+              </div>
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase">
+                AI Verified
+              </span>
+            </div>
+          )}
+
           {/* Top Switcher & Action Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-2xl no-print">
             {/* View Mode Toggle: Text Box CBT vs Pratinjau Kertas */}

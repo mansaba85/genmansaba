@@ -72,6 +72,1795 @@
   },
   "exams": [
     {
+      "id": "exam-1793349196961",
+      "title": "Paket Soal ASAS Bahasa Indonesia Lanjut — Kelas XI",
+      "config": {
+        "mapel": "Bahasa Indonesia Lanjut",
+        "kelas": "XI",
+        "semester": "2",
+        "tahunPelajaran": "2026/2027",
+        "jenisUjian": "ASAS",
+        "bahasa": "indonesia",
+        "capaianPembelajaran": "- Teks Deskripsi\n- Apresiasi Prosa bertema lingkungan\n- Mengontruksi teks eksplanasi\n- mengembangkan Apresiasi Puisi",
+        "alokasiWaktuMenit": 90,
+        "selectedTypes": {
+          "single_choice": 30,
+          "multiple_choice": 10,
+          "short_answer": 0,
+          "ordering": 0,
+          "matching": 0,
+          "essay": 5
+        },
+        "difficultyProportion": {
+          "mudah": 30,
+          "sedang": 50,
+          "sulit": 20
+        },
+        "includeAnswerKeyInPrint": true,
+        "includeRubricInPrint": true
+      },
+      "createdAt": "2026-10-30T08:33:16.961Z",
+      "createdBy": "Admin",
+      "nip": "-",
+      "questions": [
+        {
+          "id": "q-1",
+          "number": 1,
+          "type": "single_choice",
+          "text": "Cermati kutipan teks berikut!\n\n\"Lembayung senja membentang di ufuk barat Pantai Ujungnegoro, membiaskan gradasi warna jingga keemasan yang memantul di permukaan riak ombak tenang. Semilir angin petang membawa aroma khas garam laut yang bercampur dengan dinginnya pasir basah yang terasa membenam lembut di sela jemari kaki.\"\n\nBerdasarkan kutipan tersebut, cerapan pancaindra yang dominan digunakan penulis secara berurutan adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis penggunaan cerapan pancaindra dalam teks deskripsi",
+          "explanation": "Kutipan menyajikan pemandangan visual gradasi warna (penglihatan), aroma garam laut (penciuman), dan rasa dingin serta lembutnya pasir di kaki (perabaan).",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "penglihatan, penciuman, dan perabaan",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "penglihatan, pendengaran, dan pencecapan",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "pendengaran, penciuman, dan perabaan",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "penglihatan, pencecapan, dan perabaan",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "pendengaran, penglihatan, dan penciuman",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-2",
+          "number": 2,
+          "type": "single_choice",
+          "text": "Cermati paragraf berikut!\n\n\"Perkebunan Teh Pagilaran terletak di perbukitan Batang pada ketinggian sekitar 1.000 meter di atas permukaan laut. Kawasan agrowisata ini membentang seluas ratusan hektare dengan hamparan pohon teh yang menghijau rapi laksana permadani alam. Suhu udaranya berkisar antara 15 hingga 21 derajat Celsius, menjadikannya destinasi yang sejuk dan asri.\"\n\nDalam struktur teks deskripsi, kutipan di atas menempati bagian ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menentukan struktur teks deskripsi",
+          "explanation": "Paragraf tersebut berisi pengenalan umum nama objek, lokasi geografis, dan gambaran umum lanskap, sehingga tergolong bagian identifikasi/deskripsi umum.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "deskripsi bagian spesifik",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "identifikasi umum",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "simpulan atau kesan",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "penegasan ulang tesis",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "deskripsi manfaat ekonomis",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-3",
+          "number": 3,
+          "type": "single_choice",
+          "text": "Teks deskripsi yang menggambarkan suatu ruang, tempat, atau lokasi semata-mata berdasarkan batas fisik, tata letak, dan jarak antarobjek tanpa memasukkan opini atau emosi subjektif penulis secara mendalam disebut teks deskripsi ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Mengidentifikasi jenis-jenis teks deskripsi",
+          "explanation": "Deskripsi spasial menitikberatkan pada penggambaran ruang, tempat, dan batas-batas fisik suatu lingkungan.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "subjektif",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "impresionistis",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "spasial",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "objektif-eksplanatif",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "narasi sugestif",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:C"
+        },
+        {
+          "id": "q-4",
+          "number": 4,
+          "type": "single_choice",
+          "text": "Cermati kalimat berikut!\n\n\"Pohon beringin tua di alun-alun itu berdiri dengan megah, memayungi tanah lapang dengan dahan-dahannya yang kekar dan rimbun, menebarkan aura magis yang membuat siapa pun merasa kerdil di bawah naungannya.\"\n\nFrasa adjektiva yang mengandung makna emotif kuat dalam kalimat tersebut adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis unsur kebahasaan (frasa adjektiva emotif) dalam teks deskripsi",
+          "explanation": "Kata 'aura magis' dan 'merasa kerdil' memuat impresi emotif, tetapi frasa adjektiva yang langsung menyifati objek fisik secara emotif adalah 'kekar dan rimbun' serta 'berdiri dengan megah'. Pilihan A paling tepat mendeskripsikan intensitas emosi pengamat.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "aura magis",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "tanah lapang",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "dahan-dahannya",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "pohon beringin tua",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "di alun-alun",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-5",
+          "number": 5,
+          "type": "single_choice",
+          "text": "Cermati kalimat-kalimat berikut!\n\n(1) Di tengah hutan rob, batang-batang mangrove tegak menahan hantaman gelombang pasang.\n(2) Akar tunjangnya mencengkeram lumpur dengan sangat kokoh, membentuk labirin alami yang rumit.\n(3) Daun-daunnya yang berlapis lilin mengilap terkena terpaan terik surya siang hari.\n(4) Oleh sebab itu, warga seharusnya menanam mangrove untuk mencegah abrasi pantai.\n(5) Bunga-bunga kecil berwarna kekuningan terselip di balik rimbunnya dedaunan hijau pekat.\n\nKalimat yang TIDAK padu dan menyimpang dari karakteristik teks deskripsi murni karena bernada persuasif/argumentatif adalah kalimat nomor ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menilai koherensi dan kemurnian ragam teks deskripsi",
+          "explanation": "Kalimat (4) memuat saran/imbauan ('seharusnya menanam') yang merupakan ciri teks eksposisi/persuasi, bukan deskripsi fisik objek.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "(1)",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "(2)",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "(3)",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "(4)",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "(5)",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:D"
+        },
+        {
+          "id": "q-6",
+          "number": 6,
+          "type": "single_choice",
+          "text": "Cermati kutipan teks deskripsi berikut!\n\n\"Kawasan Curug Genting menyajikan panorama tebing batu cadas setinggi empat puluh meter yang dialiri air terjun deras. Percikan air membentuk kabut tipis di sekeliling kolam alami di bawahnya. Lumut basah menutupi sebagian besar batuan andesit hitam, menciptakan kontras warna yang memukau mata di antara bayangan pohon pinus merkusii yang menjulang tinggi.\"\n\nPola pengembangan paragraf deskripsi di atas disusun berdasarkan ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis pola pengembangan teks deskripsi",
+          "explanation": "Penggambaran bergerak dari air terjun di tebing atas, ke kolam di bawah, bebatuan di sekeliling, hingga pohon pinus di sekitar (berdasarkan sudut pandang ruang/spasial).",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "urutan waktu (kronologis)",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "sebab-akibat (kausalitas)",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "sudut pandang spasial (keruangan)",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "analogi perbandingan",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "hierarki kepentingan (klimaks)",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:C"
+        },
+        {
+          "id": "q-7",
+          "number": 7,
+          "type": "single_choice",
+          "text": "Cermati kalimat deskripsi yang rumpang berikut!\n\n\"Air Danau Dringo terlihat begitu [...] memantulkan langit biru tanpa cela, dihiasi lereng bukit yang [...] oleh kabut putih dingin.\"\n\nPasangan kata sifat (adjektiva) yang paling tepat untuk melengkapi kalimat tersebut adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Melengkapi teks deskripsi dengan kata sifat yang tepat",
+          "explanation": "Kata 'jernih' tepat mendeskripsikan air yang memantulkan langit, dan 'terselimuti' cocok untuk mendeskripsikan kondisi lereng bukit oleh kabut.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "keruh; tersapu",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "jernih; terselimuti",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "bergelora; tertembus",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "dalam; terkikis",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "luas; terbelah",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-8",
+          "number": 8,
+          "type": "single_choice",
+          "text": "Perhatikan kalimat berikut!\n\n\"Udara di sekitar muara sungai Sambong sangat amat begitu tercemar sekali oleh limbah pabrik yang berbau busuk.\"\n\nPerbaikan kalimat di atas agar menjadi kalimat deskripsi yang efektif dan hemat kata adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menyunting ketidakefektifan kalimat dalam teks deskripsi",
+          "explanation": "Penggunaan 'sangat amat begitu... sekali' merupakan pleonasme berlebihan. Cukup gunakan satu kata penegas derajat, misalnya 'sangat tercemar'.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Udara di sekitar muara sungai Sambong sangat tercemar oleh limbah pabrik yang berbau busuk.",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Udara di sekitar muara sungai Sambong amat begitu tercemar oleh karena limbah pabrik busuk.",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Udara di sekitar muara sungai Sambong tercemar sekali amat berbau busuk limbah pabrik.",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Udara sekitar muara sungai Sambong sangat amat berbau limbah pabrik busuk sekali.",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Udara di muara sungai Sambong begitu sangat tercemar limbah pabrik yang berbau busuk.",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-9",
+          "number": 9,
+          "type": "single_choice",
+          "text": "Cermati kutipan cerpen berikut!\n\n\"Pak Karsan menatap sedih deretan bukit yang kini gundul terkelupas. Alat-alat berat meraung sepanjang hari, mengunyah tanah lempung demi tambang galian C yang tak pernah puas. Mata air Sendang Arum yang dulu menghidupi puluhan petak sawah warga kini tinggal kubangan lumpur pekat kecokelatan. Anak-anak desa tak lagi bisa mandi di sana. Ke mana perginya riak air jernih dan kicau jalak yang dulu menyambut fajar?\"\n\nKonflik utama yang tergambar dalam kutipan prosa bertema lingkungan tersebut adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis konflik dalam prosa fiksi bertema lingkungan",
+          "explanation": "Kutipan menyoroti kerusakan ekologis (bukit gundul dan mata air tercemar lumpur) akibat aktivitas tambang galian C.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Perselisihan batas tanah antara Pak Karsan dan operator alat berat",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Kerusakan ekologis dan hilangnya sumber air akibat eksploitasi tambang",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Ketiadaan sarana pemandian untuk anak-anak desa di pedalaman",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Persaingan harga hasil panen sawah antarwarga di desa Sendang Arum",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Ketidakmampuan warga desa mengoperasikan alat-alat berat tambang",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-10",
+          "number": 10,
+          "type": "single_choice",
+          "text": "Cermati kutipan cerpen berikut!\n\n\"Bagi Wak Dul, sebatang pohon jati bukan sekadar komoditas kayu bertonase tinggi. Pohon itu adalah pasak bumi yang menahan napas lereng agar tidak longsor menimbun kampung. Ketika para pemodal datang menawarkan tumpukan uang kertas demi menebang lima hektare hutan komunal, Wak Dul berdiri tegak di depan traktor, merentangkan tangannya tanpa rasa gentar sedikit pun.\"\n\nWatak tokoh Wak Dul yang digambarkan secara dramatik dalam kutipan tersebut adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis karakterisasi tokoh dalam prosa bertema lingkungan",
+          "explanation": "Wak Dul menunjukkan pendirian teguh dan keberanian melawan eksploitasi hutan demi keselamatan desa tanpa tergoda uang.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "pemberani dan teguh menjaga kelestarian alam",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "keras kepala dan menolak modernisasi teknologi",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "materialistis namun enggan menjual aset warisan",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "acuh tak acuh terhadap masa depan ekonomi warga",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "penakut namun dipaksa warga menjadi juru bicara",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-11",
+          "number": 11,
+          "type": "single_choice",
+          "text": "Kajian sastra yang meneliti keterkaitan timbal balik antara teks sastra dan lingkungan fisik, serta bagaimana perilaku manusia memengaruhi krisis biosfer yang terefleksi dalam karya rekaan, dikenal sebagai pendekatan ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Mengidentifikasi konsep ekokritisisme dalam apresiasi prosa",
+          "explanation": "Ekokritik (ecocriticism) adalah studi sastra yang menghubungkan karya sastra dengan isu lingkungan hidup dan alam.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "psikologi sastra",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "ekokritisisme sastra",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "sosiologi sastra murni",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "strukturalisme genetik",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "dekonstruksi pascamodern",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-12",
+          "number": 12,
+          "type": "single_choice",
+          "text": "Cermati kutipan cerpen berikut!\n\n\"'Hutan ini adalah rahim ibu kita,' bisik Kakek Warso seraya menyentuh kulit kayu trembesi yang berlumut. 'Jika kalian membedah perutnya demi bijih tembaga, kalian sedang meminum darah ibumu sendiri sampai ia mengering, lalu kalian akan mati kelaparan di atas emas yang tak bisa dimakan.'\"\n\nAmanat yang terkandung dalam petuah tokoh Kakek Warso adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menemukan amanat/nilai moral lingkungan dalam prosa",
+          "explanation": "Pesan Kakek Warso menegaskan bahwa kekayaan tambang tidak berguna jika sumber kehidupan primer (alam/hutan) musnah.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Tambang tembaga harus dikelola dengan sistem bagi hasil yang adil bagi warga.",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Pohon trembesi merupakan kayu bernilai tinggi yang wajib diawetkan.",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Kelestarian alam sebagai penopang kehidupan manusia jauh lebih berharga daripada kekayaan materiil tambang.",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Eksploitasi hutan diperbolehkan asal tidak merusak pohon trembesi keramat.",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Emas dan tembaga tidak boleh diperjualbelikan kepada investor asing.",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:C"
+        },
+        {
+          "id": "q-13",
+          "number": 13,
+          "type": "single_choice",
+          "text": "Cermati kutipan novel berikut!\n\n\"Setiap kali deru mesin gergaji mesin (chainsaw) melolong membelah sunyi rimba, burung-burung rangkong terbang kocar-kacir kehilangan tajuk sarangnya. Pohon-pohon meranti berusia ratusan tahun tumbang berdebum, menimpa semak belukar dan memutus jalan hidup kawanan orangutan. Hutan yang semula bersenandung riang kini berduka di bawah kuasa rantai besi bergerigi.\"\n\nUnsur ekstrinsik nilai lingkungan yang tercermin dalam kutipan novel tersebut berpijak pada pandangan etika lingkungan ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sulit",
+          "kompetensiTarget": "Menganalisis pandangan etika lingkungan (ekosentrisme/antroposentrisme) dalam prosa",
+          "explanation": "Kutipan menolak pandangan antroposentrisme sempit dan mengajak pembaca memiliki empati biosentrisme/ekosentrisme (menghargai hak hidup seluruh makhluk di ekosistem).",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "antroposentrisme radikal",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "utilitarianisme industri",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "biosentrisme dan ekosentrisme",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "konsumerisme modern",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "hedonisme ekologis",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:C"
+        },
+        {
+          "id": "q-14",
+          "number": 14,
+          "type": "single_choice",
+          "text": "Cermati kutipan berikut!\n\n\"Aku menyaksikan sendiri bagaimana Sungai Lojahan kehilangan martabatnya. Ia bukan lagi urat nadi kehidupan yang mengalirkan kesegaran bagi tanaman cabai kami, melainkan selokan raksasa tempat racun pestisida dan limbah plastik bermuara.\"\n\nSudut pandang pengarang yang digunakan dalam kutipan cerita di atas adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menentukan sudut pandang penceritaan prosa lingkungan",
+          "explanation": "Penggunaan kata ganti 'Aku' yang terlibat langsung sebagai saksi peristiwa menunjukkan sudut pandang orang pertama (pelaku sampingan/utama).",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "orang pertama pelaku utama",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "orang kedua serbatahu",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "orang ketiga serbatahu",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "orang ketiga pengamat",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "orang pertama pengamat/sampingan",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-15",
+          "number": 15,
+          "type": "single_choice",
+          "text": "Cermati penggalan dialog berikut!\n\n\"'Lurah sudah menandatangani izin amdal itu, Kang. Pekan depan pabrik semen mulai peletakan batu pertama,' kata Darso gemetar.\n'Tapi mereka tidak pernah mengukur debit air bawah tanah di gua karst kita! Jika mata air itu mampet, sawah di tiga desa akan mati kering!' sergah Kang Bahrun membanting cangkulnya.\"\n\nLatar suasana yang terbangun dalam kutipan di atas adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menganalisis latar suasana dalam teks fiksi lingkungan",
+          "explanation": "Dialog memperlihatkan kemarahan, ketegangan, dan kekhawatiran warga terhadap dampak buruk izin pabrik.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "tegang dan penuh kecemasan",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "haru dan penuh pasrah",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "damai dan bersahabat",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "khidmat dan penuh optimisme",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "kacau balau disertai histeria massal",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-16",
+          "number": 16,
+          "type": "single_choice",
+          "text": "Cermati teks berikut!\n\n\"Banjir rob merupakan fenomena genangan air laut di daratan pesisir yang terjadi pada saat air laut pasang tertinggi. Fenomena ini dipicu oleh kombinasi kenaikan permukaan air laut global akibat pemanasan bumi serta penurunan muka tanah (land subsidence) akibat penyedotan air tanah berlebihan di kawasan pesisir.\"\n\nDalam struktur teks eksplanasi, kutipan di atas menempati bagian ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Mengidentifikasi struktur teks eksplanasi",
+          "explanation": "Bagian ini mendefinisikan dan mengenalkan fenomena banjir rob secara umum, yang merupakan bagian identifikasi fenomena (pernyataan umum).",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "deretan penjelas kausalitas",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "identifikasi fenomena",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "ulasan atau interpretasi",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "reorientasi naratif",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "kesimpulan subjektif",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-17",
+          "number": 17,
+          "type": "single_choice",
+          "text": "Cermati paragraf eksplanasi berikut!\n\n\"Ketika curah hujan dengan intensitas tinggi mengguyur lereng perbukitan yang telah kehilangan vegetasi penutup, pori-pori tanah cepat jenuh air. Akibatnya, bobot massa tanah meningkat drastis. Gaya dorong gravitasi yang melebihi gaya geser penahan lereng menyebabkan lapisan tanah menggelincir turun menuruni tebing dengan kecepatan tinggi, menimbun apa pun di jalurnya.\"\n\nKonjungsi kausalitas yang terdapat dalam kutipan di atas adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menganalisis konjungsi kausalitas dalam teks eksplanasi",
+          "explanation": "'Akibatnya' dan 'menyebabkan' merupakan konjungsi dan verba penanda hubungan kausalitas (sebab-akibat). Di antara opsi, 'akibatnya' merupakan konjungsi kausalitas antarkalimat.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "ketika",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "akibatnya",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "dengan",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "di",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "yang",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-18",
+          "number": 18,
+          "type": "single_choice",
+          "text": "Cermati kalimat eksplanasi berikut!\n\n\"Setelah magma keluar ke permukaan bumi menjadi lava, material tersebut [...] mendingin dan membeku membentuk batuan beku vulkanik dalam kurun waktu beberapa hari hingga bertahun-tahun.\"\n\nKata penanda urutan waktu (kronologis) yang tepat untuk melengkapi kalimat tersebut adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menggunakan konjungsi kronologis dalam teks eksplanasi",
+          "explanation": "Kata 'kemudian' atau 'selanjutnya' adalah penanda waktu kronologis yang menyambung urutan peristiwa pendinginan magma.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "karena",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "kemudian",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "meskipun",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "sebab",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "bahkan",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-19",
+          "number": 19,
+          "type": "single_choice",
+          "text": "Cermati kalimat eksplanasi berikut!\n\n\"Pemanasan global memicu terjadinya [...] gletser di kutub secara masif, yang berimplikasi langsung pada peningkatan laju [...] pantai di kawasan pesisir rendah di berbagai belahan dunia.\"\n\nPasangan istilah teknis ilmiah lingkungan yang tepat untuk melengkapi ruang rumpang di atas adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menggunakan istilah teknis keilmuan dalam teks eksplanasi",
+          "explanation": "Gletser mengalami pencairan/degradasi (pencairan/pelelehan), dan pesisir pantai mengalami abrasi (pengikisan pantai oleh gelombang).",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "subduksi; korosi",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "pelelehan; abrasi",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "sedimentasi; erupsi",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "evaporasi; kondensasi",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "vulkanisasi; erosi",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-20",
+          "number": 20,
+          "type": "single_choice",
+          "text": "Cermati kalimat-kalimat acak berikut!\n\n(1) Akibatnya, air tanah tawar terdesak dan digantikan oleh air laut asin yang menyusup ke pori-pori tanah.\n(2) Eksploitasi air bawah tanah secara berlebihan di kawasan industri pesisir menurunkan tekanan hidrostatik air tanah tawar.\n(3) Fenomena penyusupan air laut ke akuifer air tawar ini dikenal dengan istilah intrusi air laut.\n(4) Dampak lanjutannya, sumur-sumur warga menjadi payau dan tidak lagi layak dikonsumsi untuk kebutuhan harian.\n(5) Perbedaan tekanan hidrostatik tersebut memungkinkan gradien hidrolik air laut bergerak masuk ke arah daratan.\n\nUrutan kalimat yang logis dan padu agar membentuk deretan penjelas kausalitas teks eksplanasi adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sulit",
+          "kompetensiTarget": "Mengonstruksi urutan teks eksplanasi kausalitas",
+          "explanation": "Pola sebab-akibat yang padu: (3) identifikasi awal intrusi, (2) penyebab berupa eksploitasi, (5) proses bergeraknya gradien hidrolik, (1) akibat penggantian air tawar, (4) dampak bagi sumur warga. Atau (2)-(5)-(1)-(4)-(3). Urutan (2)-(5)-(1)-(4)-(3) mengalir dari pemicu -> proses perpindahan -> akibat langsung -> dampak warga -> penamaan fenomena.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "(2) - (5) - (1) - (4) - (3)",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "(3) - (2) - (1) - (5) - (4)",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "(2) - (1) - (5) - (3) - (4)",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "(5) - (2) - (1) - (4) - (3)",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "(3) - (5) - (2) - (4) - (1)",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-21",
+          "number": 21,
+          "type": "single_choice",
+          "text": "Cermati kutipan teks eksplanasi berikut!\n\n\"Oleh karena itu, mitigasi bencana abrasi pesisir memerlukan keterpaduan antara pembangunan tanggul laut penahan ombak (breakwater) dan restorasi sabuk hijau hutan mangrove. Keterlibatan masyarakat pesisir menjadi kunci utama keberlanjutan program tersebut demi mempertahankan ruang hidup generasi mendatang.\"\n\nBerdasarkan fungsinya dalam teks eksplanasi, paragraf di atas merupakan bagian ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis bagian interpretasi/ulasan dalam teks eksplanasi",
+          "explanation": "Paragraf berisi pandangan akhir, evaluasi, atau ulasan/simpulan berupa rekomendasi langkah mitigasi dari fenomena yang dijelaskan.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "identifikasi fenomena",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "rangkaian kejadian kausal",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "ulasan (interpretasi)",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "orientasi latar belakang",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "penjelasan kronologis",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:C"
+        },
+        {
+          "id": "q-22",
+          "number": 22,
+          "type": "single_choice",
+          "text": "Cermati kalimat berikut!\n\n\"Limbah merkuri yang dibuang ke aliran sungai diserap oleh fitoplankton, lalu fitoplankton tersebut dimakan oleh zooplankton, hingga akhirnya senyawa beracun itu terakumulasi dalam konsentrasi tinggi pada tubuh ikan predator pemuncak rantai makanan.\"\n\nVerba pasif yang menunjukkan proses ilmiah dalam kalimat eksplanasi tersebut adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menganalisis kaidah kebahasaan (verba pasif) dalam eksplanasi",
+          "explanation": "Verba pasif ditandai dengan awalan di- atau ter-, yaitu 'dibuang', 'diserap', 'dimakan', dan 'terakumulasi'.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "dibuang, diserap, dimakan, terakumulasi",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "dibuang, konsentrasi, beracun, predator",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "aliran, diserap, dimakan, pemuncak",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "sungai, fitoplankton, terakumulasi, makanan",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "beracun, konsentrasi, pemuncak, dimakan",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-23",
+          "number": 23,
+          "type": "single_choice",
+          "text": "Dalam menyusun teks eksplanasi tentang fenomena 'Eutrofikasi di Perairan Rawa', langkah awal yang paling esensial dalam tahapan prapenulisan adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Memahami langkah mengonstruksi teks eksplanasi",
+          "explanation": "Menentukan topik dan mengumpulkan fakta ilmiah mengenai mekanisme ledakan alga akibat kelebihan nutrisi fosfat/nitrat merupakan fondasi sebelum membuat kerangka dan mengembangkan draf.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "menulis bagian ulasan dan rekomendasi kebijakan secara langsung",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "mengumpulkan data ilmiah dan fakta mengenai proses masuknya nutrien berlebih ke perairan",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "menyunting tanda baca dan keefektifan kalimat kompleks",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "mencari kutipan wawancara tokoh masyarakat yang terdampak",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "membuat ilustrasi grafis dan diagram tanpa mencari referensi tertulis",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-24",
+          "number": 24,
+          "type": "single_choice",
+          "text": "Cermati kutipan puisi berikut!\n\nDi sela cerobong yang memuntahkan jelaga hitam\nbumi terbatuk di balik selubung karbondioksida\nhutan-hutan meranggas bersujud di abu peradaban\nmenagih janji hujan yang tak kunjung jatuh.\n\nMajas yang dominan pada baris kedua \"bumi terbatuk di balik selubung karbondioksida\" adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menganalisis majas dalam teks puisi",
+          "explanation": "Bumi (benda tak bernyawa) dilekatkan sifat insani yaitu 'terbatuk', yang merupakan ciri khas majas personifikasi.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "hiperbola",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "metafora",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "personifikasi",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "litotes",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "pleonasme",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:C"
+        },
+        {
+          "id": "q-25",
+          "number": 25,
+          "type": "single_choice",
+          "text": "Cermati bait puisi berikut!\n\nGemertak dahan patah mengoyak sunyi rimba\njerit anak kera melengking parau di pucuk dahan kering\nangin pun menolak membawa aroma embun pagi\nhanya bau sangit hangus menyengat rongga hidung.\n\nCitraan (imaji) pendengaran (auditif) dalam bait puisi di atas terdapat pada baris ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis citraan (imaji) dalam puisi bertema lingkungan",
+          "explanation": "Baris pertama ('Gemertak dahan patah') dan baris kedua ('jerit anak kera melengking parau') merangsang indra pendengaran pembaca.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "pertama dan kedua",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "kedua dan ketiga",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "ketiga dan keempat",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "pertama dan keempat",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "kedua dan keempat",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-26",
+          "number": 26,
+          "type": "single_choice",
+          "text": "Cermati bait puisi berikut!\n\nIkan-ikan mengapung perutnya memutih\nmenatap langit kelabu tanpa sepatah tanya\nkali ini sungai telah menjadi bejana racun\ntempat manusia membuang kerak ketamakan.\n\nMakna lambang kata \"bejana racun\" pada bait ketiga adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menginterpretasi makna simbolis/lambang dalam puisi",
+          "explanation": "Kata 'bejana racun' melambangkan sungai yang telah tercemar parah oleh limbah beracun hingga mematikan biota air.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "wadah penampungan air minum penduduk desa",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "sungai yang telah tercemar berat oleh limbah berbahaya",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "alat tradisional untuk menangkap ikan di muara",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "kedalaman sungai yang menyimpan pusaran air deras",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "tempat pembuangan bangkai ikan yang mati alami",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-27",
+          "number": 27,
+          "type": "single_choice",
+          "text": "Cermati kutipan puisi berikut!\n\nBerapa kubik tanah lagi hendak kau keruk?\nBerapa ribu hektare pohon lagi hendak kau tebang?\nHingga bukit-bukit rata menjadi kuburan air\ndan kau tersedak tumpukan lembaran uang di kerongkonganmu!\n\nNada (tone) pengarang yang terpancar dari bait puisi di atas adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menemukan nada dan suasana dalam apresiasi puisi",
+          "explanation": "Pertanyaan retoris bertubi-tubi dan kata-kata tajam ('tersedak uang di kerongkongan') menunjukkan nada mengecam, memprotes keras, dan marah terhadap keserakahan perusak lingkungan.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "melankolis dan pasrah",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "sinis, geram, dan menggugat",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "simpatik dan penuh bujukan",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "humoris dan menyindir santai",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "patriotik dan bergelora membela penguasa",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B"
+        },
+        {
+          "id": "q-28",
+          "number": 28,
+          "type": "single_choice",
+          "text": "Susunan baris, bait, jeda, perataan tepi (tata wajah) dalam sebuah puisi yang dirancang khusus untuk memperkuat pemaknaan visual dan atmosfer estetis teks dinamakan ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Memahami unsur tipografi puisi",
+          "explanation": "Tipografi (tata wajah) merupakan bentuk fisik puisi berupa pengaturan baris, tepi, dan tanda baca.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "rima",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "irama",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "tipografi",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "enjambemen",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "diksi",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:C"
+        },
+        {
+          "id": "q-29",
+          "number": 29,
+          "type": "single_choice",
+          "text": "Cermati bait puisi berikut!\n\nKami adalah karang yang tak lagi berlumut\ntersengat terik surya yang memanggang laut\nnurani manusia kian pudar membatu\nketika jaring pukat menyapu anak-cucu kami tanpa ragu.\n\nParafrasa naratif yang paling tepat merefleksikan makna bait puisi di atas adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sulit",
+          "kompetensiTarget": "Mengembangkan parafrasa puisi ke prosa",
+          "explanation": "Puisi menyuarakan kepunahan terumbu karang dan biota laut akibat pemanasan suhu laut serta eksploitasi jaring pukat harimau oleh manusia yang hilang rasa empatinya.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Terumbu karang dan ekosistem laut mengalami kehancuran parah akibat kenaikan suhu laut dan penangkapan ikan secara berlebihan dengan pukat harimau tanpa memedulikan kelestarian generasi masa depan.",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Nelayan tradisional kesulitan menjaring ikan di lautan dalam karena terhalang oleh karang-karang besar yang tajam dan panas.",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Batu karang di pinggir pantai sengaja dipecahkan oleh warga setempat untuk dijadikan bahan pondasi bangunan rumah di pesisir.",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Masyarakat pesisir pantai bekerja keras menanam kembali bibit karang agar laut kembali dingin dan terlindung dari sinar matahari.",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Pemanasan global membuat nelayan enggan melaut pada siang hari sehingga mereka beralih mencari ikan pada malam hari menggunakan jaring pukat.",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-30",
+          "number": 30,
+          "type": "single_choice",
+          "text": "Cermati bait puisi berikut!\n\nKemarau memanjat punggung bukit\nmenghirup tetes embun terakhir dari daun jati\ndanau mengering menjadi retakan tanah liat\nmenyisakan doa para petani di bibir sumur yang senyap.\n\nTema sentral yang diusung dalam bait puisi tersebut adalah ....",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menganalisis tema puisi bertema lingkungan",
+          "explanation": "Bait melukiskan kekeringan ekstrem pada musim kemarau panjang yang berdampak pada krisis air dan penderitaan petani.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Bencana kekeringan dan dampaknya terhadap kehidupan agraris",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Kegembiraan petani menyambut datangnya musim panen raya",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Keindahan pemandangan bukit di kawasan pedesaan terpencil",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Upacara adat memohon keselamatan bagi para penjaga hutan",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Pertikaian antardesa memperebutkan sisa sumber air bersih",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A"
+        },
+        {
+          "id": "q-31",
+          "number": 31,
+          "type": "multiple_choice",
+          "text": "Cermati karakteristik-karakteristik teks berikut!\n\n(A) Bersifat faktual murni tanpa melibatkan cerapan pancaindra manusia sedikit pun\n(B) Menggambarkan objek konkret secara terperinci hingga pembaca seolah melihat atau merasakan sendiri\n(C) Menggunakan kata-kata konkret dan frasa berdaya sugesti atau beradjektiva kuat\n(D) Memiliki struktur pembangun yang wajib memuat deretan penjelas kausalitas sebab-akibat\n(E) Melibatkan unsur cerapan pancaindra (visual, auditif, taktil, olfaktori)\n\nPernyataan yang merupakan ciri-ciri esensial dari teks deskripsi ditunjukkan oleh opsi .... (Pilihlah DUA atau TIGA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Mengidentifikasi ciri-ciri teks deskripsi",
+          "explanation": "Teks deskripsi memerinci objek konkret agar seolah dirasakan pembaca (B), menggunakan kata sifat/konkret emotif (C), dan melibatkan panca indra (E). Pilihan A salah karena deskripsi melibatkan indra, D adalah ciri eksplanasi.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Bersifat faktual murni tanpa melibatkan cerapan pancaindra manusia sedikit pun",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Menggambarkan objek konkret secara terperinci hingga pembaca seolah melihat atau merasakan sendiri",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Menggunakan kata-kata konkret dan frasa berdaya sugesti atau beradjektiva kuat",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Memiliki struktur pembangun yang wajib memuat deretan penjelas kausalitas sebab-akibat",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Melibatkan unsur cerapan pancaindra (visual, auditif, taktil, olfaktori)",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B,C,E"
+        },
+        {
+          "id": "q-32",
+          "number": 32,
+          "type": "multiple_choice",
+          "text": "Cermati kutipan teks deskripsi berikut!\n\n\"Lanskap Hutan Bakau Kuripan menghadirkan jajaran akar napas yang menyembul dari rawa lumpur kehitaman. Suara kecipak kepiting biola dan kepak sayap burung bangau putih memecah kesunyian muara. Angin laut menyusup di antara celah dahan, meniupkan aroma khas lumpur asin yang menyegarkan.\"\n\nBerdasarkan kutipan tersebut, cerapan pancaindra yang benar-benar dihadirkan penulis dalam teks adalah .... (Pilihlah DUA atau TIGA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menemukan cerapan pancaindra dalam teks deskripsi",
+          "explanation": "Akar menyembul dan bangau putih (penglihatan), suara kecipak dan kepak sayap (pendengaran), aroma khas lumpur asin (penciuman). Pencecapan dan sentuhan kulit tidak dieksplorasi secara eksplisit.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Pancaindra penglihatan (visual) saat melukiskan akar napas dan burung bangau",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Pancaindra pendengaran (auditif) saat merekam kecipak kepiting dan sayap burung",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Pancaindra pencecapan (gustatori) saat mencicipi keasinan lumpur",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Pancaindra penciuman (olfaktori) saat menghirup aroma khas lumpur asin",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Pancaindra keseimbangan kinestetik saat berjalan di atas jembatan gantung",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A,B,D"
+        },
+        {
+          "id": "q-33",
+          "number": 33,
+          "type": "multiple_choice",
+          "text": "Pendekatan ekokritisisme dalam mengapresiasi prosa fiksi memfokuskan pembacaan pada aspek-aspek tertentu. Manakah di antara pernyataan berikut yang menjadi fokus analisis pendekatan ekokritik sastra? (Pilihlah DUA atau TIGA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sulit",
+          "kompetensiTarget": "Memahami fokus apresiasi ekokritisisme dalam prosa",
+          "explanation": "Ekokritik menganalisis relasi manusia dengan alam nonmanusia (A), representasi krisis lingkungan dalam teks (B), serta kritik terhadap antroposentrisme dan eksploitasi biosfer (D). E dan C bukan ranah ekokritik murni.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Hubungan timbal balik antara karakter manusia dengan alam sekitarnya",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Representasi krisis ekologis, degradasi habitat, dan pencemaran dalam alur cerita",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Kesesuaian metrum dan persajakan suku kata pada akhir dialog tokoh",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Kritik terhadap pandangan antroposentrisme yang menempatkan manusia sebagai penguasa mutlak alam",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Penggunaan teori psikoanalisis libido tokoh utama dalam mengatasi trauma masa kecil",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A,B,D"
+        },
+        {
+          "id": "q-34",
+          "number": 34,
+          "type": "multiple_choice",
+          "text": "Cermati kutipan cerpen berikut!\n\n\"Perusahaan tambang emas itu tidak hanya mengeruk bukit kami, tetapi juga mematikan denyut nadi Sungai Batanghari. Ikan tapah yang dulu menjadi berkah nelayan hulu kini mengapung bangkai berbau belerang. Warga yang memprotes diancam dengan pasal perusakan fasilitas, sementara pipa pembuangan limbah terus memuntahkan racun ke sungai tanpa henti setiap tengah malam.\"\n\nBerdasarkan kutipan di atas, nilai kritik sosial dan ekologis yang disuarakan penulis adalah .... (Pilihlah DUA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis kritik sosial-lingkungan dalam cerpen",
+          "explanation": "Kutipan mengkritik ketidakadilan hukum dan intimidasi terhadap warga penuntut hak (B), serta pencemaran lingkungan akut akibat pengabaian amdal pembuangan limbah (C).",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Ketidakmampuan nelayan hulu bersaing menangkap ikan dengan teknologi modern",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Intimidasi hukum terhadap masyarakat lokal yang memperjuangkan kelestarian lingkungannya",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Ketidakbertanggungjawaban industri dalam membuang limbah beracun yang merusak ekosistem sungai",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Kegagalan pemerintah desa dalam mempromosikan destinasi wisata bukit emas",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Keengganan warga menerima tawaran ganti rugi pembebasan lahan dari perusahaan",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:B,C"
+        },
+        {
+          "id": "q-35",
+          "number": 35,
+          "type": "multiple_choice",
+          "text": "Manakah di antara topik-topik fenomena berikut yang paling tepat dan relevan untuk dikembangkan menjadi teks eksplanasi ilmiah? (Pilihlah DUA atau TIGA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Menyeleksi topik penulisan teks eksplanasi",
+          "explanation": "A, B, dan D memuat proses 'mengapa' dan 'bagaimana' terjadinya suatu fenomena alam/lingkungan secara ilmiah. C adalah teks prosedur, E adalah teks ulasan/resensi cerpen.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Proses terjadinya likuefaksi tanah pascagempa bumi tektonik",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Mekanisme terbentuknya efek rumah kaca dan kenaikan suhu bumi",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Langkah-langkah praktis membuat kerajinan tas dari botol plastik bekas",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Penyebab terjadinya fenomena intrusi air laut di wilayah dataran aluvial pesisir",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Ulasan kelebihan dan kekurangan gaya bahasa dalam antologi cerpen lingkungan",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A,B,D"
+        },
+        {
+          "id": "q-36",
+          "number": 36,
+          "type": "multiple_choice",
+          "text": "Cermati ciri-ciri kebahasaan teks eksplanasi berikut!\n\nManakah yang merupakan kaidah kebahasaan baku yang dominan digunakan dalam teks eksplanasi ilmiah? (Pilihlah DUA atau TIGA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis kaidah kebahasaan teks eksplanasi",
+          "explanation": "Teks eksplanasi banyak memakai kata kerja pasif material/relasional (A), konjungsi kausalitas dan kronologis (B), serta peristilahan teknis ilmiah (D). Emotif subyektif dan persona 'aku' bukan ciri eksplanasi.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Banyak memanfaatkan verba material dan verba relasional berbentuk pasif",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Menggunakan konjungsi kausalitas (sebab, karena, akibatnya) dan kronologis (lalu, kemudian)",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Dominan menggunakan kata ganti orang pertama tunggal 'aku' dan 'saya'",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Menggunakan peristilahan teknis (nomenklatur ilmiah) sesuai bidang keilmuan objek bahasan",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Memperbanyak penggunaan majas hiperbola dan ungkapan emotif subjektif",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A,B,D"
+        },
+        {
+          "id": "q-37",
+          "number": 37,
+          "type": "multiple_choice",
+          "text": "Cermati kalimat-kalimat berikut!\n\n(1) Hujan asam terjadi [...] sulfur dioksida dan nitrogen oksida bereaksi dengan uap air di atmosfer.\n(2) Reaksi kimia tersebut menghasilkan asam sulfat dan asam nitrat [...] air hujan yang turun memiliki tingkat pH sangat rendah.\n(3) Lapisan lilin pada daun tanaman rusak [...] tanah mengalami pengasaman ekstrem yang mematikan mikroba.\n\nKonjungsi kausalitas yang tepat untuk mengisi rumpang kalimat (1) dan (2) secara berturut-turut adalah .... (Pilihlah DUA opsi konjungsi yang tepat!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menerapkan konjungsi kausalitas dalam teks eksplanasi",
+          "explanation": "Untuk (1), konjungsi kausal alasan adalah 'karena' atau 'disebabkan oleh'. Untuk (2), konjungsi kausal akibat adalah 'sehingga' atau 'akibatnya'.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "karena (mengisi rumpang 1)",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "sehingga (mengisi rumpang 2)",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "tetapi (mengisi rumpang 1)",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "meskipun (mengisi rumpang 2)",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "agar (mengisi rumpang 1)",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A,B"
+        },
+        {
+          "id": "q-38",
+          "number": 38,
+          "type": "multiple_choice",
+          "text": "Dalam struktur batin sebuah puisi (inner structure), terdapat beberapa unsur esensial yang tidak tampak langsung di permukaan teks melainkan tersirat dalam makna. Manakah yang termasuk ke dalam unsur batin puisi? (Pilihlah DUA atau TIGA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "mudah",
+          "kompetensiTarget": "Mengidentifikasi unsur batin puisi",
+          "explanation": "Unsur batin puisi meliputi Tema (sense), Rasa (feeling), Nada (tone), dan Amanat (intention). Tipografi dan rima/ritme merupakan unsur fisik.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Tema (sense) pokok gagasan puisi",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Tipografi dan tata letak perwajahan bait",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Nada (tone) sikap penyair kepada pembaca",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Amanat (intention) pesan yang hendak disampaikan penyair",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Pola rima akhir persajakan a-b-a-b",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A,C,D"
+        },
+        {
+          "id": "q-39",
+          "number": 39,
+          "type": "multiple_choice",
+          "text": "Cermati bait puisi berikut!\n\nAsap pabrik menyulam mendung di dada langit\nmenghisap tawa anak-anak lembah yang kehilangan padang rumput\ntanah kelahiran kami merintih dalam racun\nsementara roda-roda raksasa terus berputar menggilas masa depan.\n\nMajas yang digunakan penyair dalam bait puisi di atas meliputi .... (Pilihlah DUA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menganalisis majas dalam bait puisi",
+          "explanation": "'Asap menyulam mendung' dan 'tanah merintih' adalah personifikasi. 'Menyulam mendung di dada langit' dan 'menggilas masa depan' juga berfungsi sebagai metafora visual/konseptual.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Personifikasi (pada 'asap menyulam mendung' dan 'tanah merintih')",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Metafora (pada penggambaran roda-roda raksasa 'menggilas masa depan')",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Litotes (merendahkan kenyataan secara ekstrem)",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Eufemisme (penghalusan kata secara sopan)",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Alusio (merujuk pada tokoh mitologi masa lampau)",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A,B"
+        },
+        {
+          "id": "q-40",
+          "number": 40,
+          "type": "multiple_choice",
+          "text": "Langkah-langkah yang sistematis dalam menyusun dan mengonstruksi teks eksplanasi ilmiah bertema ekologi adalah .... (Pilihlah DUA atau TIGA jawaban yang benar!)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menentukan tahapan konstruksi teks eksplanasi",
+          "explanation": "Tahapan menulis eksplanasi: menentukan fenomena dan mengumpulkan data ilmiah (A), menyusun kerangka berdasar urutan kronologis/kausalitas (B), dan mengembangkan kerangka dengan memperhatikan kaidah kebahasaan serta kohesi (D). Mengarang tokoh fiktif (C) adalah langkah prosa narasi, dan menyisipkan rima (E) adalah langkah puisi.",
+          "imagePrompt": "",
+          "options": [
+            {
+              "key": "A",
+              "text": "Menentukan fenomena alam/sosial yang akan dijelaskan dan mengumpulkan fakta-fakta ilmiah",
+              "isRtl": false
+            },
+            {
+              "key": "B",
+              "text": "Menyusun kerangka tulisan berdasarkan struktur identifikasi fenomena, rangkaian proses, dan ulasan",
+              "isRtl": false
+            },
+            {
+              "key": "C",
+              "text": "Mengarang tokoh antagonis dan protagonis fiktif untuk memperkuat ketegangan cerita",
+              "isRtl": false
+            },
+            {
+              "key": "D",
+              "text": "Mengembangkan draf dengan konjungsi kausalitas/kronologis dan istilah teknis yang tepat",
+              "isRtl": false
+            },
+            {
+              "key": "E",
+              "text": "Menyelaraskan rima akhir bait dengan kaidah persajakan puisi konvensional",
+              "isRtl": false
+            }
+          ],
+          "rawRightAnswer": "RIGHT:A,B,D"
+        },
+        {
+          "id": "q-41",
+          "number": 41,
+          "type": "essay",
+          "text": "Susunlah satu paragraf teks deskripsi subjektif (minimal 5-6 kalimat) yang menggambarkan suasana pesisir Pantai Sigandu Batang pada sore hari! Paragraf Anda WAJIB memuat minimal dua cerapan pancaindra yang berbeda (misalnya penglihatan dan pendengaran/perabaan) serta menggunakan paling sedikit dua frasa beradjektiva kuat. Berikan garis bawah atau tanda kurung pada cerapan indra dan adjektiva yang Anda gunakan!",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Mengonstruksi teks deskripsi dengan cerapan pancaindra dan kaidah kebahasaan yang tepat",
+          "explanation": "Siswa diminta mengonstruksi paragraf deskripsi subjektif dengan kriteria: panjang minimal 5-6 kalimat, memuat 2 jenis cerapan indra, memuat 2 frasa adjektiva kuat, dan bertema suasana sore di Pantai Sigandu.",
+          "imagePrompt": "",
+          "essaySampleAnswer": "Matahari petang perlahan turun di balik cakrawala Pantai Sigandu, memancarkan [cahaya keemasan yang berkilauan] (indra penglihatan; frasa adjektiva) di atas permukaan air laut. Debur ombak yang berirama tenang (indra pendengaran) pecah menghempas deretan pemecah batu karang hitam. Semilir [angin sejuk yang menusuk lembut] (indra perabaan; frasa adjektiva) menyapa kulit para pengunjung yang duduk di tepian tanggul. Butiran pasir basah terasa memadat di bawah telapak kaki saat melangkah menyusuri bibir pantai. Bau asin khas uap laut tercium samar terbawa embusan angin senja. Suasana damai dan tenteram itu seolah menghapus segala kepenatan aktivitas seharian.",
+          "essayRubric": [
+            {
+              "scoreRange": "85-100",
+              "criteria": "Paragraf terdiri atas 5-6 kalimat atau lebih, koheren, memuat minimal 2 cerapan pancaindra berbeda secara jelas, memuat minimal 2 frasa beradjektiva kuat dengan penanda yang tepat, serta ejaan dan tanda baca baku."
+            },
+            {
+              "scoreRange": "70-84",
+              "criteria": "Paragraf terdiri atas 4-5 kalimat, memuat 2 cerapan indra namun frasa adjektiva kurang variatif atau penandaan kurang lengkap, koherensi cukup baik."
+            },
+            {
+              "scoreRange": "50-69",
+              "criteria": "Paragraf kurang dari 4 kalimat, cerapan indra hanya satu jenis, struktur kalimat belum padu, dan banyak kesalahan ejaan."
+            },
+            {
+              "scoreRange": "0-49",
+              "criteria": "Jawaban menyimpang dari topik deskripsi pantai atau tidak memenuhi kriteria instruksi penulisan."
+            }
+          ]
+        },
+        {
+          "id": "q-42",
+          "number": 42,
+          "type": "essay",
+          "text": "Bacalah kutipan cerpen berikut dengan saksama!\n\n\"Bagi Pak Lurah Broto dan para pejabat dinas, bukit kapur Kendeng hanyalah gundukan batuan gamping tak bernyawa yang ditakdirkan untuk diledakkan dinamit, digiling menjadi jutaan kantong semen demi kilau gedung-gedung pencakar langit di ibu kota. Namun, bagi Mbah Sadiman dan kaum tani Samin, bukit itu adalah tandon air abadi, ibu bumi yang menyusui mata air bagi ribuan hektare sawah tadah hujan. Jika bukit itu runtuh, runtuh pulalah peradaban sawah mereka.\"\n\nBerdasarkan kutipan di atas, analisislah pertentangan antara pandangan \"Antroposentrisme\" dan \"Ekosentrisme\" yang terefleksi dalam sikap tokoh! Jelaskan bagaimana pengarang menggunakan pertentangan tersebut untuk membangun amanat cerita!",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sulit",
+          "kompetensiTarget": "Mengapresiasi nilai etika lingkungan (ekokritisisme) dalam prosa",
+          "explanation": "Siswa menguraikan pertentangan pandangan antroposentrisme (eksploitasi untuk kepentingan materiil manusia) vs ekosentrisme (kesatuan manusia dengan alam penopang hidup) dan perannya dalam membangun amanat sastra.",
+          "imagePrompt": "",
+          "essaySampleAnswer": "1. Analisis Pertentangan Etika Lingkungan:\n- Pandangan Antroposentrisme terefleksi pada sikap Pak Lurah Broto dan pejabat dinas yang memandang alam (bukit kapur) semata-mata sebagai objek material/ekonomis untuk dieksploitasi demi semen dan pembangunan fisik perkotaan, tanpa memikirkan dampak ekosistem jangka panjang.\n- Pandangan Ekosentrisme terefleksi pada sikap Mbah Sadiman dan kaum tani yang memuliakan alam sebagai 'ibu bumi' dan penyedia siklus hidrologi (mata air). Bagi mereka, kelestarian bukit terikat erat dengan keberlangsungan hidup seluruh makhluk dan peradaban tani.\n\n2. Pembangunan Amanat Cerita:\nPengarang membenturkan kedua sudut pandang ini untuk mengkritik watak serakah pembangunan modern yang mengorbankan ruang hidup ekologis masyarakat lokal. Amanat yang dibangun adalah bahwa eksploitasi alam demi kepentingan kapital semata akan merusak rantai kehidupan; manusia hendaknya memperlakukan alam secara arif dan menjaga keseimbangan biosfer karena manusia adalah bagian tak terpisahkan dari alam.",
+          "essayRubric": [
+            {
+              "scoreRange": "85-100",
+              "criteria": "Mampu membedah konsep antroposentrisme dan ekosentrisme dengan merujuk bukti tekstual secara tepat serta menjelaskan konstruksi amanat secara mendalam dan runtut."
+            },
+            {
+              "scoreRange": "70-84",
+              "criteria": "Mampu menjelaskan kedua pandangan etika lingkungan dengan benar, namun kaitan dengan pembangunan amanat cerita dijelaskan secara umum."
+            },
+            {
+              "scoreRange": "50-69",
+              "criteria": "Hanya menjelaskan salah satu pandangan (antroposentrisme atau ekosentrisme) atau penjelasan amanat kurang relevan dengan kutipan."
+            },
+            {
+              "scoreRange": "0-49",
+              "criteria": "Analisis keliru dan tidak memahami konsep antroposentrisme/ekosentrisme dalam cerpen lingkungan."
+            }
+          ]
+        },
+        {
+          "id": "q-43",
+          "number": 43,
+          "type": "essay",
+          "text": "Konstruksikan sebuah kerangka teks eksplanasi ilmiah mengenai fenomena \"Abrasi dan Banjir Rob di Wilayah Pesisir Pantura\"! Kerangka yang Anda susun harus memenuhi tiga struktur baku teks eksplanasi:\n1. Identifikasi Fenomena (Pernyataan Umum)\n2. Rangkaian Kejadian Kausalitas (minimal 2 poin proses sebab-akibat)\n3. Ulasan/Interpretasi (simpulan dan rekomendasi solusi)",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menyusun kerangka teks eksplanasi berdasarkan struktur baku",
+          "explanation": "Siswa menyusun kerangka penulisan teks eksplanasi secara logis dan runtut sesuai kaidah struktur ilmiah eksplanasi.",
+          "imagePrompt": "",
+          "essaySampleAnswer": "Kerangka Teks Eksplanasi: Fenomena Abrasi dan Banjir Rob di Pantura\n\n1. Identifikasi Fenomena (Pernyataan Umum):\n- Pengertian banjir rob dan abrasi di sepanjang pesisir Pantai Utara (Pantura) Jawa.\n- Gambaran umum fenomena genangan air laut yang semakin meluas masuk ke permukiman warga dan infrastruktur jalan nasional.\n\n2. Rangkaian Kejadian Kausalitas (Proses Sebab-Akibat):\n- Sebab 1 & Proses: Pemanasan global menyebabkan pencairan es kutub sehingga volume dan permukaan air laut global mengalami kenaikan (sea level rise).\n- Sebab 2 & Proses: Penurunan muka tanah (land subsidence) secara drastis akibat pengambilan air tanah dalam (akuifer) oleh kawasan industri dan perumahan serta beban infrastruktur berat di atas tanah aluvial muda.\n- Akibat: Pertemuan antara kenaikan pasang air laut dan daratan yang ambles menyebabkan tanggul jebol dan air laut mengikis garis pantai (abrasi) serta menggenangi daratan secara permanen.\n\n3. Ulasan/Interpretasi (Simpulan & Mitigasi):\n- Simpulan: Fenomena rob Pantura adalah bencana antropogenik-alamiah terpadu yang mengancam ketahanan ekonomi dan sosial kawasan pesisir.\n- Rekomendasi/Solusi: Perlunya penghentian penyedotan air tanah liar, pembangunan dinding laut (sea wall) terintegrasi, dan revitalisasi sabuk hijau mangrove berbasis komunitas lokal.",
+          "essayRubric": [
+            {
+              "scoreRange": "85-100",
+              "criteria": "Kerangka mencakup ketiga struktur secara lengkap, logis, memiliki poin kausalitas yang mendalam dan ilmiah, serta memuat ulasan/solusi yang relevan."
+            },
+            {
+              "scoreRange": "70-84",
+              "criteria": "Kerangka memuat ketiga struktur teks eksplanasi, namun poin kausalitas atau solusi masih bersifat garis besar dan kurang mendalam."
+            },
+            {
+              "scoreRange": "50-69",
+              "criteria": "Kerangka tidak lengkap (hanya 1-2 bagian struktur), atau poin yang disajikan tidak mencerminkan pola kausalitas eksplanasi ilmiah."
+            },
+            {
+              "scoreRange": "0-49",
+              "criteria": "Kerangka tidak sesuai dengan struktur teks eksplanasi (misalnya ditulis dalam bentuk cerita atau puisi)."
+            }
+          ]
+        },
+        {
+          "id": "q-44",
+          "number": 44,
+          "type": "essay",
+          "text": "Cermati draf paragraf teks eksplanasi yang rumpang dan rancu berikut!\n\n\"Tanah longsor terjadi karena air hujan meresap ke dalam tanah maka membuat tanah menjadi sangat berat. Sehingga tanah tidak kuat lagi menahan air dan kemudian meluncur ke bawah. Hal ini di mana disebabkan oleh karena hutan gundul yang ditebangi liar oleh manusia.\"\n\nSuntinglah paragraf di atas agar menjadi paragraf eksplanasi yang padu, memenuhi prinsip keefektifan kalimat, tata bahasa baku, dan penggunaan konjungsi kausalitas yang tepat!",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sedang",
+          "kompetensiTarget": "Menyunting kalimat tidak efektif dan konjungsi pada teks eksplanasi",
+          "explanation": "Siswa diminta memperbaiki kesalahan konjungsi intrakalimat di awal kalimat ('Sehingga...'), frasa mubazir ('Hal ini di mana disebabkan oleh karena...'), dan membuat kalimat efektif padu.",
+          "imagePrompt": "",
+          "essaySampleAnswer": "Perbaikan Paragraf Eksplanasi:\n\"Tanah longsor terjadi ketika air hujan dengan intensitas tinggi meresap ke dalam tanah sehingga bobot massa tanah meningkat drastis. Akibatnya, lapisan tanah tidak mampu lagi menahan gaya dorong air dan menggelincir menuruni lereng. Fenomena ini dipicu oleh penggundulan hutan akibat penebangan liar yang menghilangkan fungsi akar pohon sebagai pengikat alami struktur tanah.\"",
+          "essayRubric": [
+            {
+              "scoreRange": "85-100",
+              "criteria": "Seluruh kesalahan kalimat (konjungsi 'sehingga' di awal kalimat, kerancuan 'di mana disebabkan oleh karena') diperbaiki dengan tuntas; kalimat menjadi padu, bernalar ilmiah, dan efektif."
+            },
+            {
+              "scoreRange": "70-84",
+              "criteria": "Paragraf telah disunting menjadi lebih efektif dan baku, namun masih terdapat sedikit kesalahan kecil pada tanda baca atau pemilihan diksi."
+            },
+            {
+              "scoreRange": "50-69",
+              "criteria": "Penyuntingan hanya mengubah sebagian kata, kesalahan struktur logika antarkalimat dan konjungsi masih tersisa."
+            },
+            {
+              "scoreRange": "0-49",
+              "criteria": "Paragraf hasil suntingan tetap tidak baku, tidak efektif, atau maknanya menyimpang dari maksud asal."
+            }
+          ]
+        },
+        {
+          "id": "q-45",
+          "number": 45,
+          "type": "essay",
+          "text": "Bacalah puisi bertema lingkungan berikut dengan saksama!\n\nRATAP SEBUTIR DEBU PABRIK\n\nDi atas daun-daun mangga yang keperakan\nkami singgah menjadi selimut kelabu\nmenutup mulut stomata yang merindukan udara suci\nmatahari tersaring redup di balik kabut berbau belerang.\n\nBurung kutilang tak lagi menyanyikan bening embun\nmereka pindah mencari pucuk-pucuk cemara yang belum terjamah\ndi sini, kami menetap di paru-paru anak-anak balita\nyang tertidur sambil terengah-engah dalam mimpi buruk.\n\nBerdasarkan puisi di atas:\n(a) Tentukan dua jenis citraan (imaji) yang terdapat dalam bait pertama dan kutip baris pembuktikannya!\n(b) Jelaskan amanat tersirat yang hendak disampaikan penyair kepada pengelola industri dan masyarakat melalui bait kedua!",
+          "isArabic": false,
+          "hasLatex": false,
+          "difficulty": "sulit",
+          "kompetensiTarget": "Mengembangkan apresiasi puisi (menganalisis citraan dan menginterpretasi amanat)",
+          "explanation": "Siswa mengidentifikasi imaji visual/penciuman pada bait 1 serta menginterpretasikan amanat sosial-ekologis pada bait 2 mengenai ancaman polusi industri terhadap kesehatan generasi masa depan.",
+          "imagePrompt": "",
+          "essaySampleAnswer": "(a) Dua jenis citraan dalam bait pertama:\n1. Citraan Penglihatan (Visual): Terbukti pada baris 'Di atas daun-daun mangga yang keperakan', 'kami singgah menjadi selimut kelabu', dan 'matahari tersaring redup di balik kabut'. Penggambaran ini mengajak pembaca melihat warna pucat daun yang tertutup debu serta kabut polusi.\n2. Citraan Penciuman (Olfaktori): Terbukti pada baris 'di balik kabut berbau belerang'. Frasa ini merangsang indra penciuman pembaca membayangkan bau tajam zat kimia polutan.\n\n(b) Amanat tersirat pada bait kedua:\nPenyair mengingatkan pengelola industri dan pemerintah bahwa polusi udara bukan hanya mengusir satwa liar dari habitatnya, melainkan juga secara nyata meracuni kesehatan anak-anak dan generasi masa depan. Pengelola industri harus memiliki tanggung jawab moral untuk mengendalikan emisi limbah udara agar hak hidup sehat masyarakat tidak dikorbankan demi keuntungan ekonomi semata.",
+          "essayRubric": [
+            {
+              "scoreRange": "85-100",
+              "criteria": "Mampu menyebutkan 2 citraan secara tepat dengan bukti kutipan baris yang akurat pada poin (a), serta menjelaskan amanat bait kedua secara kritis, mendalam, dan kontekstual pada poin (b)."
+            },
+            {
+              "scoreRange": "70-84",
+              "criteria": "Menyebutkan citraan dan kutipan dengan benar, namun penjelasan amanat masih bersifat umum dan belum menyentuh aspek generasi masa depan/tanggung jawab emisi."
+            },
+            {
+              "scoreRange": "50-69",
+              "criteria": "Hanya satu citraan yang tepat atau kutipan baris tidak sesuai; penjelasan amanat sangat singkat."
+            },
+            {
+              "scoreRange": "0-49",
+              "criteria": "Jawaban keliru baik dalam penentuan citraan maupun penafsiran amanat puisi."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "exam-1791987577778",
       "title": "Paket Soal ASTS Biologi — Kelas X",
       "config": {

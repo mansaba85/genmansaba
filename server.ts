@@ -548,7 +548,26 @@ function parseJsonFromAiResponse(rawText: string): any {
   return null;
 }
 
-// Helper to discover candidate models from 9router API with intelligent provider rotation
+// Standard browser User-Agent to prevent Cloudflare Tunnel 403 blocks (error 1010)
+const BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+
+function getRouterHeaders(apiKey?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'User-Agent': BROWSER_USER_AGENT,
+    'Accept': 'application/json, text/plain, */*',
+  };
+  if (apiKey && apiKey.trim()) {
+    headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+  }
+  return headers;
+}
+
+// Global diagnostic reason tracker for AI generation attempts
+let lastAiGatewayDiagnostic = '';
+
+// Helper to discover candidate models from 9router API with high-pedagogy model prioritization
 async function fetchRouterModelCandidates(baseUrl: string, apiKey: string, explicitModel?: string): Promise<string[]> {
   const candidates: string[] = [];
 
@@ -562,14 +581,12 @@ async function fetchRouterModelCandidates(baseUrl: string, apiKey: string, expli
   }
 
   const cleanBase = baseUrl.trim().replace(/\/+$/, '');
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (apiKey) headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+  const headers = getRouterHeaders(apiKey);
 
-  // Probe available models from 9router /models or /v1/models (4s timeout)
   let discoveredList: string[] = [];
   try {
     const mUrl = cleanBase.endsWith('/v1') ? `${cleanBase}/models` : `${cleanBase}/v1/models`;
-    const res = await fetch(mUrl, { method: 'GET', headers, signal: AbortSignal.timeout(4000) });
+    const res = await fetch(mUrl, { method: 'GET', headers, signal: AbortSignal.timeout(6000) });
     if (res.ok) {
       const data = (await res.json()) as any;
       discoveredList = Array.isArray(data?.data)
@@ -580,10 +597,10 @@ async function fetchRouterModelCandidates(baseUrl: string, apiKey: string, expli
     }
   } catch {}
 
-  // Filter out any models known to have reached limits/exhausted
   const availableDiscovered = discoveredList.filter((m) => !isModelExhausted(m));
 
-  // Provider 1: Gemini on 9router (high speed, 200 OK, full Indonesian & pedagogical capability)
+  // High capability pedagogical models on 9router:
+  // 1. Gemini on 9router (tested and verified 200 OK via Cloudflare)
   const geminiOnRouter = availableDiscovered.find(
     (m) => m === 'gemini/gemini-3.6-flash' || m === 'gemini/gemini-4-argon' || m.startsWith('gemini/')
   );
@@ -591,7 +608,7 @@ async function fetchRouterModelCandidates(baseUrl: string, apiKey: string, expli
     candidates.push(geminiOnRouter);
   }
 
-  // Provider 2: Komoboku or Auto combo model
+  // 2. Komoboku or Auto combo model
   const komobokuOrAuto = availableDiscovered.find(
     (m) => (m === 'komoboku' || m === 'kr/auto') && !candidates.includes(m)
   );
@@ -599,25 +616,9 @@ async function fetchRouterModelCandidates(baseUrl: string, apiKey: string, expli
     candidates.push(komobokuOrAuto);
   }
 
-  // Provider 3: OpenRouter free models on 9router
-  const freeModel = availableDiscovered.find(
-    (m) => (m.startsWith('openrouter/') || m.includes(':free') || m.startsWith('oc/')) && !candidates.includes(m)
-  );
-  if (freeModel && !candidates.includes(freeModel)) {
-    candidates.push(freeModel);
-  }
-
-  // Provider 4: Any other available model from discovered list (up to 4 candidates)
-  for (const m of availableDiscovered) {
-    if (candidates.length >= 4) break;
-    if (!candidates.includes(m)) {
-      candidates.push(m);
-    }
-  }
-
   // Ultimate defaults if discovery was completely empty
   if (candidates.length === 0) {
-    candidates.push('gemini/gemini-3.6-flash', 'komoboku', 'kr/auto');
+    candidates.push('gemini/gemini-3.6-flash', 'komoboku');
   }
 
   return candidates;
@@ -629,6 +630,7 @@ async function generateViaUnifiedAI(params: {
   responseMimeType?: string;
   temperature?: number;
 }): Promise<{ text: string; modelUsed: string } | null> {
+  lastAiGatewayDiagnostic = '';
   // 1. Try 9router / OpenAI-compatible Gateway if configured
   const { baseUrl, apiKey, model: explicitModel } = getRouterConfig();
 
@@ -642,12 +644,7 @@ async function generateViaUnifiedAI(params: {
         ? `${cleanBaseUrl}/chat/completions`
         : `${cleanBaseUrl}/v1/chat/completions`;
 
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey.trim()}`;
-      }
+      const headers = getRouterHeaders(apiKey);
 
       for (const modelToTry of candidateModels) {
         if (isModelExhausted(modelToTry)) continue;
@@ -657,34 +654,41 @@ async function generateViaUnifiedAI(params: {
             model: modelToTry,
             messages: [{ role: 'user', content: params.prompt }],
             temperature: params.temperature ?? 0.7,
+            max_tokens: 8192,
             stream: false,
           };
+
+          if (params.responseMimeType === 'application/json') {
+            bodyPayload.response_format = { type: 'json_object' };
+          }
 
           const response = await fetch(endpoint, {
             method: 'POST',
             headers,
             body: JSON.stringify(bodyPayload),
-            signal: AbortSignal.timeout(12000), // 12s timeout per model attempt for fast failover
+            signal: AbortSignal.timeout(90000), // 90s timeout per model attempt
           });
 
           if (response.ok) {
             const rawText = await response.text();
             const text = extractTextFromRouterResponse(rawText);
             if (text && text.length > 5) {
-              // 1. Check if the model returned an apology or quota refusal
+              // Check if the model returned an apology or quota refusal
               if (isAiApologyOrRefusal(text)) {
-                console.info(`Model 9router '${modelToTry}' mengembalikan respons penolakan: "${text.slice(0, 100)}...". Mencoba model berikutnya...`);
+                console.info(`Model 9router '${modelToTry}' mengembalikan respons penolakan: "${text.slice(0, 100)}...".`);
                 if (text.toLowerCase().includes('kuota') || text.toLowerCase().includes('limit') || text.toLowerCase().includes('permintaan')) {
                   markModelExhausted(modelToTry, 30);
                 }
+                lastAiGatewayDiagnostic = `9router (${modelToTry}) menolak permintaan: ${text.slice(0, 80)}`;
                 continue;
               }
 
-              // 2. If JSON is expected, make sure it parses as valid JSON
+              // If JSON is expected, make sure it parses as valid JSON
               if (params.responseMimeType === 'application/json') {
                 const parsedCheck = parseJsonFromAiResponse(text);
                 if (!parsedCheck) {
-                  console.info(`Model 9router '${modelToTry}' mengembalikan teks bukan format JSON saat diminta JSON. Mencoba model berikutnya...`);
+                  console.info(`Model 9router '${modelToTry}' mengembalikan teks bukan format JSON saat diminta JSON.`);
+                  lastAiGatewayDiagnostic = `9router (${modelToTry}) menghasilkan output non-JSON`;
                   continue;
                 }
               }
@@ -694,29 +698,27 @@ async function generateViaUnifiedAI(params: {
             }
           } else {
             const errorText = await response.text();
-            const isQuotaExhausted =
-              response.status === 402 ||
-              response.status === 429 ||
-              (response.status === 503 &&
-                (errorText.includes('limit') ||
-                 errorText.includes('quota') ||
-                 errorText.includes('MONTHLY_REQUEST_COUNT') ||
-                 errorText.includes('402')));
-
-            if (isQuotaExhausted) {
+            if (response.status === 401) {
+              lastAiGatewayDiagnostic = '9router HTTP 401 Unauthorized: API Key ditolak gateway (remote API access required)';
+              console.warn('9router API Key ditolak (HTTP 401):', errorText.slice(0, 150));
+            } else if (response.status === 403) {
+              lastAiGatewayDiagnostic = 'Cloudflare HTTP 403 Forbidden: Diblokir firewall Cloudflare Tunnel';
+              console.warn('Cloudflare memblokir request (HTTP 403):', errorText.slice(0, 150));
+            } else if (response.status === 402 || response.status === 429 || response.status === 503) {
               markModelExhausted(modelToTry, 30);
-              console.warn(
-                `Model 9router '${modelToTry}' telah mencapai batas kuota (HTTP ${response.status}). Otomatis beralih ke model berikutnya.`
-              );
+              lastAiGatewayDiagnostic = `9router HTTP ${response.status}: Batas kuota atau antrean model '${modelToTry}' padat`;
             } else {
-              console.info(`9router model '${modelToTry}' status ${response.status}:`, errorText.slice(0, 150));
+              lastAiGatewayDiagnostic = `9router HTTP ${response.status}: ${errorText.slice(0, 100)}`;
             }
           }
         } catch (err: any) {
+          const isTimeout = err?.name === 'TimeoutError' || String(err?.message || '').includes('timeout') || String(err?.message || '').includes('aborted');
+          lastAiGatewayDiagnostic = isTimeout ? `9router Timeout (>90 detik)` : `9router Network Error: ${err?.message || err}`;
           console.info(`9router attempt for model '${modelToTry}' ended:`, err?.message || err);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      lastAiGatewayDiagnostic = `9router Gateway Error: ${err?.message || err}`;
       console.info('9router connection ended, proceeding to fallback engine:', err);
     }
   }
@@ -724,7 +726,16 @@ async function generateViaUnifiedAI(params: {
   // 2. Direct Gemini SDK fallback
   const ai = getGeminiClient();
   if (ai) {
-    return generateWithModelFallback(ai, params);
+    try {
+      const geminiRes = await generateWithModelFallback(ai, params);
+      if (geminiRes) {
+        return geminiRes;
+      } else {
+        lastAiGatewayDiagnostic = (lastAiGatewayDiagnostic ? lastAiGatewayDiagnostic + ' | ' : '') + 'Gemini SDK fallback exhausted';
+      }
+    } catch (gErr: any) {
+      lastAiGatewayDiagnostic = (lastAiGatewayDiagnostic ? lastAiGatewayDiagnostic + ' | ' : '') + `Gemini SDK Error: ${gErr?.message || gErr}`;
+    }
   }
 
   return null;
@@ -750,8 +761,8 @@ app.get('/api/health', async (req: Request, res: Response) => {
   });
 });
 
-// Dedicated 9router Connection Test Endpoint
-app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
+// Dedicated 9router Connection Test Endpoint (Supports GET & POST)
+app.all('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
   const startTime = Date.now();
   const { baseUrl, apiKey, model: explicitModel } = getRouterConfig();
 
@@ -759,19 +770,14 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
     return res.status(400).json({
       connected: false,
       message: 'Variabel OPENAI_BASE_URL atau NINEROUTER_BASE_URL belum diatur di environment server.',
-      tip: 'Pastikan OPENAI_BASE_URL dan OPENAI_API_KEY sudah diisi dan tombol "Apply" sudah diklik.',
+      tip: 'Pastikan OPENAI_BASE_URL dan OPENAI_API_KEY sudah diisi dan disimpan.',
     });
   }
 
   const cleanBase = baseUrl.trim().replace(/\/+$/, '');
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (apiKey) {
-    headers['Authorization'] = `Bearer ${apiKey.trim()}`;
-  }
+  const headers = getRouterHeaders(apiKey);
 
-  // Probe available models from 9router /models or /v1/models (4s timeout)
+  // Probe available models from 9router /models or /v1/models (6s timeout)
   let discoveredModels: string[] = [];
   const modelEndpoints = [
     cleanBase.endsWith('/v1') ? `${cleanBase}/models` : `${cleanBase}/v1/models`,
@@ -780,7 +786,7 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
 
   for (const mUrl of modelEndpoints) {
     try {
-      const mRes = await fetch(mUrl, { method: 'GET', headers, signal: AbortSignal.timeout(4000) });
+      const mRes = await fetch(mUrl, { method: 'GET', headers, signal: AbortSignal.timeout(6000) });
       if (mRes.ok) {
         const mData = (await mRes.json()) as any;
         if (Array.isArray(mData?.data)) {
@@ -794,7 +800,6 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
     } catch {}
   }
 
-  // Filter available healthy models
   const availableModels = discoveredModels.filter((m) => !isModelExhausted(m));
 
   // Determine list of test candidate models (preferred first, then healthy alternatives)
@@ -805,17 +810,13 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
   if (cachedResolvedModel && !isModelExhausted(cachedResolvedModel) && !modelsToTest.includes(cachedResolvedModel)) {
     modelsToTest.push(cachedResolvedModel);
   }
-  const healthyGemini = availableModels.find((m) => m.startsWith('gemini/') || m.includes('gemini-3.6'));
+  const healthyGemini = availableModels.find((m) => m === 'gemini/gemini-3.6-flash' || m.startsWith('gemini/'));
   if (healthyGemini && !modelsToTest.includes(healthyGemini)) {
     modelsToTest.push(healthyGemini);
   }
   const healthyKomoboku = availableModels.find((m) => m === 'komoboku' || m === 'kr/auto');
   if (healthyKomoboku && !modelsToTest.includes(healthyKomoboku)) {
     modelsToTest.push(healthyKomoboku);
-  }
-  for (const m of availableModels) {
-    if (modelsToTest.length >= 4) break;
-    if (!modelsToTest.includes(m)) modelsToTest.push(m);
   }
   if (modelsToTest.length === 0) {
     modelsToTest.push('gemini/gemini-3.6-flash', 'komoboku');
@@ -846,7 +847,7 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
           content: 'Halo, respon singkat 1 kalimat: "Koneksi 9router MA NU 01 Banyuputih aktif."',
         },
       ],
-      max_tokens: 350,
+      max_tokens: 150,
       temperature: 0.3,
       stream: false,
     };
@@ -857,7 +858,7 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
           method: 'POST',
           headers,
           body: JSON.stringify(testPayload),
-          signal: AbortSignal.timeout(8000), // 8s timeout to guarantee instant response
+          signal: AbortSignal.timeout(20000), // 20s timeout
         });
 
         lastStatus = response.status;
@@ -874,6 +875,7 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
             latencyMs: latency,
             responseSample: reply,
             discoveredModels: discoveredModels.length > 0 ? discoveredModels : undefined,
+            geminiFallbackActive: Boolean(process.env.GEMINI_API_KEY),
             message: `Koneksi ke 9router berhasil! Menggunakan model aktif "${currentModel}".`,
           });
         } else {
@@ -895,7 +897,11 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
 
   const latency = Date.now() - startTime;
   let tipMessage = 'Periksa konfigurasi 9router Anda.';
-  if (discoveredModels.length > 0) {
+  if (lastStatus === 401) {
+    tipMessage = 'HTTP 401 Unauthorized: API key 9router ditolak. Pastikan OPENAI_API_KEY di environment server diisi dengan remote API key yang sah.';
+  } else if (lastStatus === 403) {
+    tipMessage = 'HTTP 403 Forbidden: Diblokir Cloudflare Tunnel. Header User-Agent browser sudah otomatis dipasang oleh server.';
+  } else if (discoveredModels.length > 0) {
     tipMessage = `Model "${modelTested}" tidak dapat diakses (status ${lastStatus}). Tersedia ${discoveredModels.length} model lain di gateway 9router Anda.`;
   }
 
@@ -906,12 +912,13 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
     statusCode: lastStatus,
     errorRaw: lastErrorText,
     discoveredModels: discoveredModels.length > 0 ? discoveredModels : undefined,
+    geminiFallbackActive: Boolean(process.env.GEMINI_API_KEY),
     message: `9router mengembalikan status error HTTP ${lastStatus}.`,
     tip: tipMessage,
   });
 });
 
-// Generator Soal API Endpoint (supporting standard & ninerouter route aliases)
+// Generator Soal API Endpoint (with Batching, User-Agent, and Transparent Fallback Metadata)
 app.post(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], async (req: Request, res: Response) => {
   try {
     const {
@@ -926,100 +933,129 @@ app.post(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], asy
       difficultyProportion,
     } = req.body;
 
-    const prompt = `Anda adalah Pakar Penyusun Soal Ujian & AI Engine Madrasah (9router Combo Engine) untuk MA NU 01 Banyuputih Batang.
-Hasilkan paket naskah soal ujian yang SANGAT PRESISI, KAYA VARIATIF, BERBOBOT AKADEMIK, dan BEBAS DUPLIKASI berdasarkan Capaian Pembelajaran (CP) dan Materi Target yang diberikan oleh Guru.
+    // 1. Calculate requested counts per question type
+    const sCount = Math.max(0, parseInt(selectedTypes?.single_choice ?? 0, 10));
+    const mCount = Math.max(0, parseInt(selectedTypes?.multiple_choice ?? 0, 10));
+    const shCount = Math.max(0, parseInt(selectedTypes?.short_answer ?? 0, 10));
+    const oCount = Math.max(0, parseInt(selectedTypes?.ordering ?? 0, 10));
+    const matCount = Math.max(0, parseInt(selectedTypes?.matching ?? 0, 10));
+    const eCount = Math.max(0, parseInt(selectedTypes?.essay ?? 0, 10));
 
-================================================================================
-INFORMASI UTAMA UJIAN:
-================================================================================
-- Mata Pelajaran: ${mapel}
-- Kelas: ${kelas} (Fase ${kelas === '10' ? 'E' : 'F'})
-- Semester: ${semester} | Tahun Pelajaran: ${tahunPelajaran}
-- Jenis Ujian: ${jenisUjian} (ASTS/ASESGA/ASAS)
-- Bahasa Pengantar Sistem: ${bahasa}
+    const totalRequested = sCount + mCount + shCount + oCount + matCount + eCount;
 
-================================================================================
-ACUAN UTAMA: CAPAIAN PEMBELAJARAN (CP) / MATERI TARGET (WAJIB DIBEDAH TUNTAS)
-================================================================================
+    // 2. Prepare batches (max 5-6 questions per batch to avoid token truncation & timeouts)
+    interface BatchItem {
+      startNum: number;
+      types: Record<string, number>;
+      total: number;
+    }
+
+    const batches: BatchItem[] = [];
+    let currentNum = 1;
+
+    const queueType = (typeKey: string, count: number, maxChunk = 6) => {
+      let remaining = count;
+      while (remaining > 0) {
+        const chunk = Math.min(remaining, maxChunk);
+        batches.push({
+          startNum: currentNum,
+          types: { [typeKey]: chunk },
+          total: chunk,
+        });
+        currentNum += chunk;
+        remaining -= chunk;
+      }
+    };
+
+    queueType('single_choice', sCount || (totalRequested === 0 ? 15 : 0), 6);
+    queueType('multiple_choice', mCount, 5);
+    queueType('short_answer', shCount, 5);
+    if (oCount > 0 || matCount > 0) {
+      const combinedTypes: Record<string, number> = {};
+      if (oCount > 0) combinedTypes.ordering = oCount;
+      if (matCount > 0) combinedTypes.matching = matCount;
+      batches.push({
+        startNum: currentNum,
+        types: combinedTypes,
+        total: oCount + matCount,
+      });
+      currentNum += oCount + matCount;
+    }
+    queueType('essay', eCount, 4);
+
+    // 3. Execute batches via Unified AI
+    let primaryModelUsed = '';
+    const allAiQuestions: any[] = [];
+    let batchFailed = false;
+    let failureDetail = '';
+
+    for (let bIdx = 0; bIdx < batches.length; bIdx++) {
+      const b = batches[bIdx];
+      const endNum = b.startNum + b.total - 1;
+
+      const typesList = Object.entries(b.types)
+        .map(([t, count]) => {
+          if (t === 'single_choice') return `- Pilihan Ganda Tunggal (single_choice): ${count} butir (Opsi A s.d E, kunci RIGHT:A / RIGHT:B / RIGHT:C / RIGHT:D / RIGHT:E)`;
+          if (t === 'multiple_choice') return `- Pilihan Ganda Jamak (multiple_choice): ${count} butir (Opsi A s.d E, kunci multi opsi misal RIGHT:A,C,E)`;
+          if (t === 'short_answer') return `- Jawaban Singkat (short_answer): ${count} butir (Satu kata kunci kapital misal RIGHT:FAKTA)`;
+          if (t === 'ordering') return `- Mengurutkan (ordering): ${count} butir (orderingItems berurutan id 1..n)`;
+          if (t === 'matching') return `- Menjodohkan (matching): ${count} butir (matchingPremises dan matchingResponses 1-ke-1)`;
+          if (t === 'essay') return `- Uraian / Essay (essay): ${count} butir (essaySampleAnswer dan essayRubric)`;
+          return `- ${t}: ${count} butir`;
+        })
+        .join('\n');
+
+      const batchPrompt = `Anda adalah Pakar Kurikulum Merdeka & Engine Pembuat Soal Ujian untuk MA NU 01 Banyuputih Batang.
+Hasilkan paket naskah soal ujian yang SANGAT PRESISI, KAYA VARIATIF, BERBOBOT AKADEMIK, dan BEBAS DUPLIKASI berdasarkan Capaian Pembelajaran (CP).
+
+INFORMASI UJIAN:
+- Mata Pelajaran: ${mapel} | Kelas: ${kelas} (Fase ${kelas === '10' ? 'E' : 'F'}) | Semester: ${semester} | Jenis Ujian: ${jenisUjian}
+- Bahasa Pengantar: ${bahasa || 'Indonesia'}
+
+CAPAIAN PEMBELAJARAN (CP) / MATERI TARGET (WAJIB DIBEDAH TUNTAS):
 "${capaianPembelajaran || 'Standar Capaian Pembelajaran Kurikulum Merdeka ' + mapel}"
 
-================================================================================
-INSTRUKSI WAKTU GENERASI & ATURAN KETAT (WAJIB DITAATI 100%):
-================================================================================
+TUGAS KHUSUS BATCH KE-${bIdx + 1} DARI TOTAL ${batches.length} BATCH:
+Hasilkan soal nomor #${b.startNum} sampai #${endNum} (total ${b.total} butir) dengan alokasi tipe:
+${typesList}
 
-1. BEDAH CAPAIAN PEMBELAJARAN & DISTRIBUSI PROPORSIONAL (PRINSIP NOL DUPLIKASI):
-   - Teliti setiap bab, poin, angka (1, 2, 3...), dan sub-bullet (•) pada Capaian Pembelajaran di atas!
-   - JIKA CP memuat beberapa topik/bidang sekaligus (misal: 1. Kewirausahaan, 2. Kerajinan, 3. Rekayasa, atau Fikih Muamalah, Fikih Munakahat, dst):
-     * Anda WAJIB membagi dan mendistribusikan total soal secara SEIMBANG dan MERATA ke SEMUA topik/sub-topik tersebut!
-     * Contoh: Jika total 15 soal dan ada 3 topik utama pada CP, maka Topik 1 mendapat ~5 soal, Topik 2 mendapat ~5 soal, dan Topik 3 mendapat ~5 soal.
-     * DILARANG KERAS hanya memproduksi soal dari 1 topik saja dan mengabaikan topik lainnya!
-     * DILARANG KERAS mengulang-ulang pertanyaan yang sama atau sekadar mengubah opsi jawaban ("Variasi Soal Model X"). Setiap butir soal (Soal 1 s.d. Soal N) HARUS menargetkan konsep/indikator yang BERBEDA dan SPESIFIK!
+ATURAN WAJIB:
+1. Soal HARUS menguji konsep keilmuan riil sesuai poin Capaian Pembelajaran. DILARANG membuat pertanyaan meta-pedagogi seperti "Dalam materi X, pemahaman mendalam berfokus pada...".
+2. Khusus Mata Pelajaran Bahasa Jawa / Bahasa Inggris / Bahasa Arab: Gunakan 100% bahasa asli mata pelajaran tersebut!
+3. Cantumkan imagePrompt ringkas 1 kalimat jika soal memerlukan diagram, grafik, atau ilustrasi ilmiah (opsional).
 
-2. KESESUAIAN BAHASA ALAMI MATA PELAJARAN (LANGUAGE FIDELITY):
-   - JIKA MAPEL = "BAHASA JAWA" (atau Muatan Lokal Bahasa Jawa, Sastra Jawa):
-     * SELURUH naskah soal, stimulus bacaan (Geguritan, Cerkak, Tembang Macapat, Pawarta, Aksara Jawa), opsi jawaban A-E, petunjuk soal, kunci, dan pembahasan HARUS 100% MURNI DALAM BAHASA JAWA (Basa Jawa standar Kurikulum Muatan Lokal Jawa Tengah SMA/MA Kelas ${kelas}). DILARANG KERAS menggunakan Bahasa Indonesia!
-   - JIKA MAPEL = "BAHASA INGGRIS" (atau English, Sastra Inggris):
-     * SELURUH naskah soal, reading passage, opsi jawaban, dan pembahasan HARUS 100% MURNI DALAM BAHASA INGGRIS (Standard English) sesuai Kurikulum Merdeka.
-   - JIKA MAPEL = "BAHASA ARAB":
-     * SELURUH naskah soal, teks qira'ah, opsi jawaban HARUS 100% MURNI DALAM BAHASA ARAB (Fusha berharakat lengkap, RTL).
-   - JIKA MAPEL UMUM/EKSAK/AGAMA (Prakarya/PKWU, Matematika, Fisika, Kimia, Biologi, Fiqih, SKI, Ekonomi, Geografi, dll):
-     * Gunakan Bahasa Indonesia baku yang lugas dan akademis. Isi naskah HARUS MURNI membahas domain keilmuan ${mapel} sesuai poin-poin CP.
-
-3. KONFIGURASI TIPE SOAL CBT MADRASAH:
-   Suspensi distribusi tipe soal wajib mengikuti alokasi berikut:
-   - Pilihan Ganda Tunggal: ${selectedTypes?.single_choice ?? 2} butir (Opsi A:) s.d E:), Kunci: RIGHT:A)
-   - Pilihan Ganda Jamak: ${selectedTypes?.multiple_choice ?? 1} butir (Opsi A:) s.d E:), Kunci: RIGHT:A,B tanpa spasi)
-   - Jawaban Singkat: ${selectedTypes?.short_answer ?? 1} butir (Satu opsi A:) jawaban huruf kapital, Kunci: RIGHT:A)
-   - Mengurutkan (Ordering): ${selectedTypes?.ordering ?? 1} butir (Tuliskan item berurutan runtut 1..n dari awal ke akhir, Kunci: RIGHT:)
-   - Menjodohkan (Matching): ${selectedTypes?.matching ?? 1} butir (Premis dan Pasangan 1-to-1 lurus berpasangan, Kunci: RIGHT:)
-   - Uraian / Essay: ${selectedTypes?.essay ?? 1} butir (Hanya teks soal & rubrik, tanpa opsi, Kunci: "")
-
-4. ATURAN KHUSUS SOAL MENGURUTKAN (ORDERING):
-   - Item dalam orderingItems HARUS ditulis berurutan secara benar dari awal hingga akhir (id: 1 adalah langkah pertama yang benar, id: 2 adalah langkah kedua, dst). System CBT yang akan mengacak urutan tampilan untuk siswa.
-
-5. ATURAN KHUSUS SOAL MENJODOHKAN (MATCHING):
-   - Premis (matchingPremises) dan Pasangan Respons (matchingResponses) HARUS ditulis berpasangan langsung 1-ke-1 secara tepat (Premis index 0 berpasangan dengan Respons key "A", Premis index 1 dengan Respons key "B", dst).
-
-6. SINTAKS MATEMATIKA / IPA:
-   - Wajib gunakan sintaks LaTeX diapit tanda $...$ atau $$...$$ jika terdapat rumus/persamaan.
-
-Format keluaran HARUS MURNI JSON valid tanpa pembungkus markdown codeblock dengan struktur:
+Format keluaran WAJIB MURNI JSON valid tanpa markdown codeblock dengan struktur:
 {
   "questions": [
     {
-      "id": "q-1",
-      "number": 1,
-      "type": "single_choice" | "multiple_choice" | "short_answer" | "ordering" | "matching" | "essay",
+      "id": "q-${b.startNum}",
+      "number": ${b.startNum},
+      "type": "${Object.keys(b.types)[0]}",
       "text": "Teks pertanyaan lengkap yang mendalam & spesifik",
       "isArabic": false,
       "hasLatex": false,
-      "difficulty": "mudah" | "sedang" | "sulit",
+      "difficulty": "sedang",
       "kompetensiTarget": "Sub-materi/indikator spesifik dari CP yang diuji",
       "explanation": "Pembahasan ringkas 1-2 kalimat",
-      "imagePrompt": "Deskripsi singkat 1 kalimat jika soal membutuhkan diagram/ilustrasi/grafik (opsional, kosongkan jika tidak butuh)",
-      // KHUSUS single_choice & multiple_choice:
-      "options": [{"key": "A", "text": "opsi A", "isRtl": false}, {"key": "B", "text": "opsi B", "isRtl": false}, {"key": "C", "text": "opsi C", "isRtl": false}, {"key": "D", "text": "opsi D", "isRtl": false}, {"key": "E", "text": "opsi E", "isRtl": false}],
-      "rawRightAnswer": "RIGHT:A",
-      // KHUSUS ordering (hanya ada jika type === "ordering"):
-      "orderingItems": [{"id": 1, "text": "item urutan 1"}],
-      // KHUSUS matching (hanya ada jika type === "matching"):
-      "matchingPremises": [{"id": 1, "text": "premis"}],
-      "matchingResponses": [{"key": "A", "text": "respons"}],
-      // KHUSUS essay (hanya ada jika type === "essay"):
-      "essaySampleAnswer": "Contoh jawaban essay ideal",
-      "essayRubric": [{"scoreRange": "80-100", "criteria": "Kriteria penilaian"}]
+      "imagePrompt": "Deskripsi singkat jika butuh diagram/grafik",
+      "options": [{"key": "A", "text": "opsi A"}, {"key": "B", "text": "opsi B"}, {"key": "C", "text": "opsi C"}, {"key": "D", "text": "opsi D"}, {"key": "E", "text": "opsi E"}],
+      "rawRightAnswer": "RIGHT:A"
     }
   ]
-}
-CATATAN: HANYA sertakan field yang sesuai dengan tipe soal (misal untuk single_choice JANGAN sertakan orderingItems/matching/rubric). Pembahasan singkat padat agar proses generasi cepat dan presisi.`;
+}`;
 
-    const genResult = await generateViaUnifiedAI({
-      prompt,
-      responseMimeType: 'application/json',
-      temperature: 0.7,
-    });
+      const genResult = await generateViaUnifiedAI({
+        prompt: batchPrompt,
+        responseMimeType: 'application/json',
+        temperature: 0.6,
+      });
 
-    if (genResult && genResult.text) {
+      if (!genResult || !genResult.text) {
+        batchFailed = true;
+        failureDetail = lastAiGatewayDiagnostic || 'Gateway AI tidak merespons atau menolak request';
+        break;
+      }
+
       const parsed = parseJsonFromAiResponse(genResult.text);
       const rawList = Array.isArray(parsed?.questions)
         ? parsed.questions
@@ -1027,28 +1063,44 @@ CATATAN: HANYA sertakan field yang sesuai dengan tipe soal (misal untuk single_c
         ? parsed
         : [];
 
-      if (rawList.length > 0) {
-        // Auto-attach educational diagram URL if AI suggested an imagePrompt for stimulus questions
-        const enrichedQuestions = rawList.map((q: any) => {
-          if (q.imagePrompt && typeof q.imagePrompt === 'string' && q.imagePrompt.trim() && !q.imageUrl) {
-            const cleanP = `Educational high school textbook diagram for ${mapel || 'exam'}: ${q.imagePrompt.trim()}`;
-            const seed = Math.floor(Math.random() * 900000) + 100000;
-            q.imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanP)}?width=768&height=512&nologo=true&seed=${seed}`;
-          }
-          return q;
-        });
-
-        return res.json({
-          success: true,
-          source: `${genResult.modelUsed}`,
-          questions: enrichedQuestions,
-        });
-      } else {
-        console.info('parseJsonFromAiResponse returned null or non-array questions. Using contextual fallback engine.');
+      if (rawList.length === 0) {
+        batchFailed = true;
+        failureDetail = 'Respons AI tidak dapat diparse sebagai daftar soal JSON yang valid';
+        break;
       }
+
+      if (!primaryModelUsed) {
+        primaryModelUsed = genResult.modelUsed;
+      }
+
+      rawList.forEach((q: any, idx: number) => {
+        const qNum = b.startNum + idx;
+        q.number = qNum;
+        q.id = `q-${qNum}`;
+        allAiQuestions.push(q);
+      });
     }
 
-    // Fallback template generator if offline, busy, or key absent
+    if (!batchFailed && allAiQuestions.length > 0) {
+      // Auto-attach educational diagram URL if AI suggested an imagePrompt for stimulus questions
+      const enrichedQuestions = allAiQuestions.map((q: any) => {
+        if (q.imagePrompt && typeof q.imagePrompt === 'string' && q.imagePrompt.trim() && !q.imageUrl) {
+          const cleanP = `Educational high school textbook diagram for ${mapel || 'exam'}: ${q.imagePrompt.trim()}`;
+          const seed = Math.floor(Math.random() * 900000) + 100000;
+          q.imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanP)}?width=768&height=512&nologo=true&seed=${seed}`;
+        }
+        return q;
+      });
+
+      return res.json({
+        success: true,
+        isFallback: false,
+        source: primaryModelUsed || '9router AI',
+        questions: enrichedQuestions,
+      });
+    }
+
+    // Fallback template generator if offline, busy, key absent, or gateway rejected
     const fallbackQuestions = generateFallbackExamQuestions(
       mapel,
       kelas,
@@ -1061,7 +1113,9 @@ CATATAN: HANYA sertakan field yang sesuai dengan tipe soal (misal untuk single_c
 
     return res.json({
       success: true,
-      source: 'Hermes Agent Local Template Engine',
+      isFallback: true,
+      source: 'Hermes Emergency Template Engine (Bukan AI)',
+      fallbackReason: failureDetail || lastAiGatewayDiagnostic || 'Koneksi 9router / Gemini gagal (HTTP 401/403/Timeout)',
       questions: fallbackQuestions,
     });
   } catch (error: any) {
@@ -1608,6 +1662,7 @@ PENTING & WAJIB DIPATUHI:
       const cleanMarkdown = cleanMarkdownAdminOutput(genResult.text);
       return res.json({
         success: true,
+        isFallback: false,
         source: `${genResult.modelUsed}`,
         markdown: cleanMarkdown,
       });
@@ -1640,7 +1695,9 @@ PENTING & WAJIB DIPATUHI:
     const cleanFallback = cleanMarkdownAdminOutput(fallbackMarkdown);
     return res.json({
       success: true,
-      source: 'Hermes Agent Local Template Engine',
+      isFallback: true,
+      source: 'Hermes Emergency Template Engine (Bukan AI)',
+      fallbackReason: lastAiGatewayDiagnostic || 'AI Gateway 9router tidak dapat dihubungi atau API Key ditolak',
       markdown: cleanFallback,
     });
   } catch (error: any) {
@@ -5615,20 +5672,24 @@ Dokumen ini disusun untuk mata pelajaran ${mapel} kelas ${kelas}.`;
 }
 
 // Ensure all unhandled /api/* routes return JSON, NEVER HTML!
-app.all('/api/*', (req: Request, res: Response) => {
+app.use('/api', (req: Request, res: Response) => {
   res.status(404).json({
     success: false,
-    error: `Endpoint API '${req.method} ${req.path}' tidak ditemukan.`,
+    connected: false,
+    error: `Endpoint API '${req.method} ${req.originalUrl}' tidak ditemukan.`,
+    message: `Endpoint API '${req.method} ${req.originalUrl}' tidak ditemukan.`,
   });
 });
 
 // Global API error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  if (req.path.startsWith('/api')) {
+  if (req.path.startsWith('/api') || req.originalUrl.startsWith('/api')) {
     console.error('Unhandled API Error:', err);
     return res.status(500).json({
       success: false,
+      connected: false,
       error: err?.message || 'Terjadi kesalahan pada server backend.',
+      message: err?.message || 'Terjadi kesalahan pada server backend.',
     });
   }
   next(err);
@@ -5646,6 +5707,13 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req: Request, res: Response) => {
+      if (req.path.startsWith('/api')) {
+        return res.status(404).json({
+          success: false,
+          connected: false,
+          error: `Endpoint API '${req.method} ${req.path}' tidak ditemukan.`,
+        });
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

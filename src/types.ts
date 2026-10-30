@@ -121,6 +121,9 @@ export interface ExamPackage {
   createdAt: string;
   createdBy: string;
   nip: string;
+  source?: string;
+  isFallback?: boolean;
+  fallbackReason?: string;
 }
 
 export interface MadrasahIdentity {
