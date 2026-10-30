@@ -74,6 +74,7 @@ export interface QuestionItem {
   hasLatex?: boolean;
   isArabic?: boolean;
   imageUrl?: string;
+  imagePrompt?: string;
   options?: OptionItem[];
   orderingItems?: OrderingItem[];
   matchingPremises?: MatchingPremise[];

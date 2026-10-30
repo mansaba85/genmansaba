@@ -191,6 +191,7 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
   }, [madrasahIdentity]);
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [generatedMarkdown, setGeneratedMarkdown] = useState<string>(
     savedDocs.find((d) => d.type === activeDocType)?.contentMarkdown || ''
   );
@@ -306,6 +307,7 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
     }
 
     setIsGenerating(true);
+    setGenerationError(null);
     try {
       const response = await fetch('/api/v1/admin/generate-document', {
         method: 'POST',
@@ -313,8 +315,18 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
         body: JSON.stringify(activeConfig),
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Server tidak mengembalikan format JSON (${response.status}): ${text.slice(0, 100)}`);
+      }
+
       const data = await response.json();
-      if (data.success && data.markdown) {
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `Gagal menyusun dokumen administrasi (${response.status})`);
+      }
+
+      if (data.markdown) {
         setGeneratedMarkdown(data.markdown);
         const newDoc: GeneratedAdminDoc = {
           id: `doc-${Date.now()}`,
@@ -334,8 +346,9 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
         };
         onSaveDocument(newDoc);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Document generation error:', err);
+      setGenerationError(err?.message || 'Gagal menghasilkan dokumen administrasi. Silakan periksa kembali konfigurasi.');
     } finally {
       setIsGenerating(false);
     }
@@ -397,8 +410,8 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Poppins', 'sans-serif'],
-            heading: ['Poppins', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            heading: ['"Plus Jakarta Sans"', 'sans-serif'],
           }
         }
       }
@@ -407,7 +420,7 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
   <style>
     * { box-sizing: border-box; }
     body {
-      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #f8fafc;
       color: #0f172a;
       margin: 0;
@@ -530,10 +543,11 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
 <body>
   <div class="no-print top-toolbar">
     <div class="toolbar-container">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 11px; font-weight: 700; color: #1e4d7b; background: #e0f2fe; padding: 4px 10px; border-radius: 9999px; border: 1px solid #bae6fd;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; font-weight: 700; color: #045f3b; letter-spacing: 0.02em;">
           MA NU 01 BANYUPUTIH
         </span>
+        <span style="color: #94a3b8;">·</span>
         <span style="font-size: 13px; font-weight: 600; color: #0f172a;">
           ${docTitle}
         </span>
@@ -598,23 +612,23 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
 
   return (
     <div className="space-y-6">
-      {/* Top Futuristic Banner (hidden in print) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-4 sm:p-5 rounded-3xl shadow-xs no-print">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-900/10">
-            <FileSpreadsheet className="w-5 h-5" />
+      {/* Top Institutional Header */}
+      <div className="bg-white p-5 sm:p-6 rounded-3xl border-2 border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-blue-800 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <FileSpreadsheet className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="font-heading text-lg sm:text-xl font-bold text-slate-900">
-                Modul Administrasi Pembelajaran Guru
+              <h1 className="font-heading text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                Perangkat Administrasi Guru & Kurikulum Merdeka
               </h1>
-              <span className="text-[11px] font-bold text-slate-400">
-                · Kurikulum Merdeka
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-900 uppercase">
+                Resmi
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Perangkat pembelajaran terintegrasi <span className="font-semibold text-[#1e4d7b]">Deep Learning</span> dan <span className="font-semibold text-emerald-700">Kurikulum Berbasis Cinta (KBC)</span>
+              MA NU 01 Banyuputih · Modul Ajar Deep Learning, CP, ATP, Prota, Prosem, KKTP & KBC Panca Cinta
             </p>
           </div>
         </div>
@@ -622,80 +636,75 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
         {/* Global Export actions */}
         <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={handleCopy}
             disabled={!generatedMarkdown}
-            className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white/90 hover:bg-white text-xs font-semibold text-slate-700 transition shadow-2xs disabled:opacity-40 cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition disabled:opacity-40 cursor-pointer"
           >
-            {copySuccess ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+            {copySuccess ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
             <span>{copySuccess ? 'Tersalin!' : 'Salin Teks'}</span>
           </button>
           <button
+            type="button"
             onClick={handleDownloadDocx}
             disabled={!generatedMarkdown}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-40 cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition disabled:opacity-40 cursor-pointer shadow-xs"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download .docx</span>
           </button>
           <button
+            type="button"
             onClick={handlePrintNewTab}
             disabled={!generatedMarkdown}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white/90 hover:bg-white text-xs font-semibold text-slate-700 hover:text-slate-900 transition shadow-2xs disabled:opacity-40 cursor-pointer group"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-800 transition disabled:opacity-40 cursor-pointer group"
             title="Buka dokumen di tab baru untuk cetak atau simpan ke PDF"
           >
-            <Printer className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-600 transition-colors" />
+            <Printer className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-800 transition-colors" />
             <span>Cetak PDF</span>
-            <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+            <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-800 transition-colors" />
           </button>
         </div>
       </div>
 
       {/* 8 Document Category Selector Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 no-print">
-        {[
-          { id: 'rpp', label: 'RPP Merdeka', icon: FileSpreadsheet, badge: 'RPP Kurikulum' },
-          { id: 'modul_ajar', label: 'Modul Ajar (KBC)', icon: HeartHandshake, badge: 'Deep Learning' },
-          { id: 'cp', label: 'CP (Capaian)', icon: BookOpen, badge: 'Elemen CP' },
-          { id: 'atp', label: 'ATP (Alur)', icon: Sparkles, badge: 'Tujuan Alur' },
-          { id: 'prota', label: 'PROTA', icon: Calendar, badge: 'Tahunan' },
-          { id: 'prosem', label: 'PROSEM', icon: Layers, badge: 'Matriks' },
-          { id: 'kktp', label: 'KKTP Interval', icon: CheckCircle2, badge: '3 Dimensi' },
-          { id: 'umpan_balik', label: 'Umpan Balik', icon: MessageSquare, badge: 'Survei KBC' },
-        ].map((t) => {
-          const Icon = t.icon;
-          const isActive = activeDocType === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => handleSelectDocType(t.id as AdminDocType)}
-              className={`p-3.5 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between cursor-pointer ${
-                isActive
-                  ? 'border-emerald-500/60 bg-gradient-to-b from-emerald-50/80 to-white shadow-md shadow-emerald-900/5 ring-1 ring-emerald-500/20'
-                  : 'border-slate-200/80 glass-panel hover:border-slate-300 hover:bg-white'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                  isActive ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-500'
-                }`}>
-                  <Icon className="w-3.5 h-3.5" />
-                </div>
-                <span className={`text-[9.5px] font-bold uppercase tracking-wide text-slate-400`}>
-                  {t.badge}
-                </span>
-              </div>
-              <div className={`font-semibold text-xs leading-snug ${isActive ? 'text-emerald-900' : 'text-slate-800'}`}>
-                {t.label}
-              </div>
-            </button>
-          );
-        })}
+      <div className="bg-white p-1.5 rounded-2xl border border-slate-200/90 shadow-2xs no-print overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-4 lg:grid-cols-8">
+          {[
+            { id: 'rpp', label: 'RPP Merdeka', icon: FileSpreadsheet },
+            { id: 'modul_ajar', label: 'Modul Ajar KBC', icon: HeartHandshake },
+            { id: 'cp', label: 'Capaian (CP)', icon: BookOpen },
+            { id: 'atp', label: 'Alur (ATP)', icon: Sparkles },
+            { id: 'prota', label: 'PROTA', icon: Calendar },
+            { id: 'prosem', label: 'PROSEM', icon: Layers },
+            { id: 'kktp', label: 'KKTP Interval', icon: CheckCircle2 },
+            { id: 'umpan_balik', label: 'Umpan Balik', icon: MessageSquare },
+          ].map((t) => {
+            const Icon = t.icon;
+            const isActive = activeDocType === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => handleSelectDocType(t.id as AdminDocType)}
+                className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer touch-manipulation whitespace-nowrap ${
+                  isActive
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Two-Panel Layout: Parameters Left, Preview Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start print:block print:w-full">
         {/* LEFT PANEL: Form parameters */}
-        <div className="lg:col-span-5 glass-panel p-5 sm:p-6 rounded-3xl shadow-xs space-y-4 no-print text-xs">
+        <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-4 no-print text-xs">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h2 className="font-heading font-bold text-sm text-slate-900 flex items-center space-x-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -1470,20 +1479,27 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
             </div>
           )}
 
+          {generationError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-start gap-2">
+              <span className="font-bold shrink-0">Info:</span>
+              <span className="flex-1">{generationError}</span>
+            </div>
+          )}
+
           <button
             type="button"
             disabled={isGenerating}
             onClick={handleGenerate}
-            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-[#1e4d7b] hover:opacity-95 text-white font-bold text-xs transition-all duration-200 shadow-md shadow-emerald-900/15 flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer mt-2"
+            className="w-full py-3 px-4 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer mt-2 shadow-xs"
           >
             {isGenerating ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Hermes Agent Sedang Menyusun Dokumen...</span>
+                <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                <span>Sedang Menyusun Perangkat Administrasi...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-amber-300" />
+                <Sparkles className="w-4 h-4 text-emerald-200" />
                 <span>Generate Dokumen Administrasi</span>
               </>
             )}

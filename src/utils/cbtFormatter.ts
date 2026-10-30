@@ -78,10 +78,16 @@ export function formatExamToCbtText(
   questions.forEach((q, idx) => {
     const qNum = q.number || idx + 1;
     const qText = transformText(q.text.trim());
+    const pushQuestionHeader = () => {
+      lines.push(`Q:${qNum})${qText}`);
+      if (q.imageUrl) {
+        lines.push(`[IMG]${q.imageUrl}[/IMG]`);
+      }
+    };
 
     switch (q.type) {
       case 'single_choice': {
-        lines.push(`Q:${qNum})${qText}`);
+        pushQuestionHeader();
         if (q.options && q.options.length > 0) {
           q.options.forEach((opt) => {
             lines.push(`${opt.key}:)${transformText(opt.text.trim())}`);
@@ -94,7 +100,7 @@ export function formatExamToCbtText(
       }
 
       case 'multiple_choice': {
-        lines.push(`Q:${qNum})${qText}`);
+        pushQuestionHeader();
         if (q.options && q.options.length > 0) {
           q.options.forEach((opt) => {
             lines.push(`${opt.key}:)${transformText(opt.text.trim())}`);
@@ -112,6 +118,9 @@ export function formatExamToCbtText(
           questionText += '\n( jawablah dengan mengetikkan huruf kapital pada kotak yang disediakan )';
         }
         lines.push(`Q:${qNum})${questionText}`);
+        if (q.imageUrl) {
+          lines.push(`[IMG]${q.imageUrl}[/IMG]`);
+        }
         const ans = transformText((q.options?.[0]?.text || 'JAWABAN').trim().toUpperCase());
         lines.push(`A:)${ans}`);
         lines.push('RIGHT:A');
@@ -120,7 +129,7 @@ export function formatExamToCbtText(
       }
 
       case 'ordering': {
-        lines.push(`Q:${qNum})${qText}`);
+        pushQuestionHeader();
         if (q.orderingItems && q.orderingItems.length > 0) {
           const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
           q.orderingItems.forEach((item, i) => {
@@ -138,7 +147,7 @@ export function formatExamToCbtText(
       }
 
       case 'matching': {
-        lines.push(`Q:${qNum})${qText}`);
+        pushQuestionHeader();
         if (q.matchingResponses && q.matchingResponses.length > 0) {
           q.matchingResponses.forEach((resp, rIdx) => {
             lines.push(`${rIdx + 1}.\t${transformText(resp.text.trim())}`);
@@ -157,13 +166,13 @@ export function formatExamToCbtText(
       }
 
       case 'essay': {
-        lines.push(`Q:${qNum})${qText}`);
+        pushQuestionHeader();
         lines.push('');
         break;
       }
 
       default: {
-        lines.push(`Q:${qNum})${qText}`);
+        pushQuestionHeader();
         if (q.options) {
           q.options.forEach((opt) => {
             lines.push(`${opt.key}:)${transformText(opt.text.trim())}`);
@@ -222,6 +231,10 @@ export function formatExamToCkEditorHtml(
     html += `      <span class="soal-nomor">${qNum}.</span>\n`;
     html += `      <span>${qTextWithImages}</span>\n`;
     html += `    </div>\n`;
+
+    if (q.imageUrl) {
+      html += `    <div style="text-align:center;margin:10px 0;"><img src="${q.imageUrl}" alt="Gambar Soal ${qNum}" style="max-height:260px;max-width:100%;border-radius:6px;border:1px solid #cbd5e1;object-fit:contain;" /></div>\n`;
+    }
 
     if ((q.type === 'single_choice' || q.type === 'multiple_choice') && q.options && q.options.length > 0) {
       html += `    <ul class="opsi-list">\n`;
@@ -292,6 +305,10 @@ export function formatCbtTextAsCkEditorHtml(
       const trimmed = line.trim();
       if (!trimmed) {
         return '<p><br></p>';
+      }
+      if (trimmed.startsWith('[IMG]') && trimmed.endsWith('[/IMG]')) {
+        const url = trimmed.slice(5, -6).trim();
+        return `<p style="margin:8px 0; text-align:center;"><img src="${url}" alt="Ilustrasi Soal" style="max-height:260px;max-width:100%;border-radius:6px;border:1px solid #cbd5e1;object-fit:contain;" /></p>`;
       }
       const withImages = replaceLatexWithImgTags(trimmed, format);
       return `<p style="margin:0 0 2px 0; font-family:Arial,sans-serif; font-size:12pt;">${withImages}</p>`;

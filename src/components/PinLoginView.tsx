@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, EyeOff, Lock, Sparkles, Building2, Shield, ArrowRight, Check } from 'lucide-react';
 import { LogoMadrasahSvg } from './KopMadrasah';
 
 interface PinLoginViewProps {
@@ -53,13 +53,11 @@ export const PinLoginView: React.FC<PinLoginViewProps> = ({
 
     if (matchedUser) {
       onShowToast(`Selamat datang kembali, ${matchedUser.name}!`, 'success');
-      // Delay success login slightly to allow toast and sound transition
       setTimeout(() => {
         onLoginSuccess(matchedUser);
-      }, 500);
+      }, 400);
     } else {
-      onShowToast('PIN akses salah! Periksa kembali atau hubungi Operator.', 'error');
-      // Reset PIN with a tiny haptic feel / visual feedback
+      onShowToast('PIN akses salah! Periksa kembali atau pilih akun pengajar di bawah.', 'error');
       setPin('');
     }
   };
@@ -78,41 +76,52 @@ export const PinLoginView: React.FC<PinLoginViewProps> = ({
     setPin('');
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-emerald-50/30 flex flex-col justify-center items-center p-4 relative overflow-hidden select-none">
-      {/* Decorative subtle background accents */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-60 pointer-events-none"></div>
+  const handleQuickLogin = (user: User) => {
+    if (user.pin) {
+      setPin(user.pin);
+    }
+  };
 
-      {/* Soft warm glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl pointer-events-none"></div>
+  return (
+    <div className="min-h-screen bg-[#f4f3ed] flex flex-col justify-center items-center p-4 sm:p-6 select-none relative overflow-hidden">
+      
+      {/* Decorative Subtle Background Aura */}
+      <div className="absolute top-0 inset-x-0 h-72 bg-[#053b26] border-b-4 border-amber-400" />
+      <div className="absolute top-20 right-1/4 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container Card */}
-      <div className="max-w-md w-full bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 p-6 sm:p-8 space-y-6 relative z-10 shadow-xl shadow-slate-900/5">
+      <div className="max-w-md w-full bg-white rounded-3xl border-2 border-slate-200/90 shadow-2xl p-6 sm:p-8 space-y-6 relative z-10">
         
-        {/* Madrasah Branding */}
+        {/* Madrasah Branding & Crest */}
         <div className="flex flex-col items-center text-center space-y-3">
-          <div className="p-3.5 bg-gradient-to-tr from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100 shadow-xs">
-            <LogoMadrasahSvg className="w-12 h-12" />
+          <div className="w-18 h-18 rounded-2xl bg-white p-2.5 shadow-md border-2 border-amber-400 flex items-center justify-center -mt-12 bg-white">
+            <LogoMadrasahSvg className="w-full h-full" />
           </div>
           <div>
-            <h1 className="font-heading text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+            <span className="text-[11px] font-extrabold text-emerald-800 tracking-wider uppercase block">
+              LP MA'ARIF NU KABUPATEN BATANG
+            </span>
+            <h1 className="font-heading text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
               MA NU 01 BANYUPUTIH
             </h1>
-            <p className="text-[10.5px] sm:text-xs text-emerald-800 font-semibold tracking-wide uppercase mt-0.5">
-              Portal Akses Guru & Staf
+            <p className="text-xs text-slate-600 font-medium mt-1">
+              Portal Asesmen Madrasah & Administrasi Kurikulum Merdeka
             </p>
+            <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-[10px] font-bold mt-2">
+              <span>★ TERAKREDITASI A (UNGGUL) ★</span>
+            </div>
           </div>
         </div>
 
         {/* PIN Entry Display Area */}
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10.5px] text-slate-500 font-bold tracking-wider uppercase flex items-center space-x-1.5">
-              <Lock className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Masukkan 6-Angka PIN Akses</span>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-700 font-semibold flex items-center space-x-1.5">
+              <Lock className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Masukkan 6 Digit PIN Pengajar</span>
             </span>
             <button
+              type="button"
               onClick={() => setIsMasked(!isMasked)}
               className="text-slate-400 hover:text-slate-700 transition cursor-pointer p-1"
               title={isMasked ? 'Tampilkan Angka' : 'Sembunyikan Angka'}
@@ -121,21 +130,21 @@ export const PinLoginView: React.FC<PinLoginViewProps> = ({
             </button>
           </div>
 
-          {/* Dots Indicator */}
-          <div className="flex items-center justify-center space-x-3.5 py-4 bg-slate-50/90 rounded-2xl border border-slate-200/90 shadow-inner relative">
+          {/* Masked Indicator Slots */}
+          <div className="flex items-center justify-center space-x-2.5 sm:space-x-3 py-3.5 bg-slate-50 rounded-2xl border-2 border-slate-200">
             {[...Array(6)].map((_, i) => {
               const hasDigit = pin.length > i;
               const digit = pin[i];
               return (
                 <div
                   key={i}
-                  className={`w-4 h-4 rounded-full border-2 transition-all duration-150 flex items-center justify-center font-mono font-extrabold text-xs ${
+                  className={`w-10 h-12 rounded-xl border-2 flex items-center justify-center font-mono font-black text-lg transition-all duration-150 tabular-nums ${
                     hasDigit
-                      ? 'border-emerald-600 bg-emerald-500/20 text-emerald-800 scale-110 shadow-2xs'
-                      : 'border-slate-300 bg-white text-transparent'
+                      ? 'border-emerald-700 bg-white text-emerald-900 shadow-xs'
+                      : 'border-slate-200 bg-slate-100/60 text-transparent'
                   }`}
                 >
-                  {hasDigit && !isMasked ? digit : ''}
+                  {hasDigit ? (isMasked ? '●' : digit) : ''}
                 </div>
               );
             })}
@@ -143,13 +152,13 @@ export const PinLoginView: React.FC<PinLoginViewProps> = ({
         </div>
 
         {/* Numeric Keypad Pad */}
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
             <button
               key={digit}
               type="button"
               onClick={() => handleKeypadPress(digit)}
-              className="py-3.5 rounded-xl bg-slate-50/80 hover:bg-emerald-50/80 hover:text-emerald-900 border border-slate-200/90 hover:border-emerald-300 active:scale-95 transition-all text-slate-800 font-heading font-extrabold text-base flex items-center justify-center shadow-2xs hover:shadow-xs cursor-pointer"
+              className="h-12 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 active:scale-[0.98] transition-all text-slate-900 font-heading font-bold text-lg flex items-center justify-center cursor-pointer tabular-nums shadow-2xs"
             >
               {digit}
             </button>
@@ -157,32 +166,63 @@ export const PinLoginView: React.FC<PinLoginViewProps> = ({
           <button
             type="button"
             onClick={handleClear}
-            className="py-3.5 rounded-xl bg-rose-50/70 hover:bg-rose-100 hover:text-rose-800 border border-rose-200/80 hover:border-rose-300 active:scale-95 transition-all text-rose-700 font-bold text-xs flex items-center justify-center cursor-pointer shadow-2xs"
+            className="h-12 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 active:scale-[0.98] transition-all text-slate-600 font-semibold text-xs flex items-center justify-center cursor-pointer"
           >
-            CLEAR
+            Hapus
           </button>
           <button
             type="button"
             onClick={() => handleKeypadPress('0')}
-            className="py-3.5 rounded-xl bg-slate-50/80 hover:bg-emerald-50/80 hover:text-emerald-900 border border-slate-200/90 hover:border-emerald-300 active:scale-95 transition-all text-slate-800 font-heading font-extrabold text-base flex items-center justify-center shadow-2xs hover:shadow-xs cursor-pointer"
+            className="h-12 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 active:scale-[0.98] transition-all text-slate-900 font-heading font-bold text-lg flex items-center justify-center cursor-pointer tabular-nums shadow-2xs"
           >
             0
           </button>
           <button
             type="button"
             onClick={handleBackspace}
-            className="py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all text-slate-700 font-bold text-base flex items-center justify-center cursor-pointer shadow-2xs"
+            className="h-12 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 active:scale-[0.98] transition-all text-slate-700 font-bold text-sm flex items-center justify-center cursor-pointer"
+            title="Hapus Satu Digit"
           >
             ⌫
           </button>
         </div>
+
+        {/* Quick Teacher Account Selector for Fast Trial */}
+        <div className="pt-3 border-t border-slate-100 space-y-2">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block text-center">
+            Akses Cepat Pengajar (Klik untuk Isi PIN):
+          </span>
+          <div className="grid grid-cols-3 gap-1.5">
+            {users.slice(0, 3).map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => handleQuickLogin(u)}
+                className="p-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 transition text-left cursor-pointer group"
+              >
+                <div className="text-[11px] font-bold text-slate-900 group-hover:text-emerald-900 truncate">
+                  {u.name.split(',')[0]}
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                  PIN: {u.pin}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
       </div>
 
-      {/* Footer copyright */}
-      <div className="text-[11px] text-slate-400 font-medium mt-8 text-center space-y-0.5">
-        <p>© 2026 MA NU 01 Banyuputih Batang · Kurikulum Merdeka</p>
-        <p className="text-slate-400 text-[10px]">Sistem Asesmen & Administrasi Guru Madrasah</p>
+      {/* Institutional Bottom Banner */}
+      <div className="text-center mt-6 text-xs text-slate-500 space-y-1 relative z-10">
+        <p className="font-semibold text-slate-700">
+          MA NU 01 Banyuputih · Kabupaten Batang, Jawa Tengah
+        </p>
+        <p className="text-[11px] text-slate-400">
+          Jl. Lapangan 9A Banyuputih · NPSN: 20364930 · Telp: (0285) 666789
+        </p>
       </div>
+
     </div>
   );
 };

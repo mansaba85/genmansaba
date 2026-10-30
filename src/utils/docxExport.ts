@@ -238,6 +238,30 @@ export const exportExamToDocx = async (exam: ExamPackage): Promise<void> => {
               })
             );
 
+            // Question Image if available
+            if (q.imageUrl) {
+              paragraphs.push(
+                new Paragraph({
+                  spacing: { before: 60, after: 80 },
+                  indent: { left: 360 },
+                  children: [
+                    new TextRun({
+                      text: '[ GAMBAR / ILUSTRASI SOAL ]',
+                      bold: true,
+                      size: 16,
+                      color: '1E4D7B',
+                    }),
+                    new TextRun({
+                      text: q.imageUrl.startsWith('data:') ? ' (Gambar Tersemat)' : ` (${q.imageUrl})`,
+                      size: 14,
+                      italics: true,
+                      color: '555555',
+                    }),
+                  ],
+                })
+              );
+            }
+
             // Options if Single Choice or Multiple Choice
             if (q.type === 'single_choice' || q.type === 'multiple_choice') {
               if (q.type === 'multiple_choice') {

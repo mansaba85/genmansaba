@@ -16,12 +16,17 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV DATA_DIR=/app/data
+
+RUN mkdir -p /app/data
 
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 
 # Install only production dependencies
 RUN npm install --omit=dev
+
+VOLUME /app/data
 
 EXPOSE 3000
 

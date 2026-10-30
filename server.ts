@@ -1,5 +1,6 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
@@ -10,6 +11,247 @@ const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: '10mb' }));
+
+// Server Persistent Database Layer (JSON File Storage in /data volume)
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DATA_DIR, 'db.json');
+
+if (!fs.existsSync(DATA_DIR)) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (e) {
+    console.error('Failed to create data directory:', e);
+  }
+}
+
+const DEFAULT_MADRASAH_IDENTITY = {
+  yayasan: "YAYASAN LP MA'ARIF NU KABUPATEN BATANG",
+  nama: 'MA NU 01 BANYUPUTIH',
+  singkatan: 'MA NU 01 Banyuputih',
+  akreditasi: 'TERAKREDITASI A (UNGGUL)',
+  alamat: 'Jl. Lapangan 9A Banyuputih, Kab. Batang',
+  npsn: '20364930',
+  tahunAjaran: '2026/2027',
+  semester: 'Ganjil',
+  modeJadwal: 'Reguler (Normal)',
+  kabupaten: 'Kab. Batang',
+  kepalaMadrasah: 'H. Mukhsin, S.Ag., M.Pd.I.',
+  nipKepala: '197206151998031002',
+  telepon: '(0285) 666789',
+  email: 'manubanyuputih@gmail.com',
+  website: 'https://manu01banyuputih.sch.id',
+};
+
+const DEFAULT_USERS = [
+  {
+    id: 'user-hariyanto',
+    name: 'Bpk. Hariyanto, S.Pd.',
+    nip: '198604122011011008',
+    role: 'guru',
+    mapel: ['Matematika', 'Fisika'],
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+    lastLogin: '21 Sep 2026, 07:15 WIB',
+    pin: '123456',
+  },
+  {
+    id: 'user-siti-fatimah',
+    name: 'Ibu Siti Fatimah, S.Ag.',
+    nip: '198208152009122004',
+    role: 'guru',
+    mapel: ['Fiqih', 'Bahasa Arab', "Al-Qur'an Hadits"],
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
+    lastLogin: '21 Sep 2026, 08:30 WIB',
+    pin: '654321',
+  },
+  {
+    id: 'user-zainal',
+    name: 'Admin',
+    nip: '-',
+    role: 'admin',
+    mapel: ['Informatika', 'Kewirausahaan'],
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+    lastLogin: '21 Sep 2026, 06:45 WIB',
+    pin: '888888',
+  },
+  {
+    id: 'user-nur-hidayah',
+    name: 'Ibu Nur Hidayah, A.Md.',
+    nip: '199311052019032015',
+    role: 'operator',
+    mapel: ['Tata Usaha & Distribusi Dokumen'],
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
+    lastLogin: '21 Sep 2026, 07:00 WIB',
+    pin: '111111',
+  },
+];
+
+const DEFAULT_MAPEL_LIST = [
+  'Matematika',
+  'Bahasa Indonesia',
+  'Bahasa Inggris',
+  'Bahasa Arab',
+  'Bahasa Jawa',
+  'Fisika',
+  'Kimia',
+  'Biologi',
+  'Geografi',
+  'Ekonomi',
+  'Sosiologi',
+  'Sejarah',
+  'Informatika',
+  'Pendidikan Pancasila',
+  'Pendidikan Jasmani & Olahraga',
+  'Seni Budaya',
+  'Prakarya & Kewirausahaan (PKWU)',
+  "Al-Qur'an Hadis",
+  'Akidah Akhlak',
+  'Fiqih',
+  'Sejarah Kebudayaan Islam (SKI)',
+  'Aswaja & Ke-NU-an',
+  'Riset & Karya Ilmiah Remaja',
+];
+
+function readDb(): {
+  users: any[];
+  madrasahIdentity: any;
+  exams: any[];
+  docs: any[];
+  logs: any[];
+  mapelList: string[];
+} {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const content = fs.readFileSync(DB_FILE, 'utf-8');
+      const parsed = JSON.parse(content);
+      return {
+        users: Array.isArray(parsed.users) ? parsed.users : DEFAULT_USERS,
+        madrasahIdentity: parsed.madrasahIdentity || DEFAULT_MADRASAH_IDENTITY,
+        exams: Array.isArray(parsed.exams) ? parsed.exams : [],
+        docs: Array.isArray(parsed.docs) ? parsed.docs : [],
+        logs: Array.isArray(parsed.logs) ? parsed.logs : [],
+        mapelList: Array.isArray(parsed.mapelList) ? parsed.mapelList : DEFAULT_MAPEL_LIST,
+      };
+    }
+  } catch (err) {
+    console.error('Error reading database file:', err);
+  }
+
+  const initialDb = {
+    users: DEFAULT_USERS,
+    madrasahIdentity: DEFAULT_MADRASAH_IDENTITY,
+    exams: [],
+    docs: [],
+    logs: [],
+    mapelList: DEFAULT_MAPEL_LIST,
+  };
+  writeDb(initialDb);
+  return initialDb;
+}
+
+function writeDb(data: any): boolean {
+  try {
+    const tempFile = `${DB_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tempFile, DB_FILE);
+    return true;
+  } catch (err) {
+    console.error('Failed to write database file:', err);
+    return false;
+  }
+}
+
+// REST Endpoints for Centralized Server Storage
+app.get('/api/v1/storage', (req: Request, res: Response) => {
+  const db = readDb();
+  res.json(db);
+});
+
+app.post('/api/v1/storage/sync', (req: Request, res: Response) => {
+  const db = readDb();
+  const body = req.body || {};
+
+  if (Array.isArray(body.users)) db.users = body.users;
+  if (body.madrasahIdentity) db.madrasahIdentity = body.madrasahIdentity;
+  if (Array.isArray(body.exams)) db.exams = body.exams;
+  if (Array.isArray(body.docs)) db.docs = body.docs;
+  if (Array.isArray(body.logs)) db.logs = body.logs;
+  if (Array.isArray(body.mapelList)) db.mapelList = body.mapelList;
+
+  const success = writeDb(db);
+  res.json({ success, db });
+});
+
+app.post('/api/v1/exams', (req: Request, res: Response) => {
+  const db = readDb();
+  const exam = req.body;
+  if (!exam || !exam.id) {
+    return res.status(400).json({ success: false, message: 'Invalid exam data' });
+  }
+  const existingIdx = db.exams.findIndex((e: any) => e.id === exam.id);
+  if (existingIdx >= 0) {
+    db.exams[existingIdx] = exam;
+  } else {
+    db.exams.unshift(exam);
+  }
+  writeDb(db);
+  res.json({ success: true, count: db.exams.length });
+});
+
+app.delete('/api/v1/exams/:id', (req: Request, res: Response) => {
+  const db = readDb();
+  const id = req.params.id;
+  db.exams = db.exams.filter((e: any) => e.id !== id);
+  writeDb(db);
+  res.json({ success: true, count: db.exams.length });
+});
+
+app.post('/api/v1/docs', (req: Request, res: Response) => {
+  const db = readDb();
+  const doc = req.body;
+  if (!doc || !doc.id) {
+    return res.status(400).json({ success: false, message: 'Invalid doc data' });
+  }
+  const existingIdx = db.docs.findIndex((d: any) => d.id === doc.id);
+  if (existingIdx >= 0) {
+    db.docs[existingIdx] = doc;
+  } else {
+    db.docs.unshift(doc);
+  }
+  writeDb(db);
+  res.json({ success: true, count: db.docs.length });
+});
+
+app.delete('/api/v1/docs/:id', (req: Request, res: Response) => {
+  const db = readDb();
+  const id = req.params.id;
+  db.docs = db.docs.filter((d: any) => d.id !== id);
+  writeDb(db);
+  res.json({ success: true, count: db.docs.length });
+});
+
+app.post('/api/v1/logs', (req: Request, res: Response) => {
+  const db = readDb();
+  const log = req.body;
+  if (log && log.id) {
+    db.logs.unshift(log);
+    if (db.logs.length > 200) db.logs = db.logs.slice(0, 200); // keep last 200 logs
+    writeDb(db);
+  }
+  res.json({ success: true });
+});
+
+app.post('/api/v1/storage/reset', (req: Request, res: Response) => {
+  const initialDb = {
+    users: DEFAULT_USERS,
+    madrasahIdentity: DEFAULT_MADRASAH_IDENTITY,
+    exams: [],
+    docs: [],
+    logs: [],
+    mapelList: DEFAULT_MAPEL_LIST,
+  };
+  writeDb(initialDb);
+  res.json({ success: true, db: initialDb });
+});
 
 // Lazy initialization of Gemini client
 let geminiClient: GoogleGenAI | null = null;
@@ -50,8 +292,16 @@ async function generateWithModelFallback(
           },
         });
 
-        if (response.text) {
-          return { text: response.text, modelUsed: model };
+        if (response.text && response.text.trim()) {
+          const cleanText = response.text.trim();
+          if (isAiApologyOrRefusal(cleanText)) {
+            continue;
+          }
+          if (params.responseMimeType === 'application/json') {
+            const parsed = parseJsonFromAiResponse(cleanText);
+            if (!parsed) continue;
+          }
+          return { text: cleanText, modelUsed: model };
         }
       } catch (err: any) {
         const isTransient =
@@ -89,11 +339,33 @@ function getRouterConfig() {
   return { baseUrl, apiKey, model };
 }
 
+// Track exhausted models (e.g. models that reached monthly quota / 402 / limit)
+const exhaustedModels = new Map<string, number>();
+
+function isModelExhausted(model: string): boolean {
+  if (!model) return false;
+  const expiry = exhaustedModels.get(model);
+  if (!expiry) return false;
+  if (Date.now() > expiry) {
+    exhaustedModels.delete(model);
+    return false;
+  }
+  return true;
+}
+
+function markModelExhausted(model: string, durationMinutes = 30): void {
+  if (!model) return;
+  exhaustedModels.set(model, Date.now() + durationMinutes * 60 * 1000);
+  if (cachedResolvedModel === model) {
+    cachedResolvedModel = '';
+  }
+}
+
 // Auto-discovery cache for active 9router model
 let cachedResolvedModel = '';
 async function resolveRouterModel(baseUrl: string, apiKey: string, preferredModel?: string): Promise<string> {
-  if (preferredModel) return preferredModel;
-  if (cachedResolvedModel) return cachedResolvedModel;
+  if (preferredModel && !isModelExhausted(preferredModel)) return preferredModel;
+  if (cachedResolvedModel && !isModelExhausted(cachedResolvedModel)) return cachedResolvedModel;
 
   const cleanBase = baseUrl.replace(/\/+$/, '');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -106,7 +378,7 @@ async function resolveRouterModel(baseUrl: string, apiKey: string, preferredMode
 
   for (const mUrl of modelEndpoints) {
     try {
-      const res = await fetch(mUrl, { method: 'GET', headers });
+      const res = await fetch(mUrl, { method: 'GET', headers, signal: AbortSignal.timeout(4000) });
       if (res.ok) {
         const data = (await res.json()) as any;
         const list: string[] = Array.isArray(data?.data)
@@ -115,27 +387,35 @@ async function resolveRouterModel(baseUrl: string, apiKey: string, preferredMode
           ? data.map((m: any) => (typeof m === 'string' ? m : m.id || m.name)).filter(Boolean)
           : [];
 
-        if (list.length > 0) {
-          // If komoboku exists, prioritize it
-          const komobokuMatch = list.find((m) => m.toLowerCase().includes('komoboku') || m.toLowerCase().includes('komboku'));
+        const available = list.filter((m) => !isModelExhausted(m));
+        if (available.length > 0) {
+          // Priority 1: High-reliability Gemini models on 9router
+          const geminiMatch = available.find((m) => m.startsWith('gemini/') || m.includes('gemini-3.6') || m.includes('gemini'));
+          if (geminiMatch) {
+            cachedResolvedModel = geminiMatch;
+            return geminiMatch;
+          }
+          // Priority 2: Komoboku if not exhausted
+          const komobokuMatch = available.find((m) => m.toLowerCase().includes('komoboku') || m.toLowerCase().includes('komboku'));
           if (komobokuMatch) {
             cachedResolvedModel = komobokuMatch;
             return komobokuMatch;
           }
-          // Prioritize any combo model or auto model
-          const autoMatch = list.find((m) => m.includes('auto') || m.includes('combo') || m.includes('gemini'));
-          if (autoMatch) {
-            cachedResolvedModel = autoMatch;
-            return autoMatch;
+          // Priority 3: Free / OpenRouter models
+          const freeMatch = available.find((m) => m.startsWith('openrouter/') || m.includes(':free'));
+          if (freeMatch) {
+            cachedResolvedModel = freeMatch;
+            return freeMatch;
           }
-          cachedResolvedModel = list[0];
-          return list[0];
+          // Priority 4: Any first non-exhausted model
+          cachedResolvedModel = available[0];
+          return available[0];
         }
       }
     } catch {}
   }
 
-  return 'komoboku';
+  return 'gemini/gemini-3.6-flash';
 }
 
 // Helper: Extract text from either standard JSON or Server-Sent Events (SSE data: ...) stream
@@ -157,24 +437,21 @@ function extractTextFromRouterResponse(rawText: string): string {
     } catch {}
   }
 
-  // 2. Handle Server-Sent Events (SSE) data: chunks
+  // 2. Handle Server-Sent Events (SSE) data: chunks (both newline-separated and concatenated)
   if (trimmed.includes('data:')) {
-    const lines = trimmed.split('\n');
     let accumulated = '';
-    for (const line of lines) {
-      const cleanLine = line.trim();
-      if (cleanLine.startsWith('data:') && !cleanLine.includes('[DONE]')) {
-        const jsonStr = cleanLine.replace(/^data:\s*/, '').trim();
-        try {
-          const chunk = JSON.parse(jsonStr);
-          const delta =
-            chunk?.choices?.[0]?.delta?.content ||
-            chunk?.choices?.[0]?.message?.content ||
-            chunk?.choices?.[0]?.text ||
-            '';
-          accumulated += delta;
-        } catch {}
-      }
+    const regex = /data:\s*({.+?})(?=(?:\s*data:|$))/g;
+    let match;
+    while ((match = regex.exec(trimmed)) !== null) {
+      try {
+        const chunk = JSON.parse(match[1]);
+        const delta =
+          chunk?.choices?.[0]?.delta?.content ||
+          chunk?.choices?.[0]?.message?.content ||
+          chunk?.choices?.[0]?.text ||
+          '';
+        accumulated += delta;
+      } catch {}
     }
     if (accumulated.trim()) {
       return accumulated.trim();
@@ -182,6 +459,168 @@ function extractTextFromRouterResponse(rawText: string): string {
   }
 
   return trimmed;
+}
+
+// Detect if the model outputted an AI apology, quota/rate-limit notice, or refusal instead of valid content
+function isAiApologyOrRefusal(text: string): boolean {
+  if (!text || typeof text !== 'string') return true;
+  const t = text.trim().toLowerCase();
+  if (t.length < 5) return true;
+
+  return (
+    t.startsWith('maaf') ||
+    t.startsWith('mohon maaf') ||
+    t.startsWith('sorry') ||
+    t.startsWith('i cannot') ||
+    t.startsWith('i am unable') ||
+    t.startsWith('i am sorry') ||
+    t.startsWith('as an ai') ||
+    t.startsWith('peringatan:') ||
+    t.includes('permintaan anda tidak dapat') ||
+    t.includes('kuota telah habis') ||
+    t.includes('melebihi batas') ||
+    t.includes('limit reached') ||
+    t.includes('rate limit') ||
+    t.includes('monthly_request_count') ||
+    t.includes('terjadi kesalahan saat memproses')
+  );
+}
+
+// Robust JSON parser for AI outputs (handles markdown wrappers, leading narrative text, trailing commas, array roots)
+function parseJsonFromAiResponse(rawText: string): any {
+  if (!rawText || typeof rawText !== 'string') return null;
+
+  // Immediate refusal / apology check: do not parse plain refusals
+  if (isAiApologyOrRefusal(rawText)) {
+    return null;
+  }
+
+  let clean = rawText.trim();
+
+  // Strip markdown codeblock delimiters (```json ... ``` or ``` ...)
+  clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+  // Check if text has any JSON structure indicators
+  const firstBrace = clean.indexOf('{');
+  const firstBracket = clean.indexOf('[');
+
+  // If there are no braces or brackets at all, it's plain text, not JSON
+  if (firstBrace === -1 && firstBracket === -1) {
+    return null;
+  }
+
+  // Determine outermost JSON container (object {...} or array [...])
+  let jsonSubstring = clean;
+  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    const lastBrace = clean.lastIndexOf('}');
+    if (lastBrace > firstBrace) {
+      jsonSubstring = clean.substring(firstBrace, lastBrace + 1);
+    }
+  } else if (firstBracket !== -1) {
+    const lastBracket = clean.lastIndexOf(']');
+    if (lastBracket > firstBracket) {
+      jsonSubstring = clean.substring(firstBracket, lastBracket + 1);
+    }
+  }
+
+  // Attempt 1: direct parse
+  try {
+    return JSON.parse(jsonSubstring);
+  } catch {}
+
+  // Attempt 2: clean trailing commas before closing braces/brackets
+  try {
+    const sanitized = jsonSubstring.replace(/,\s*([}\]])/g, '$1');
+    return JSON.parse(sanitized);
+  } catch {}
+
+  // Attempt 3: fix Python/relaxed JSON values (None, True, False)
+  try {
+    const relaxed = jsonSubstring
+      .replace(/:\s*None\b/g, ': null')
+      .replace(/:\s*True\b/g, ': true')
+      .replace(/:\s*False\b/g, ': false')
+      .replace(/,\s*([}\]])/g, '$1');
+    return JSON.parse(relaxed);
+  } catch {}
+
+  // Non-JSON response received, return null cleanly without triggering false-positive SyntaxError warnings
+  return null;
+}
+
+// Helper to discover candidate models from 9router API with intelligent provider rotation
+async function fetchRouterModelCandidates(baseUrl: string, apiKey: string, explicitModel?: string): Promise<string[]> {
+  const candidates: string[] = [];
+
+  // Priority 1: User's explicitly configured model in environment (if healthy)
+  if (explicitModel && explicitModel.trim() && !isModelExhausted(explicitModel.trim())) {
+    candidates.push(explicitModel.trim());
+  }
+  // Priority 2: Cached known working model (if healthy)
+  if (cachedResolvedModel && cachedResolvedModel.trim() && !isModelExhausted(cachedResolvedModel.trim()) && !candidates.includes(cachedResolvedModel.trim())) {
+    candidates.push(cachedResolvedModel.trim());
+  }
+
+  const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (apiKey) headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+
+  // Probe available models from 9router /models or /v1/models (4s timeout)
+  let discoveredList: string[] = [];
+  try {
+    const mUrl = cleanBase.endsWith('/v1') ? `${cleanBase}/models` : `${cleanBase}/v1/models`;
+    const res = await fetch(mUrl, { method: 'GET', headers, signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const data = (await res.json()) as any;
+      discoveredList = Array.isArray(data?.data)
+        ? data.data.map((m: any) => m.id || m.name).filter(Boolean)
+        : Array.isArray(data)
+        ? data.map((m: any) => (typeof m === 'string' ? m : m.id || m.name)).filter(Boolean)
+        : [];
+    }
+  } catch {}
+
+  // Filter out any models known to have reached limits/exhausted
+  const availableDiscovered = discoveredList.filter((m) => !isModelExhausted(m));
+
+  // Provider 1: Gemini on 9router (high speed, 200 OK, full Indonesian & pedagogical capability)
+  const geminiOnRouter = availableDiscovered.find(
+    (m) => m === 'gemini/gemini-3.6-flash' || m === 'gemini/gemini-4-argon' || m.startsWith('gemini/')
+  );
+  if (geminiOnRouter && !candidates.includes(geminiOnRouter)) {
+    candidates.push(geminiOnRouter);
+  }
+
+  // Provider 2: Komoboku or Auto combo model
+  const komobokuOrAuto = availableDiscovered.find(
+    (m) => (m === 'komoboku' || m === 'kr/auto') && !candidates.includes(m)
+  );
+  if (komobokuOrAuto && !candidates.includes(komobokuOrAuto)) {
+    candidates.push(komobokuOrAuto);
+  }
+
+  // Provider 3: OpenRouter free models on 9router
+  const freeModel = availableDiscovered.find(
+    (m) => (m.startsWith('openrouter/') || m.includes(':free') || m.startsWith('oc/')) && !candidates.includes(m)
+  );
+  if (freeModel && !candidates.includes(freeModel)) {
+    candidates.push(freeModel);
+  }
+
+  // Provider 4: Any other available model from discovered list (up to 4 candidates)
+  for (const m of availableDiscovered) {
+    if (candidates.length >= 4) break;
+    if (!candidates.includes(m)) {
+      candidates.push(m);
+    }
+  }
+
+  // Ultimate defaults if discovery was completely empty
+  if (candidates.length === 0) {
+    candidates.push('gemini/gemini-3.6-flash', 'komoboku', 'kr/auto');
+  }
+
+  return candidates;
 }
 
 // Unified Generator supporting 9router Combo Model & Gemini SDK
@@ -195,8 +634,8 @@ async function generateViaUnifiedAI(params: {
 
   if (baseUrl) {
     try {
-      const activeModel = await resolveRouterModel(baseUrl, apiKey, explicitModel);
-      const cleanBaseUrl = baseUrl.replace(/\/+$/, '');
+      const candidateModels = await fetchRouterModelCandidates(baseUrl, apiKey, explicitModel);
+      const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '');
       const endpoint = cleanBaseUrl.endsWith('/chat/completions')
         ? cleanBaseUrl
         : cleanBaseUrl.endsWith('/v1')
@@ -207,38 +646,78 @@ async function generateViaUnifiedAI(params: {
         'Content-Type': 'application/json',
       };
       if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
+        headers['Authorization'] = `Bearer ${apiKey.trim()}`;
       }
 
-      const bodyPayload: any = {
-        model: activeModel,
-        messages: [{ role: 'user', content: params.prompt }],
-        temperature: params.temperature ?? 0.7,
-        stream: false,
-      };
+      for (const modelToTry of candidateModels) {
+        if (isModelExhausted(modelToTry)) continue;
 
-      if (params.responseMimeType === 'application/json') {
-        bodyPayload.response_format = { type: 'json_object' };
-      }
+        try {
+          const bodyPayload: any = {
+            model: modelToTry,
+            messages: [{ role: 'user', content: params.prompt }],
+            temperature: params.temperature ?? 0.7,
+            stream: false,
+          };
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(bodyPayload),
-      });
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(bodyPayload),
+            signal: AbortSignal.timeout(12000), // 12s timeout per model attempt for fast failover
+          });
 
-      if (response.ok) {
-        const rawText = await response.text();
-        const text = extractTextFromRouterResponse(rawText);
-        if (text) {
-          return { text, modelUsed: `9router (${activeModel})` };
+          if (response.ok) {
+            const rawText = await response.text();
+            const text = extractTextFromRouterResponse(rawText);
+            if (text && text.length > 5) {
+              // 1. Check if the model returned an apology or quota refusal
+              if (isAiApologyOrRefusal(text)) {
+                console.info(`Model 9router '${modelToTry}' mengembalikan respons penolakan: "${text.slice(0, 100)}...". Mencoba model berikutnya...`);
+                if (text.toLowerCase().includes('kuota') || text.toLowerCase().includes('limit') || text.toLowerCase().includes('permintaan')) {
+                  markModelExhausted(modelToTry, 30);
+                }
+                continue;
+              }
+
+              // 2. If JSON is expected, make sure it parses as valid JSON
+              if (params.responseMimeType === 'application/json') {
+                const parsedCheck = parseJsonFromAiResponse(text);
+                if (!parsedCheck) {
+                  console.info(`Model 9router '${modelToTry}' mengembalikan teks bukan format JSON saat diminta JSON. Mencoba model berikutnya...`);
+                  continue;
+                }
+              }
+
+              cachedResolvedModel = modelToTry;
+              return { text, modelUsed: `9router (${modelToTry})` };
+            }
+          } else {
+            const errorText = await response.text();
+            const isQuotaExhausted =
+              response.status === 402 ||
+              response.status === 429 ||
+              (response.status === 503 &&
+                (errorText.includes('limit') ||
+                 errorText.includes('quota') ||
+                 errorText.includes('MONTHLY_REQUEST_COUNT') ||
+                 errorText.includes('402')));
+
+            if (isQuotaExhausted) {
+              markModelExhausted(modelToTry, 30);
+              console.warn(
+                `Model 9router '${modelToTry}' telah mencapai batas kuota (HTTP ${response.status}). Otomatis beralih ke model berikutnya.`
+              );
+            } else {
+              console.info(`9router model '${modelToTry}' status ${response.status}:`, errorText.slice(0, 150));
+            }
+          }
+        } catch (err: any) {
+          console.info(`9router attempt for model '${modelToTry}' ended:`, err?.message || err);
         }
-      } else {
-        const errorText = await response.text();
-        console.warn(`9router status ${response.status}:`, errorText);
       }
     } catch (err) {
-      console.warn('9router connection error, attempting Gemini direct fallback:', err);
+      console.info('9router connection ended, proceeding to fallback engine:', err);
     }
   }
 
@@ -292,7 +771,7 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
     headers['Authorization'] = `Bearer ${apiKey.trim()}`;
   }
 
-  // Probe available models from 9router /models or /v1/models
+  // Probe available models from 9router /models or /v1/models (4s timeout)
   let discoveredModels: string[] = [];
   const modelEndpoints = [
     cleanBase.endsWith('/v1') ? `${cleanBase}/models` : `${cleanBase}/v1/models`,
@@ -301,7 +780,7 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
 
   for (const mUrl of modelEndpoints) {
     try {
-      const mRes = await fetch(mUrl, { method: 'GET', headers });
+      const mRes = await fetch(mUrl, { method: 'GET', headers, signal: AbortSignal.timeout(4000) });
       if (mRes.ok) {
         const mData = (await mRes.json()) as any;
         if (Array.isArray(mData?.data)) {
@@ -315,16 +794,31 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
     } catch {}
   }
 
-  // If no explicit model provided, auto-select from discovered list
-  let routerModel = explicitModel;
-  if (!routerModel) {
-    if (discoveredModels.includes('komoboku')) {
-      routerModel = 'komoboku';
-    } else if (discoveredModels.length > 0) {
-      routerModel = discoveredModels[0];
-    } else {
-      routerModel = 'komoboku';
-    }
+  // Filter available healthy models
+  const availableModels = discoveredModels.filter((m) => !isModelExhausted(m));
+
+  // Determine list of test candidate models (preferred first, then healthy alternatives)
+  const modelsToTest: string[] = [];
+  if (explicitModel && !isModelExhausted(explicitModel)) {
+    modelsToTest.push(explicitModel);
+  }
+  if (cachedResolvedModel && !isModelExhausted(cachedResolvedModel) && !modelsToTest.includes(cachedResolvedModel)) {
+    modelsToTest.push(cachedResolvedModel);
+  }
+  const healthyGemini = availableModels.find((m) => m.startsWith('gemini/') || m.includes('gemini-3.6'));
+  if (healthyGemini && !modelsToTest.includes(healthyGemini)) {
+    modelsToTest.push(healthyGemini);
+  }
+  const healthyKomoboku = availableModels.find((m) => m === 'komoboku' || m === 'kr/auto');
+  if (healthyKomoboku && !modelsToTest.includes(healthyKomoboku)) {
+    modelsToTest.push(healthyKomoboku);
+  }
+  for (const m of availableModels) {
+    if (modelsToTest.length >= 4) break;
+    if (!modelsToTest.includes(m)) modelsToTest.push(m);
+  }
+  if (modelsToTest.length === 0) {
+    modelsToTest.push('gemini/gemini-3.6-flash', 'komoboku');
   }
 
   // Candidate chat completion endpoints
@@ -336,66 +830,79 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
       : `${cleanBase}/v1/chat/completions`,
     `${cleanBase}/chat/completions`,
   ];
-
   const uniqueEndpoints = Array.from(new Set(chatEndpoints));
+
   let lastStatus = 404;
   let lastErrorText = '';
+  let modelTested = modelsToTest[0];
 
-  const testPayload = {
-    model: routerModel,
-    messages: [
-      {
-        role: 'user',
-        content: 'Halo, respon dengan 1 kalimat singkat: "Koneksi 9router MA NU 01 Banyuputih berhasil."',
-      },
-    ],
-    max_tokens: 60,
-    temperature: 0.3,
-    stream: false,
-  };
+  for (const currentModel of modelsToTest) {
+    modelTested = currentModel;
+    const testPayload = {
+      model: currentModel,
+      messages: [
+        {
+          role: 'user',
+          content: 'Halo, respon singkat 1 kalimat: "Koneksi 9router MA NU 01 Banyuputih aktif."',
+        },
+      ],
+      max_tokens: 350,
+      temperature: 0.3,
+      stream: false,
+    };
 
-  for (const endpoint of uniqueEndpoints) {
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(testPayload),
-      });
-
-      lastStatus = response.status;
-      const rawText = await response.text();
-
-      if (response.ok) {
-        const reply = extractTextFromRouterResponse(rawText) || 'Sukses terhubung';
-        const latency = Date.now() - startTime;
-        cachedResolvedModel = routerModel;
-        return res.json({
-          connected: true,
-          endpoint,
-          model: routerModel,
-          latencyMs: latency,
-          responseSample: reply,
-          discoveredModels: discoveredModels.length > 0 ? discoveredModels : undefined,
-          message: `Koneksi ke 9router berhasil! Menggunakan model "${routerModel}".`,
+    for (const endpoint of uniqueEndpoints) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(testPayload),
+          signal: AbortSignal.timeout(8000), // 8s timeout to guarantee instant response
         });
-      } else {
-        lastErrorText = rawText;
+
+        lastStatus = response.status;
+        const rawText = await response.text();
+
+        if (response.ok) {
+          const reply = extractTextFromRouterResponse(rawText) || 'Koneksi 9router MA NU 01 Banyuputih aktif.';
+          const latency = Date.now() - startTime;
+          cachedResolvedModel = currentModel;
+          return res.json({
+            connected: true,
+            endpoint,
+            model: currentModel,
+            latencyMs: latency,
+            responseSample: reply,
+            discoveredModels: discoveredModels.length > 0 ? discoveredModels : undefined,
+            message: `Koneksi ke 9router berhasil! Menggunakan model aktif "${currentModel}".`,
+          });
+        } else {
+          lastErrorText = rawText;
+          const isQuota =
+            response.status === 402 ||
+            response.status === 429 ||
+            (response.status === 503 &&
+              (rawText.includes('limit') || rawText.includes('quota') || rawText.includes('MONTHLY_REQUEST_COUNT')));
+          if (isQuota) {
+            markModelExhausted(currentModel, 30);
+          }
+        }
+      } catch (err: any) {
+        lastErrorText = err?.message || 'Network error';
       }
-    } catch (err: any) {
-      lastErrorText = err?.message || 'Network error';
     }
   }
 
   const latency = Date.now() - startTime;
   let tipMessage = 'Periksa konfigurasi 9router Anda.';
   if (discoveredModels.length > 0) {
-    tipMessage = `Model "${routerModel}" tidak merespon. Model yang aktif di 9router Anda: [ ${discoveredModels.slice(0, 8).join(', ')}... ].`;
+    tipMessage = `Model "${modelTested}" tidak dapat diakses (status ${lastStatus}). Tersedia ${discoveredModels.length} model lain di gateway 9router Anda.`;
   }
 
   return res.status(lastStatus >= 400 && lastStatus < 600 ? lastStatus : 500).json({
     connected: false,
     endpoint: uniqueEndpoints[0],
-    model: routerModel,
+    model: modelTested,
     statusCode: lastStatus,
     errorRaw: lastErrorText,
     discoveredModels: discoveredModels.length > 0 ? discoveredModels : undefined,
@@ -404,8 +911,8 @@ app.post('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
   });
 });
 
-// Generator Soal API Endpoint
-app.post('/api/v1/soal/generate', async (req: Request, res: Response) => {
+// Generator Soal API Endpoint (supporting standard & ninerouter route aliases)
+app.post(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], async (req: Request, res: Response) => {
   try {
     const {
       mapel,
@@ -419,81 +926,92 @@ app.post('/api/v1/soal/generate', async (req: Request, res: Response) => {
       difficultyProportion,
     } = req.body;
 
-    const prompt = `Anda bertindak sebagai AI Engine Madrasah (9router Combo Model) untuk MA NU 01 Banyuputih Batang.
-Hasilkan paket soal ujian madrasah berkualitas tinggi sesuai Kurikulum Merdeka dan standar Kemenag RI dengan ketentuan:
+    const prompt = `Anda adalah Pakar Penyusun Soal Ujian & AI Engine Madrasah (9router Combo Engine) untuk MA NU 01 Banyuputih Batang.
+Hasilkan paket naskah soal ujian yang SANGAT PRESISI, KAYA VARIATIF, BERBOBOT AKADEMIK, dan BEBAS DUPLIKASI berdasarkan Capaian Pembelajaran (CP) dan Materi Target yang diberikan oleh Guru.
+
+================================================================================
+INFORMASI UTAMA UJIAN:
+================================================================================
 - Mata Pelajaran: ${mapel}
-- Kelas: ${kelas} | Semester: ${semester} | Tahun Pelajaran: ${tahunPelajaran}
+- Kelas: ${kelas} (Fase ${kelas === '10' ? 'E' : 'F'})
+- Semester: ${semester} | Tahun Pelajaran: ${tahunPelajaran}
 - Jenis Ujian: ${jenisUjian} (ASTS/ASESGA/ASAS)
 - Bahasa Pengantar Sistem: ${bahasa}
-- Capaian Pembelajaran / Materi Target: ${capaianPembelajaran || 'Standar Capaian Pembelajaran Kurikulum Merdeka'}
 
 ================================================================================
-HIERARKI KONTEKS GENERASI SOAL (SANGAT KETAT & WAJIB DITAATI):
+ACUAN UTAMA: CAPAIAN PEMBELAJARAN (CP) / MATERI TARGET (WAJIB DIBEDAH TUNTAS)
 ================================================================================
-1. PRIORITAS UTAMA (LEVEL 1): IDENTITAS MATA PELAJARAN & BAHASA ALAMI MAPEL
-   Mata pelajaran memegang kendali tertinggi atas domain keilmuan dan bahasa naskah. Pilihan dropdown bahasa diabaikan jika bertentangan dengan bahasa alami mata pelajaran:
+"${capaianPembelajaran || 'Standar Capaian Pembelajaran Kurikulum Merdeka ' + mapel}"
+
+================================================================================
+INSTRUKSI WAKTU GENERASI & ATURAN KETAT (WAJIB DITAATI 100%):
+================================================================================
+
+1. BEDAH CAPAIAN PEMBELAJARAN & DISTRIBUSI PROPORSIONAL (PRINSIP NOL DUPLIKASI):
+   - Teliti setiap bab, poin, angka (1, 2, 3...), dan sub-bullet (•) pada Capaian Pembelajaran di atas!
+   - JIKA CP memuat beberapa topik/bidang sekaligus (misal: 1. Kewirausahaan, 2. Kerajinan, 3. Rekayasa, atau Fikih Muamalah, Fikih Munakahat, dst):
+     * Anda WAJIB membagi dan mendistribusikan total soal secara SEIMBANG dan MERATA ke SEMUA topik/sub-topik tersebut!
+     * Contoh: Jika total 15 soal dan ada 3 topik utama pada CP, maka Topik 1 mendapat ~5 soal, Topik 2 mendapat ~5 soal, dan Topik 3 mendapat ~5 soal.
+     * DILARANG KERAS hanya memproduksi soal dari 1 topik saja dan mengabaikan topik lainnya!
+     * DILARANG KERAS mengulang-ulang pertanyaan yang sama atau sekadar mengubah opsi jawaban ("Variasi Soal Model X"). Setiap butir soal (Soal 1 s.d. Soal N) HARUS menargetkan konsep/indikator yang BERBEDA dan SPESIFIK!
+
+2. KESESUAIAN BAHASA ALAMI MATA PELAJARAN (LANGUAGE FIDELITY):
    - JIKA MAPEL = "BAHASA JAWA" (atau Muatan Lokal Bahasa Jawa, Sastra Jawa):
-     * SELURUH naskah soal, stimulus teks bacaan (Geguritan, Cerkak, Tembang Macapat, Pawarta, Sandhangan Aksara Jawa), opsi jawaban A-E, petunjuk soal, kunci, dan pembahasan HARUS 100% MURNI DALAM BAHASA JAWA (Basa Jawa standar Kurikulum Muatan Lokal Jawa Tengah SMA/MA Kelas ${kelas}).
-     * DILARANG KERAS menggunakan bahasa Indonesia untuk soal Bahasa Jawa, MESKIPUN dropdown bahasa sistem dipilih 'Indonesia'!
+     * SELURUH naskah soal, stimulus bacaan (Geguritan, Cerkak, Tembang Macapat, Pawarta, Aksara Jawa), opsi jawaban A-E, petunjuk soal, kunci, dan pembahasan HARUS 100% MURNI DALAM BAHASA JAWA (Basa Jawa standar Kurikulum Muatan Lokal Jawa Tengah SMA/MA Kelas ${kelas}). DILARANG KERAS menggunakan Bahasa Indonesia!
    - JIKA MAPEL = "BAHASA INGGRIS" (atau English, Sastra Inggris):
-     * SELURUH naskah soal, stimulus reading passage, opsi jawaban A-E, petunjuk, dan pembahasan HARUS 100% MURNI DALAM BAHASA INGGRIS (Standard English) sesuai Kurikulum Merdeka Kelas ${kelas} (Descriptive text, Recount, Congratulation/Compliment, Grammar, dll).
-     * DILARANG KERAS mencampuradukkan materi pelajaran Bahasa Indonesia (seperti Teks Argumentasi Pangan Lokal, Paragraf Deduktif, dll).
+     * SELURUH naskah soal, reading passage, opsi jawaban, dan pembahasan HARUS 100% MURNI DALAM BAHASA INGGRIS (Standard English) sesuai Kurikulum Merdeka.
    - JIKA MAPEL = "BAHASA ARAB":
      * SELURUH naskah soal, teks qira'ah, opsi jawaban HARUS 100% MURNI DALAM BAHASA ARAB (Fusha berharakat lengkap, RTL).
-   - JIKA MAPEL EKSAK/UMUM (Matematika, Fisika, Kimia, Biologi, Geografi, Sosiologi, Ekonomi, Sejarah, Informatika, Fiqih, SKI, Quran Hadis):
-     * Materi soal harus 100% murni konsep mata pelajaran tersebut tanpa analogi yang salah sasaran (misal Matematika tidak boleh memuat istilah fikih/zakat).
+   - JIKA MAPEL UMUM/EKSAK/AGAMA (Prakarya/PKWU, Matematika, Fisika, Kimia, Biologi, Fiqih, SKI, Ekonomi, Geografi, dll):
+     * Gunakan Bahasa Indonesia baku yang lugas dan akademis. Isi naskah HARUS MURNI membahas domain keilmuan ${mapel} sesuai poin-poin CP.
 
-2. PRIORITAS KEDUA (LEVEL 2): KELAS & TINGKAT KOGNITIF SISWA
-   - Sesuaikan kedalaman materi, kompleksitas bacaan, dan proporsi kognitif (LOTS/MOTS/HOTS) dengan jenjang Kelas ${kelas} (Fase ${kelas === '10' ? 'E' : 'F'}).
+3. KONFIGURASI TIPE SOAL CBT MADRASAH:
+   Suspensi distribusi tipe soal wajib mengikuti alokasi berikut:
+   - Pilihan Ganda Tunggal: ${selectedTypes?.single_choice ?? 2} butir (Opsi A:) s.d E:), Kunci: RIGHT:A)
+   - Pilihan Ganda Jamak: ${selectedTypes?.multiple_choice ?? 1} butir (Opsi A:) s.d E:), Kunci: RIGHT:A,B tanpa spasi)
+   - Jawaban Singkat: ${selectedTypes?.short_answer ?? 1} butir (Satu opsi A:) jawaban huruf kapital, Kunci: RIGHT:A)
+   - Mengurutkan (Ordering): ${selectedTypes?.ordering ?? 1} butir (Tuliskan item berurutan runtut 1..n dari awal ke akhir, Kunci: RIGHT:)
+   - Menjodohkan (Matching): ${selectedTypes?.matching ?? 1} butir (Premis dan Pasangan 1-to-1 lurus berpasangan, Kunci: RIGHT:)
+   - Uraian / Essay: ${selectedTypes?.essay ?? 1} butir (Hanya teks soal & rubrik, tanpa opsi, Kunci: "")
 
-3. PRIORITAS KETIGA (LEVEL 3): MATERI / CAPAIAN PEMBELAJARAN
-   - Fokuskan stimulus dan butir-butir pertanyaan pada materi: "${capaianPembelajaran || mapel}".
+4. ATURAN KHUSUS SOAL MENGURUTKAN (ORDERING):
+   - Item dalam orderingItems HARUS ditulis berurutan secara benar dari awal hingga akhir (id: 1 adalah langkah pertama yang benar, id: 2 adalah langkah kedua, dst). System CBT yang akan mengacak urutan tampilan untuk siswa.
 
-DISIPLIN SOAL CBT:
-- DILARANG KERAS mengulang atau menduplikasi pertanyaan yang identik/mirip. Setiap butir soal (Q:1, Q:2, dst.) harus unik dan menargetkan sub-kompetensi bervariasi.
-- Soal Uraian/Essay untuk Matematika/Sains HARUS berupa pemecahan masalah matematis nyata (HOTS).
+5. ATURAN KHUSUS SOAL MENJODOHKAN (MATCHING):
+   - Premis (matchingPremises) dan Pasangan Respons (matchingResponses) HARUS ditulis berpasangan langsung 1-ke-1 secara tepat (Premis index 0 berpasangan dengan Respons key "A", Premis index 1 dengan Respons key "B", dst).
 
-ATURAN KHUSUS SOAL MENGURUTKAN (ORDERING):
-- Butir tahapan/langkah dalam orderingItems JANGAN DIACAK! Tuliskan langkah-langkah dalam urutan yang benar dan runtut dari awal ke akhir (id: 1 adalah langkah pertama yang benar, id: 2 adalah langkah kedua yang benar, dst). Opsi HANYA berisi teks murni tanpa embel-embel/penjelasan. Sistem CBT Madrasah yang akan mengacak tampilan item secara otomatis saat ujian berlangsung. Baris rawRightAnswer diisi "RIGHT:".
+6. SINTAKS MATEMATIKA / IPA:
+   - Wajib gunakan sintaks LaTeX diapit tanda $...$ atau $$...$$ jika terdapat rumus/persamaan.
 
-ATURAN KHUSUS SOAL MENJODOHKAN (MATCHING):
-- Antara Premis dan Pilihan/Pasangan Respons (matchingPremises dan matchingResponses) JANGAN DIACAK! Susunlah berpasangan langsung secara lurus 1-ke-1 (Premis index 0 berpasangan benar dengan Respons index 0 / key "A", Premis index 1 dengan Respons index 1 / key "B", Premis index 2 dengan Respons index 2 / key "C", dst).
-- Pada soal menjodohkan, field rawRightAnswer diisi "RIGHT:".
-
-SINTAKS MATEMATIKA:
-- Jika memuat rumus matematika atau fisika, wajib gunakan sintaks LaTeX diapit tanda dollar $...$ atau $$...$$. Contoh: $2^{2x} - 6 \\cdot 2^x + 8 = 0$, $\\frac{a^3b^{-2}}{a^{-1}b}$.
-
-- Konfigurasi Tipe Soal sesuai format impor CBT Madrasah:
-  * Pilihan Ganda Tunggal: ${selectedTypes?.single_choice ?? 2} butir (Opsi A:) s.d E:), Kunci: RIGHT:A)
-  * Pilihan Ganda Jamak: ${selectedTypes?.multiple_choice ?? 1} butir (Opsi A:) s.d E:), Kunci: RIGHT:A,B tanpa spasi)
-  * Jawaban Singkat: ${selectedTypes?.short_answer ?? 1} butir (Satu opsi A:) jawaban huruf kapital, Kunci: RIGHT:A)
-  * Mengurutkan: ${selectedTypes?.ordering ?? 1} butir (Item berurutan runtut 1..n tidak diacak, Kunci: RIGHT: kosong)
-  * Menjodohkan: ${selectedTypes?.matching ?? 1} butir (Premis dan Pasangan 1-to-1 lurus tidak diacak, Kunci: RIGHT: kosong)
-  * Uraian/Essay: ${selectedTypes?.essay ?? 1} butir (Hanya teks soal, tanpa opsi dan tanpa RIGHT:)
-
-Kembalikan respon DALAM FORMAT JSON MURNI tanpa markdown block backticks dengan struktur:
+Format keluaran HARUS MURNI JSON valid tanpa pembungkus markdown codeblock dengan struktur:
 {
   "questions": [
     {
       "id": "q-1",
       "number": 1,
       "type": "single_choice" | "multiple_choice" | "short_answer" | "ordering" | "matching" | "essay",
-      "text": "Teks soal lengkap",
+      "text": "Teks pertanyaan lengkap yang mendalam & spesifik",
       "isArabic": false,
       "hasLatex": false,
       "difficulty": "mudah" | "sedang" | "sulit",
-      "kompetensiTarget": "Indikator KD",
-      "options": [{"key": "A", "text": "opsi A", "isRtl": false}],
-      "orderingItems": [{"id": 1, "text": "item urutan"}],
+      "kompetensiTarget": "Sub-materi/indikator spesifik dari CP yang diuji",
+      "explanation": "Pembahasan ringkas 1-2 kalimat",
+      "imagePrompt": "Deskripsi singkat 1 kalimat jika soal membutuhkan diagram/ilustrasi/grafik (opsional, kosongkan jika tidak butuh)",
+      // KHUSUS single_choice & multiple_choice:
+      "options": [{"key": "A", "text": "opsi A", "isRtl": false}, {"key": "B", "text": "opsi B", "isRtl": false}, {"key": "C", "text": "opsi C", "isRtl": false}, {"key": "D", "text": "opsi D", "isRtl": false}, {"key": "E", "text": "opsi E", "isRtl": false}],
+      "rawRightAnswer": "RIGHT:A",
+      // KHUSUS ordering (hanya ada jika type === "ordering"):
+      "orderingItems": [{"id": 1, "text": "item urutan 1"}],
+      // KHUSUS matching (hanya ada jika type === "matching"):
       "matchingPremises": [{"id": 1, "text": "premis"}],
       "matchingResponses": [{"key": "A", "text": "respons"}],
-      "rawRightAnswer": "RIGHT:A" (atau "RIGHT:A,B" atau "RIGHT:" untuk ordering/matching atau "" untuk essay),
-      "explanation": "Pembahasan singkat",
-      "essaySampleAnswer": "Narasi jawaban",
+      // KHUSUS essay (hanya ada jika type === "essay"):
+      "essaySampleAnswer": "Contoh jawaban essay ideal",
       "essayRubric": [{"scoreRange": "80-100", "criteria": "Kriteria penilaian"}]
     }
   ]
-}`;
+}
+CATATAN: HANYA sertakan field yang sesuai dengan tipe soal (misal untuk single_choice JANGAN sertakan orderingItems/matching/rubric). Pembahasan singkat padat agar proses generasi cepat dan presisi.`;
 
     const genResult = await generateViaUnifiedAI({
       prompt,
@@ -501,19 +1019,32 @@ Kembalikan respon DALAM FORMAT JSON MURNI tanpa markdown block backticks dengan 
       temperature: 0.7,
     });
 
-    if (genResult) {
-      try {
-        const rawText = genResult.text || '';
-        const parsed = JSON.parse(rawText);
-        if (parsed.questions && Array.isArray(parsed.questions)) {
-          return res.json({
-            success: true,
-            source: `${genResult.modelUsed}`,
-            questions: parsed.questions,
-          });
-        }
-      } catch {
-        console.info('9router / AI: JSON parse issue on response, using fallback engine.');
+    if (genResult && genResult.text) {
+      const parsed = parseJsonFromAiResponse(genResult.text);
+      const rawList = Array.isArray(parsed?.questions)
+        ? parsed.questions
+        : Array.isArray(parsed)
+        ? parsed
+        : [];
+
+      if (rawList.length > 0) {
+        // Auto-attach educational diagram URL if AI suggested an imagePrompt for stimulus questions
+        const enrichedQuestions = rawList.map((q: any) => {
+          if (q.imagePrompt && typeof q.imagePrompt === 'string' && q.imagePrompt.trim() && !q.imageUrl) {
+            const cleanP = `Educational high school textbook diagram for ${mapel || 'exam'}: ${q.imagePrompt.trim()}`;
+            const seed = Math.floor(Math.random() * 900000) + 100000;
+            q.imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanP)}?width=768&height=512&nologo=true&seed=${seed}`;
+          }
+          return q;
+        });
+
+        return res.json({
+          success: true,
+          source: `${genResult.modelUsed}`,
+          questions: enrichedQuestions,
+        });
+      } else {
+        console.info('parseJsonFromAiResponse returned null or non-array questions. Using contextual fallback engine.');
       }
     }
 
@@ -524,7 +1055,8 @@ Kembalikan respon DALAM FORMAT JSON MURNI tanpa markdown block backticks dengan 
       semester,
       jenisUjian,
       bahasa,
-      selectedTypes
+      selectedTypes,
+      capaianPembelajaran
     );
 
     return res.json({
@@ -536,6 +1068,190 @@ Kembalikan respon DALAM FORMAT JSON MURNI tanpa markdown block backticks dengan 
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// Endpoint: Generate Gambar / Ilustrasi Diagram Khusus Soal Asesmen
+app.post('/api/v1/soal/generate-image', async (req: Request, res: Response) => {
+  try {
+    const { prompt, questionText, mapel, style } = req.body;
+
+    if (!prompt && !questionText) {
+      return res.status(400).json({
+        success: false,
+        error: 'Teks soal atau prompt gambar harus disertakan.',
+      });
+    }
+
+    let basePrompt = (prompt || '').trim();
+    if (!basePrompt && questionText) {
+      const clean = questionText
+        .replace(/Q:\d+\)/gi, '')
+        .replace(/\[IMG\].*?\[\/IMG\]/gi, '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/RIGHT:.*$/gim, '')
+        .replace(/\n+/g, ' ')
+        .trim()
+        .slice(0, 160);
+      basePrompt = `Educational high school exam diagram or illustration about ${mapel || 'general study'}: ${clean}`;
+    }
+
+    let stylePrefix = 'Educational textbook schematic diagram, clean white background, detailed, sharp: ';
+    if (style === 'vector') {
+      stylePrefix = 'Clean 2D vector graphic educational illustration for textbook, minimal, clear: ';
+    } else if (style === 'photo') {
+      stylePrefix = 'Realistic educational documentary photography, clear lighting, sharp detail: ';
+    } else if (style === 'sketch') {
+      stylePrefix = 'Clear black and white technical line art schematic diagram for school exam: ';
+    }
+
+    const fullPrompt = `${stylePrefix}${basePrompt}`.slice(0, 320);
+    const seed = Math.floor(Math.random() * 900000) + 100000;
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=768&height=512&nologo=true&seed=${seed}`;
+    const proxyUrl = `/api/v1/soal/image-proxy?url=${encodeURIComponent(pollinationsUrl)}&mapel=${encodeURIComponent(mapel || 'Pendidikan')}&title=${encodeURIComponent(basePrompt.slice(0, 50))}`;
+    const svgFallback = generateEducationalDiagramSvg(mapel || 'Pendidikan', basePrompt || 'Diagram Pembelajaran');
+
+    return res.json({
+      success: true,
+      imageUrl: proxyUrl, // Use proxyUrl as primary to ensure CORS & iframe compatibility
+      originalUrl: pollinationsUrl,
+      proxyUrl,
+      svgFallback,
+      promptUsed: fullPrompt,
+      seed,
+    });
+  } catch (error: any) {
+    console.error('Error generating image for question:', error);
+    const svgFallback = generateEducationalDiagramSvg('Pendidikan', 'Ilustrasi Soal Asesmen');
+    return res.json({
+      success: true,
+      imageUrl: svgFallback,
+      proxyUrl: svgFallback,
+      svgFallback,
+      promptUsed: 'Ilustrasi Diagram Edukasi Terstandar',
+    });
+  }
+});
+
+// Endpoint: Image Proxy to prevent CORS/Referrer issues in iframe/sandboxes
+app.get('/api/v1/soal/image-proxy', async (req: Request, res: Response) => {
+  const mapel = (req.query.mapel as string) || 'Pendidikan';
+  const title = (req.query.title as string) || 'Diagram Pembelajaran';
+  const serveSvgFallback = () => {
+    const fallbackSvg = generateEducationalDiagramSvg(mapel, title);
+    const base64Data = fallbackSvg.replace(/^data:image\/svg\+xml;base64,/, '');
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.send(Buffer.from(base64Data, 'base64'));
+  };
+
+  try {
+    const targetUrl = req.query.url as string;
+    if (!targetUrl) {
+      return serveSvgFallback();
+    }
+    const response = await fetch(targetUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      signal: AbortSignal.timeout(8000), // 8s timeout to avoid slow hanging
+    });
+    if (!response.ok) {
+      return serveSvgFallback();
+    }
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const buffer = await response.arrayBuffer();
+    return res.send(Buffer.from(buffer));
+  } catch (err: any) {
+    return serveSvgFallback();
+  }
+});
+
+// Helper: Generate vector SVG educational diagram
+function generateEducationalDiagramSvg(mapel: string, title: string): string {
+  const cleanTitle = (title || 'Diagram Soal')
+    .replace(/[<>&"']/g, '')
+    .slice(0, 90);
+  const cleanMapel = (mapel || 'Kurikulum Merdeka')
+    .replace(/[<>&"']/g, '')
+    .slice(0, 40);
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 512" width="100%" height="100%">
+    <defs>
+      <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fdfdfb"/>
+        <stop offset="100%" stop-color="#f4f6f0"/>
+      </linearGradient>
+      <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#093d25"/>
+        <stop offset="100%" stop-color="#14532d"/>
+      </linearGradient>
+      <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+        <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#e2e8f0" stroke-width="0.8"/>
+      </pattern>
+    </defs>
+    <!-- Background -->
+    <rect width="768" height="512" fill="url(#bgGrad)"/>
+    <rect width="768" height="512" fill="url(#grid)" opacity="0.6"/>
+    <!-- Outer Border -->
+    <rect x="16" y="16" width="736" height="480" rx="16" fill="none" stroke="#093d25" stroke-width="2.5" stroke-opacity="0.8"/>
+    <rect x="22" y="22" width="724" height="468" rx="12" fill="none" stroke="#d97706" stroke-width="1" stroke-dasharray="4,4"/>
+    
+    <!-- Top Institutional Banner -->
+    <rect x="24" y="24" width="720" height="56" rx="10" fill="url(#headerGrad)"/>
+    <text x="44" y="58" font-family="sans-serif" font-weight="900" font-size="16" fill="#fef08a" letter-spacing="1">MA NU 01 BANYUPUTIH</text>
+    <text x="320" y="58" font-family="sans-serif" font-weight="600" font-size="12" fill="#86efac">· DIAGRAM STIMULUS ASESMEN ·</text>
+    <rect x="610" y="38" width="116" height="28" rx="6" fill="#052e16" stroke="#fbbf24" stroke-width="1"/>
+    <text x="668" y="56" font-family="sans-serif" font-weight="700" font-size="11" fill="#ffffff" text-anchor="middle">${cleanMapel}</text>
+
+    <!-- Main Schematic Canvas -->
+    <g transform="translate(48, 105)">
+      <!-- Central Focus Plate -->
+      <rect x="0" y="0" width="672" height="315" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      
+      <!-- Educational Diagram Graphics -->
+      <circle cx="210" cy="155" r="95" fill="#ecfdf5" stroke="#059669" stroke-width="2.5"/>
+      <circle cx="210" cy="155" r="55" fill="#f0fdf4" stroke="#10b981" stroke-width="1.8" stroke-dasharray="3,3"/>
+      <circle cx="210" cy="155" r="22" fill="#dcfce7" stroke="#047857" stroke-width="2"/>
+      
+      <!-- Coordinate / Component Axes -->
+      <line x1="90" y1="155" x2="330" y2="155" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="2,2"/>
+      <line x1="210" y1="35" x2="210" y2="275" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="2,2"/>
+      
+      <!-- Pointer Line 1 -->
+      <path d="M 270 100 L 390 70 L 460 70" fill="none" stroke="#0f766e" stroke-width="2"/>
+      <circle cx="270" cy="100" r="4" fill="#0f766e"/>
+      <rect x="470" y="56" width="180" height="30" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.2"/>
+      <text x="480" y="76" font-family="sans-serif" font-weight="700" font-size="12" fill="#134e4a">Bagian [A] Komponen Utama</text>
+
+      <!-- Pointer Line 2 -->
+      <path d="M 225 155 L 390 155 L 460 155" fill="none" stroke="#2563eb" stroke-width="2"/>
+      <circle cx="225" cy="155" r="4" fill="#2563eb"/>
+      <rect x="470" y="140" width="180" height="30" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+      <text x="480" y="160" font-family="sans-serif" font-weight="700" font-size="12" fill="#1e3a8a">Bagian [B] Struktur Pusat</text>
+
+      <!-- Pointer Line 3 -->
+      <path d="M 270 210 L 390 240 L 460 240" fill="none" stroke="#d97706" stroke-width="2"/>
+      <circle cx="270" cy="210" r="4" fill="#d97706"/>
+      <rect x="470" y="225" width="180" height="30" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.2"/>
+      <text x="480" y="245" font-family="sans-serif" font-weight="700" font-size="12" fill="#78350f">Bagian [C] Lapisan Luar</text>
+
+      <!-- Bottom Caption Bar -->
+      <rect x="0" y="275" width="672" height="40" rx="0 0 12 12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="18" y="299" font-family="sans-serif" font-weight="700" font-size="12" fill="#334155">Stimulus Soal:</text>
+      <text x="110" y="299" font-family="sans-serif" font-weight="500" font-size="12" fill="#475569">${cleanTitle}</text>
+    </g>
+
+    <!-- Footer Note -->
+    <text x="48" y="475" font-family="sans-serif" font-size="10" fill="#64748b">Dokumen Ujian Resmi MA NU 01 Banyuputih Batang · Berstandar BSNP &amp; Kemenag RI</text>
+    <text x="720" y="475" font-family="sans-serif" font-size="10" font-weight="700" fill="#059669" text-anchor="end">ASLI / VALID</text>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 
 function cleanMarkdownAdminOutput(text: string): string {
   if (!text) return '';
@@ -939,7 +1655,8 @@ function generateFallbackExamQuestions(
   semester: string,
   jenisUjian: string,
   bahasa: string,
-  selectedTypes: any
+  selectedTypes: any,
+  capaianPembelajaran?: string
 ) {
   const mapelLower = mapel.toLowerCase().trim();
   
@@ -962,7 +1679,11 @@ function generateFallbackExamQuestions(
   const isInformaticsSubject = (mapelLower.includes('info') || mapelLower.includes('komp') || mapelLower.includes('it') || mapelLower.includes('tekno') || mapelLower.includes('ict') || mapelLower.includes('rpl') || mapelLower.includes('jaringan') || mapelLower.includes('algoritma')) && !isEnglishSubject && !isJawaSubject;
   const isPpknSubject = (mapelLower.includes('pancasila') || mapelLower.includes('ppkn') || mapelLower.includes('pkn') || mapelLower.includes('kewarganegaraan'));
   const isPjokSubject = (mapelLower.includes('pjok') || mapelLower.includes('penjas') || mapelLower.includes('olahraga') || mapelLower.includes('penjaskes'));
-  const isSeniSubject = (mapelLower.includes('seni') || mapelLower.includes('rupa') || mapelLower.includes('musik') || mapelLower.includes('tari') || mapelLower.includes('teater'));
+  const isTariSubject = mapelLower.includes('tari');
+  const isMusikSubject = mapelLower.includes('musik');
+  const isTeaterSubject = mapelLower.includes('teater');
+  const isRupaSubject = mapelLower.includes('rupa');
+  const isSeniSubject = (mapelLower.includes('seni') || isTariSubject || isMusikSubject || isTeaterSubject || isRupaSubject);
   const isPkwuSubject = (mapelLower.includes('pkwu') || mapelLower.includes('prakarya') || mapelLower.includes('kewirausahaan') || mapelLower.includes('usaha'));
   const isIndoSubject = (mapelLower.includes('indo') || mapelLower.includes('bhs') || mapelLower.includes('bahasa') || mapelLower === 'bi') && !isArabicSubject && !isEnglishSubject && !isJawaSubject && !isGeoSubject && !isSosiologiSubject;
   const isMathSubject = (mapelLower.includes('matematika') || mapelLower.startsWith('mat') || mapelLower === 'mtk') && !isInformaticsSubject && !isIndoSubject && !isArabicSubject && !isFiqihSubject && !isEnglishSubject && !isJawaSubject && !isGeoSubject && !isFisikaSubject && !isKimiaSubject;
@@ -1061,26 +1782,26 @@ function generateFallbackExamQuestions(
       text: "Dalam mempromosikan produk pangan lokal Indonesia melalui media poster, kalimat persuasi yang digunakan sebaiknya memiliki sifat...",
       kompetensi: "Memahami Poster Media Persuasi Pangan Lokal",
       options: [
-        { key: "A", text: "Singkat, komunikatif, estetik, dan langsung mengajak pembaca bertindak positif" },
-        { key: "B", text: "Sangat panjang, formal, dan dipenuhi istilah-istilah biologi tanaman" },
+        { key: "A", text: "Sangat panjang, formal, dan dipenuhi istilah-istilah biologi tanaman" },
+        { key: "B", text: "Singkat, komunikatif, estetik, dan langsung mengajak pembaca bertindak positif" },
         { key: "C", text: "Menakut-nakuti pembaca dengan konsekuensi hukum jika tidak membeli" },
         { key: "D", text: "Sarkastik, bernada menyindir produk pangan impor secara berlebihan" },
         { key: "E", text: "Pasif, kaku, dan hanya menyajikan daftar harga bahan mentah" }
       ],
-      ans: "RIGHT:A",
+      ans: "RIGHT:B",
       exp: "Kalimat persuasi poster harus memikat nalar dan emosi pembaca dengan diksi yang segar, padat, dan estetis."
     },
     {
       text: "Unsur kelengkapan berita inovasi yang merujuk pada latar belakang alasan mengapa inovasi tersebut diciptakan adalah...",
       kompetensi: "Unsur-Unsur Teks Berita (5W+1H)",
       options: [
-        { key: "A", text: "Why (Mengapa)" },
-        { key: "B", text: "What (Apa)" },
-        { key: "C", text: "Who (Siapa)" },
+        { key: "A", text: "What (Apa)" },
+        { key: "B", text: "Who (Siapa)" },
+        { key: "C", text: "Why (Mengapa)" },
         { key: "D", text: "When (Kapan)" },
         { key: "E", text: "How (Bagaimana)" }
       ],
-      ans: "RIGHT:A",
+      ans: "RIGHT:C",
       exp: "Unsur 'Why' (Mengapa) menerangkan latar belakang masalah, alasan kausalitas, dan tujuan suatu aksi inovasi."
     },
     {
@@ -1095,6 +1816,344 @@ function generateFallbackExamQuestions(
       ],
       ans: "RIGHT:A",
       exp: "Paragraf Deduktif menempatkan gagasan utama atau tesis di awal kalimat, diikuti penjelasan rinci."
+    },
+    {
+      text: "Cermatilah kutipan paragraf deskripsi berikut:\n'Hembusan angin senja membawa aroma tanah basah seusai hujan lebat. Dedaunan pinus bergoyang gemerisik, sementara kabut tipis mulai turun menyelimuti lereng bukit yang kian temaram.'\n\nPencerapan pancaindra yang paling dominan dalam kutipan teks deskripsi di atas adalah...",
+      kompetensi: "Pencerapan Pancaindra dalam Teks Deskripsi",
+      options: [
+        { key: "A", text: "Pengecapan dan perabaan" },
+        { key: "B", text: "Pendengaran dan pengecapan" },
+        { key: "C", text: "Penciuman semata" },
+        { key: "D", text: "Penciuman, pendengaran, dan penglihatan" },
+        { key: "E", text: "Perabaan dan gerak semata" }
+      ],
+      ans: "RIGHT:D",
+      exp: "Kutipan memuat aroma tanah basah (penciuman), gemerisik daun (pendengaran), dan kabut menyelimuti lereng temaram (penglihatan)."
+    },
+    {
+      text: "Manakah kutipan kalimat berikut yang menggunakan citraan penglihatan (visual imagery) secara paling jelas dan konkret?",
+      kompetensi: "Analisis Citraan Visual Teks Deskripsi",
+      options: [
+        { key: "A", text: "Suara riak air sungai memecah keheningan dini hari yang dingin" },
+        { key: "B", text: "Rasa manis legit ubi bakar meleleh lembut di lidah saat digigit" },
+        { key: "C", text: "Hamparan sawah terasering membentang hijau royo-royo dibingkai sinar mentari fajar" },
+        { key: "D", text: "Hawa panas menyengat kulit punggung para pemetik teh di perkebunan" },
+        { key: "E", text: "Bau sangit jerami terbakar tercium samar dari kejauhan desa" }
+      ],
+      ans: "RIGHT:C",
+      exp: "Frasa 'hamparan sawah membentang hijau royo-royo dibingkai sinar mentari fajar' menstimulasi persepsi mata pembaca."
+    },
+    {
+      text: "Dalam teks eksplanasi ilmiah mengenai proses terjadinya hujan asam, bagian yang menguraikan rentetan hubungan sebab-akibat pembentukan senyawa sulfur dioksida di atmosfer dikelompokkan ke dalam struktur...",
+      kompetensi: "Struktur Kausalitas Teks Eksplanasi",
+      options: [
+        { key: "A", text: "Pernyataan umum (identifikasi fenomena)" },
+        { key: "B", text: "Deretan penjelas (kausalitas)" },
+        { key: "C", text: "Orientasi tokoh" },
+        { key: "D", text: "Interpretasi / simpulan opsional" },
+        { key: "E", text: "Abstraksi peristiwa" }
+      ],
+      ans: "RIGHT:B",
+      exp: "Rangkaian urutan kausalitas (sebab-akibat) yang memicu fenomena dipaparkan pada struktur deretan penjelas."
+    },
+    {
+      text: "Konjungsi antarkalimat yang paling tepat untuk menyatakan hubungan akibat dalam mengonstruksi teks eksplanasi ilmiah adalah...",
+      kompetensi: "Kaidah Konjungsi Kausalitas Teks Eksplanasi",
+      options: [
+        { key: "A", text: "Meskipun demikian" },
+        { key: "B", text: "Bahkan" },
+        { key: "C", text: "Akan tetapi" },
+        { key: "D", text: "Sebaliknya" },
+        { key: "E", text: "Oleh karena itu" }
+      ],
+      ans: "RIGHT:E",
+      exp: "'Oleh karena itu' dan 'oleh sebab itu' merupakan konjungsi antarkalimat yang menyatakan hubungan konsekuensi logis atau akibat."
+    },
+    {
+      text: "Cermatilah kutipan cerpen berikut:\n'Pak Darmo menatap nanar hamparan hutan jati yang kini luluh lantak rata dengan tanah. Tangannya gemetar mencengkeram cangkul tua miliknya. Tiada sepatah kata pun terucap, namun kedua matanya yang basah merefleksikan kepedihan mendalam atas hilangnya mata air desa.'\n\nMetode penokohan yang digunakan pengarang untuk menggambarkan karakter Pak Darmo adalah teknik...",
+      kompetensi: "Teknik Penokohan Prosa Fiksi",
+      options: [
+        { key: "A", text: "Analitik langsung tanpa tindakan" },
+        { key: "B", text: "Narasi historis kronologis" },
+        { key: "C", text: "Monolog batin intelektual" },
+        { key: "D", text: "Dramatik melalui tindakan, ekspresi fisik, dan gestur tokoh" },
+        { key: "E", text: "Percakapan verbal dengan tokoh sampingan" }
+      ],
+      ans: "RIGHT:D",
+      exp: "Teknik dramatik memperlihatkan karakter tokoh melalui tingkah laku jasmaniah, tatapan mata, dan gestur tanpa pernyataan langsung pengarang."
+    },
+    {
+      text: "Dalam apresiasi prosa fiksi bertema lingkungan hidup (ekokritik sastra), amanat moral yang paling hakiki yang lazim diinternalisasikan pembaca adalah...",
+      kompetensi: "Apresiasi Nilai Ekologis Prosa Fiksi",
+      options: [
+        { key: "A", text: "Kewajiban menjaga keseimbangan ekosistem dan kearifan lokal demi kelestarian generasi mendatang" },
+        { key: "B", text: "Pemanfaatan sumber daya alam secara eksploitatif demi mengejar surplus ekonomi maksimal" },
+        { key: "C", text: "Penolakan terhadap seluruh bentuk kemajuan teknologi dan infrastruktur modern" },
+        { key: "D", text: "Pelimpahan seluruh tanggung jawab kebersihan lingkungan hanya kepada aparat pemerintah" },
+        { key: "E", text: "Keharusan merelokasi seluruh populasi masyarakat adat ke kawasan metropolitan" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Prosa bertema lingkungan menekankan pesan etika ekologis (ekosentrisme), tanggung jawab kemanusiaan, dan pelestarian bumi."
+    },
+    {
+      text: "Cermatilah bait puisi berikut:\n'Derak ranting kering terinjak langkahku\nAngin pegunungan membelai lembut kulit pipi\nDinginnya meresap hingga ke celah sumsum tulang.'\n\nCitraan yang mendominasi baris kedua dan ketiga puisi di atas adalah citraan...",
+      kompetensi: "Analisis Citraan Taktil / Perabaan dalam Puisi",
+      options: [
+        { key: "A", text: "Penglihatan (visual)" },
+        { key: "B", text: "Penciuman (olfaktori)" },
+        { key: "C", text: "Perabaan (taktil)" },
+        { key: "D", text: "Pencecapan (gustatori)" },
+        { key: "E", text: "Gerak kinetik semata" }
+      ],
+      ans: "RIGHT:C",
+      exp: "'Membelai lembut kulit pipi' dan 'dinginnya meresap hingga ke celah sumsum' merupakan stimuli indra peraba (taktil)."
+    },
+    {
+      text: "Larik puisi yang memanfaatkan majas personifikasi secara tepat di bawah ini adalah...",
+      kompetensi: "Gaya Bahasa Personifikasi Puisi",
+      options: [
+        { key: "A", text: "Suaranya menggelegar membelah angkasa raya" },
+        { key: "B", text: "Malam merayap sunyi memeluk keluh kesah para musafir" },
+        { key: "C", text: "Wajahnya laksana rembulan purnama di langit kelam" },
+        { key: "D", text: "Seribu pulau menyatu dalam ikatan nusantara nan permai" },
+        { key: "E", text: "Darahnya mendidih mendengar fitnah keji yang beredar" }
+      ],
+      ans: "RIGHT:B",
+      exp: "'Malam merayap sunyi memeluk' memberikan sifat insani (merayap, memeluk) kepada entitas non-manusia (malam), yakni majas personifikasi."
+    },
+    {
+      text: "Dalam apresiasi puisi tingkat lanjut, kata konkret (concrete words) memiliki peranan vital untuk...",
+      kompetensi: "Fungsi Kata Konkret dalam Struktur Fisik Puisi",
+      options: [
+        { key: "A", text: "Menyamarkan arti sebenarnya agar pembaca merasa bingung" },
+        { key: "B", text: "Memenuhi jumlah suku kata agar rima pantun terbentuk sempurna" },
+        { key: "C", text: "Menggantikan seluruh kosakata bahasa baku dengan istilah asing" },
+        { key: "D", text: "Menghilangkan keharusan interpretasi makna konotatif puisi" },
+        { key: "E", text: "Membangkitkan daya imajinasi pencerapan indra pembaca secara nyata dan terukur" }
+      ],
+      ans: "RIGHT:E",
+      exp: "Kata konkret berfungsi memperjelas pengimajian pembaca sehingga objek puitik dapat dibayangkan secara inderawi."
+    },
+    {
+      text: "Penyusunan tata letak larik, kerapatan bait, tanda baca, serta penggunaan huruf kapital dalam puisi modern dikenal dengan istilah...",
+      kompetensi: "Struktur Fisik Puisi (Tipografi)",
+      options: [
+        { key: "A", text: "Diksi" },
+        { key: "B", text: "Rima" },
+        { key: "C", text: "Asonansi" },
+        { key: "D", text: "Tipografi" },
+        { key: "E", text: "Enjambemen" }
+      ],
+      ans: "RIGHT:D",
+      exp: "Tipografi merupakan perwajahan fisik puisi, meliputi susunan baris, bait, tepi halaman, dan bentuk visual teks."
+    },
+    {
+      text: "Cermatilah paragraf argumentasi berikut:\n'Singkong mengandung karbohidrat kompleks yang ramah lambung. Ubi jalar kaya akan serat larut dan antioksidan alami. Talas dan sukun terbukti memiliki indeks glikemik rendah yang cocok bagi penderita diabetes. Dengan demikian, aneka umbi-umbian lokal Indonesia memiliki potensi nutrisi unggul untuk mewujudkan diversifikasi pangan sehat.'\n\nPola penalaran yang digunakan dalam menyusun paragraf argumentasi di atas adalah...",
+      kompetensi: "Penalaran Induktif Teks Argumentasi",
+      options: [
+        { key: "A", text: "Deduktif silogistis" },
+        { key: "B", text: "Induktif generalisasi" },
+        { key: "C", text: "Kausalitas terbalik" },
+        { key: "D", text: "Analogi komparatif fiktif" },
+        { key: "E", text: "Kronologis naratif" }
+      ],
+      ans: "RIGHT:B",
+      exp: "Paragraf diawali proposisi khusus (singkong, ubi, talas, sukun) dan diakhiri simpulan umum (aneka umbi lokal berpotensi unggul)."
+    },
+    {
+      text: "Struktur teks berita inovasi yang menampung inti informasi terpenting dan memuat rangkuman unsur 5W+1H pada alur piramida terbalik disebut...",
+      kompetensi: "Struktur Kepala Berita (Lead)",
+      options: [
+        { key: "A", text: "Judul berita (Headline)" },
+        { key: "B", text: "Tubuh berita (Body text)" },
+        { key: "C", text: "Kepala berita (Lead)" },
+        { key: "D", text: "Ekor berita (Tail)" },
+        { key: "E", text: "Kaki berita (Footnote)" }
+      ],
+      ans: "RIGHT:C",
+      exp: "Lead (Kepala Berita) menyajikan intisari terpenting berita (5W+1H) pada bagian pembuka sesuai konvensi piramida terbalik."
+    },
+    {
+      text: "Penulisan kalimat langsung dalam naskah berita inovasi yang sesuai dengan kaidah tata bahasa Indonesia baku adalah...",
+      kompetensi: "Kaidah Kebahasaan Kalimat Langsung Berita",
+      options: [
+        { key: "A", text: "\"Inovasi beras singkong ini mampu menghemat devisa impor pangan hingga miliaran rupiah,\" kata Kepala BRIN." },
+        { key: "B", text: "\"Inovasi beras singkong ini mampu menghemat devisa impor pangan hingga miliaran rupiah\" Kata Kepala BRIN." },
+        { key: "C", text: "Kepala BRIN berkata; \"Inovasi beras singkong ini mampu menghemat devisa impor pangan\"." },
+        { key: "D", text: "\"Inovasi beras singkong ini mampu menghemat devisa\", kata: Kepala BRIN." },
+        { key: "E", text: "Kepala BRIN mengatakan: 'bahwa beras singkong menghemat devisa'." }
+      ],
+      ans: "RIGHT:A",
+      exp: "Tanda koma diletakkan di dalam tanda petik penutup sebelum keterangan pengiring dengan huruf awal kecil."
+    },
+    {
+      text: "Kepaduan makna antarkalimat dalam sebuah paragraf yang dibangun melalui hubungan semantis yang logis dan harmonis dinamakan...",
+      kompetensi: "Koherensi Paragraf Bahasa Indonesia",
+      options: [
+        { key: "A", text: "Kohesi leksikal semata" },
+        { key: "B", text: "Subordinasi kalimat" },
+        { key: "C", text: "Variasi sintaksis" },
+        { key: "D", text: "Asindeton" },
+        { key: "E", text: "Koherensi" }
+      ],
+      ans: "RIGHT:E",
+      exp: "Koherensi adalah keterpaduan jalinan makna antarkalimat, sedangkan kohesi adalah keterpaduan bentuk fisik/gramatikal."
+    },
+    {
+      text: "Di bawah ini yang merupakan ciri khas teks eksplanasi fenomena sosial adalah...",
+      kompetensi: "Karakteristik Teks Eksplanasi Sosial",
+      options: [
+        { key: "A", text: "Berisi konflik antar-tokoh fiksi yang diakhiri resolusi bahagia" },
+        { key: "B", text: "Menggunakan kalimat perintah persuasif untuk membeli komoditas" },
+        { key: "C", text: "Memuat alur pengembaraan petualangan imajinatif seorang ksatria" },
+        { key: "D", text: "Memaparkan hubungan kausalitas dan kronologi terjadinya fenomena kemasyarakatan berbasis fakta ilmiah" },
+        { key: "E", text: "Mengedepankan diksi puitis konotatif berima rima ganda" }
+      ],
+      ans: "RIGHT:D",
+      exp: "Teks eksplanasi sosial menguraikan kronologi dan kausalitas kemunculan suatu fenomena masyarakat berdasarkan fakta objektif."
+    },
+    {
+      text: "Jika seorang narator cerpen terlibat langsung sebagai tokoh protagonis yang menuturkan pengalaman pribadinya menggunakan kata ganti orang pertama ('aku' atau 'saya'), sudut pandang yang digunakan adalah...",
+      kompetensi: "Sudut Pandang Prosa Fiksi",
+      options: [
+        { key: "A", text: "Orang pertama pelaku utama" },
+        { key: "B", text: "Orang pertama pelaku sampingan" },
+        { key: "C", text: "Orang ketiga serba tahu" },
+        { key: "D", text: "Orang ketiga terarah / pengamat" },
+        { key: "E", text: "Orang kedua jamak" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Sudut pandang orang pertama pelaku utama menempatkan narator 'aku' sebagai poros penggerak utama jalan cerita."
+    },
+    {
+      text: "Nilai kearifan lokal dalam sebuah karya sastra prosa fiksi yang mengedepankan tradisi gotong royong warga desa saat musim panen padi tergolong ke dalam nilai...",
+      kompetensi: "Nilai Sosial Budaya dalam Prosa Fiksi",
+      options: [
+        { key: "A", text: "Politik praktis" },
+        { key: "B", text: "Sosial dan budaya" },
+        { key: "C", text: "Estetika individualis" },
+        { key: "D", text: "Biologis murni" },
+        { key: "E", text: "Hukum positif kenegaraan" }
+      ],
+      ans: "RIGHT:B",
+      exp: "Tradisi sambatan dan gotong royong merupakan cerminan luhur nilai sosial dan kebudayaan masyarakat nusantara."
+    },
+    {
+      text: "Persamaan bunyi akhir suku kata pada larik-larik puisi yang menciptakan harmoni keindahan auditif disebut...",
+      kompetensi: "Unsur Musikalitas Puisi (Rima)",
+      options: [
+        { key: "A", text: "Diksi" },
+        { key: "B", text: "Latar" },
+        { key: "C", text: "Rima" },
+        { key: "D", text: "Tema" },
+        { key: "E", text: "Majas" }
+      ],
+      ans: "RIGHT:C",
+      exp: "Rima (persajakan) adalah pengulangan bunyi yang berselang, baik di dalam larik maupun pada akhir bait puisi."
+    },
+    {
+      text: "Penulisan kata depan 'di' dan awalan 'di-' yang benar menurut Pedoman Umum Ejaan Bahasa Indonesia (EYD Edisi V) adalah...",
+      kompetensi: "Penerapan Ejaan EYD Edisi V (Kata Depan vs Awalan)",
+      options: [
+        { key: "A", text: "Beras lokal itu di pasarkan diwarung tradisional sekitarnya." },
+        { key: "B", text: "Beras lokal itu dipasarkan diwarung tradisional sekitarnya." },
+        { key: "C", text: "Beras lokal itu di pasarkan di warung tradisional sekitarnya." },
+        { key: "D", text: "Beras lokal itu dipasarkan, di mana-mana di sukai warga." },
+        { key: "E", text: "Beras lokal itu dipasarkan di warung tradisional sekitarnya." }
+      ],
+      ans: "RIGHT:E",
+      exp: "Awalan 'di-' pada kata kerja pasif ditulis serangkai (dipasarkan), sedangkan kata depan 'di' penunjuk tempat ditulis terpisah (di warung)."
+    },
+    {
+      text: "Tanda baca titik koma (;) yang digunakan secara tepat menurut kaidah bahasa Indonesia baku berfungsi untuk...",
+      kompetensi: "Kaidah Penggunaan Tanda Baca Titik Koma",
+      options: [
+        { key: "A", text: "Mengakhiri kalimat tanya retoris yang tidak butuh jawaban" },
+        { key: "B", text: "Mengapit keterangan aposisi yang disisipkan di tengah kalimat" },
+        { key: "C", text: "Menghubungkan dua suku kata yang terpotong oleh batas ujung baris" },
+        { key: "D", text: "Memisahkan bagian-bagian kalimat sejenis dan setara pengganti kata penghubung" },
+        { key: "E", text: "Menandai kutipan langsung yang bersumber dari pembicaraan narasumber" }
+      ],
+      ans: "RIGHT:D",
+      exp: "Tanda titik koma (;) dapat dipakai sebagai pengganti kata penghubung untuk memisahkan kalimat setara dalam kalimat majemuk."
+    },
+    {
+      text: "Cermatilah kalimat berikut:\n'Banyak murid-murid saling tolong-menolong dalam rangka demi membantu korban bencana banjir.'\n\nPerbaikan kalimat di atas agar menjadi kalimat efektif yang hemat dan lugas adalah...",
+      kompetensi: "Penyuntingan Kalimat Efektif Baku",
+      options: [
+        { key: "A", text: "Murid-murid tolong-menolong demi membantu korban bencana banjir." },
+        { key: "B", text: "Para murid saling tolong-menolong demi untuk membantu korban banjir." },
+        { key: "C", text: "Banyak murid-murid tolong-menolong untuk membantu korban banjir." },
+        { key: "D", text: "Murid-murid saling tolong-menolong membantu korban bencana banjir." },
+        { key: "E", text: "Semua para murid saling tolong-menolong dalam membantu korban." }
+      ],
+      ans: "RIGHT:D",
+      exp: "Opsi D menghilangkan pemborosan kata (pleonasme 'banyak murid-murid' -> 'murid-murid', serta 'dalam rangka demi' -> 'membantu')."
+    },
+    {
+      text: "Dalam teks eksplanasi tentang fenomena urbanisasi, kalimat yang menyatakan hubungan sebab-akibat (kausalitas) adalah...",
+      kompetensi: "Kalimat Kausalitas Eksplanasi Sosial",
+      options: [
+        { key: "A", text: "Kota Jakarta didirikan pada tanggal 22 Juni berabad-abad silam." },
+        { key: "B", text: "Minimnya lapangan kerja di pedesaan menyebabkan laju perpindahan penduduk ke kota semakin meningkat." },
+        { key: "C", text: "Pemerintah pusat memindahkan ibu kota baru ke Pulau Kalimantan Timur." },
+        { key: "D", text: "Gedung-gedung pencakar langit menjulang tinggi di sepanjang jalan protokol." },
+        { key: "E", text: "Masyarakat urban terbiasa menggunakan moda transportasi kereta rel listrik." }
+      ],
+      ans: "RIGHT:B",
+      exp: "Kata kerja kausatif 'menyebabkan' menghubungkan klausa sebab (minimnya lapangan kerja) dan akibat (laju perpindahan meningkat)."
+    },
+    {
+      text: "Penokohan analitik dalam cerpen ditandai dengan...",
+      kompetensi: "Karakteristik Penokohan Analitik",
+      options: [
+        { key: "A", text: "Perilaku tokoh yang dibiarkan disimpulkan sendiri oleh pembaca" },
+        { key: "B", text: "Dialog antar-tokoh yang saling berselisih paham" },
+        { key: "C", text: "Pengarang secara langsung memaparkan watak dan kepribadian tokoh kepada pembaca" },
+        { key: "D", text: "Penggambaran busana dan lingkungan tempat tinggal tokoh" },
+        { key: "E", text: "Perubahan psikologis tokoh setelah mengalami bencana" }
+      ],
+      ans: "RIGHT:C",
+      exp: "Metode analitik (langsung) adalah cara pengarang mendeskripsikan sifat tokoh secara eksplisit tanpa melalui perantara tindakan."
+    },
+    {
+      text: "Cermatilah bait puisi berikut:\n'Hati ini remuk redam laksana pualam pecah\nMelihat ladang bapak kekeringan menanti setetes embun\nKapankah musim semi kan singgah kembali?'\n\nSuasana batin yang terbangun dalam bait puisi tersebut adalah...",
+      kompetensi: "Menentukan Suasana Batin Puisi",
+      options: [
+        { key: "A", text: "Gembira ria menyambut keberhasilan panen" },
+        { key: "B", text: "Penuh semangat juang merebut kemerdekaan" },
+        { key: "C", text: "Santai dan tenang menikmati keindahan sore" },
+        { key: "D", text: "Acuh tak acuh terhadap nasib sesama petani" },
+        { key: "E", text: "Duka lara, prihatin, dan penuh keputusasaan" }
+      ],
+      ans: "RIGHT:E",
+      exp: "Diksi 'remuk redam', 'kekeringan', dan pertanyaan retoris ratapan menggambarkan suasana keprihatinan mendalam (duka lara)."
+    },
+    {
+      text: "Kesesatan berpikir (logical fallacy) dalam teks argumentasi yang menyerang pribadi lawan bicara dan bukan membantah argumennya dinamakan...",
+      kompetensi: "Evaluasi Kritis Argumen (Logical Fallacy)",
+      options: [
+        { key: "A", text: "Hasty generalization (generalisasi tergesa-gesa)" },
+        { key: "B", text: "False dichotomy (dilema palsu)" },
+        { key: "C", text: "Straw man fallacy (argumen orang-orangan jerami)" },
+        { key: "D", text: "Argumentum ad hominem" },
+        { key: "E", text: "Post hoc ergo propter hoc" }
+      ],
+      ans: "RIGHT:D",
+      exp: "Ad hominem adalah kecacatan logika di mana seseorang menyerang karakter/pribadi pihak lawan ketimbang substansi dalilnya."
+    },
+    {
+      text: "Dalam teks persuasi, kata-kata yang berfungsi mengajak atau mengimbau pembaca untuk melakukan sesuatu secara sadar disebut kata kerja...",
+      kompetensi: "Diksi Imperatif / Persuasif Ajakan",
+      options: [
+        { key: "A", text: "Deskriptif material" },
+        { key: "B", text: "Imperatif ajakan (persuasif) seperti 'ayo' dan 'marilah'" },
+        { key: "C", text: "Mental reflektif seperti 'merasa' dan 'mengira'" },
+        { key: "D", text: "Relasional penjelas seperti 'merupakan' dan 'adalah'" },
+        { key: "E", text: "Pasif inversi" }
+      ],
+      ans: "RIGHT:B",
+      exp: "Kata ajakan seperti 'marilah', 'ayo', 'hendaknya' adalah penanda gramatikal khas teks persuasi untuk memengaruhi sikap pembaca."
     }
   ];
 
@@ -1566,6 +2625,90 @@ function generateFallbackExamQuestions(
     }
   ];
 
+  const seniTariSinglePool = [
+    {
+      text: "Unsur utama dalam seni tari yang berkaitan erat dengan gerak seluruh anggota tubuh manusia sebagai media ungkapan estetis dinamakan...",
+      kompetensi: "Unsur Utama Seni Tari (Wiraga)",
+      options: [
+        { key: "A", text: "Wiraga (Raga / Gerak Tubuh)" },
+        { key: "B", text: "Wirama (Irama / Musik Pengiring)" },
+        { key: "C", text: "Wirasa (Penjiwaan / Rasa Emosional)" },
+        { key: "D", text: "Wirupa (Tata Rias dan Busana)" },
+        { key: "E", text: "Tata Panggung" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Wiraga adalah unsur utama seni tari yang merujuk pada keindahan gerak raga/tubuh penari."
+    },
+    {
+      text: "Kesesuaian ritme, tempo, dan ketukan antara gerak tari dengan alunan musik pengiring dinamakan unsur...",
+      kompetensi: "Unsur Musikalitas Seni Tari (Wirama)",
+      options: [
+        { key: "A", text: "Wirama (Irama Musik)" },
+        { key: "B", text: "Wiraga (Raga Gerak)" },
+        { key: "C", text: "Wirasa (Ekspresi Wajah)" },
+        { key: "D", text: "Pola Lantai" },
+        { key: "E", text: "Properti Tari" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Wirama menuntut penari menyesuaikan dinamika dan tempo geraknya secara harmonis dengan alunan musik pengiring."
+    },
+    {
+      text: "Garis-garis di atas panggung yang dilalui oleh penari atau formasi kelompok penari saat melakukan pergerakan pertunjukan disebut...",
+      kompetensi: "Desain Ruang & Formasi Tari (Pola Lantai)",
+      options: [
+        { key: "A", text: "Pola Lantai (Floor Pattern)" },
+        { key: "B", text: "Desain Bawah" },
+        { key: "C", text: "Level Ketinggian" },
+        { key: "D", text: "Desain Atas" },
+        { key: "E", text: "Arah Hadap" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Pola lantai adalah denah atau lintasan panggung yang dibentuk oleh penari untuk memperindah susunan kelompok."
+    },
+    {
+      text: "Penjiwaan emosional, penggambaran karakter, dan penghayatan ekspresi wajah penari saat membawakan suatu tarian dinamakan unsur...",
+      kompetensi: "Ekspresi & Penjiwaan Seni Tari (Wirasa)",
+      options: [
+        { key: "A", text: "Wirasa (Penyampaian Rasa)" },
+        { key: "B", text: "Wiraga" },
+        { key: "C", text: "Wirama" },
+        { key: "D", text: "Pola Panggung" },
+        { key: "E", text: "Level Gerak" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Wirasa adalah kemampuan penari menyampaikan pesan rasa dan emosi tarian melalui penjiwaan wajah dan mimik."
+    },
+    {
+      text: "Fungsi utama tata rias dan tata busana dalam pementasan seni tari tradisi maupun kreasi adalah...",
+      kompetensi: "Pendukung Pertunjukan Tari (Tata Rias & Busana)",
+      options: [
+        { key: "A", text: "Pertegas karakter tokoh, wujud peran, dan estetika penampilan penari" },
+        { key: "B", text: "Menggantikan peran irama musik pengiring tari" },
+        { key: "C", text: "Menentukan arah lintasan pola lantai di atas panggung" },
+        { key: "D", text: "Mengatur intensitas pencahayaan lampu panggung" },
+        { key: "E", text: "Menutupi kesalahan teknik gerak kaki penari" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Tata rias dan busana membantu memperjelas watak, usia, status sosial, dan tema tarian yang dibawakan penari."
+    }
+  ];
+
+  const seniMusikSinglePool = [
+    {
+      text: "Elemen musik yang menunjukkan tingkatan panjang pendeknya bunyi yang terdengar berulang secara teratur dinamakan...",
+      kompetensi: "Unsur-Unsur Musik (Ritme / Irama)",
+      options: [
+        { key: "A", text: "Ritme / Irama" },
+        { key: "B", text: "Melodi" },
+        { key: "C", text: "Harmoni" },
+        { key: "D", text: "Timbre" },
+        { key: "E", text: "Dinamika" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Ritme adalah penataan urutan nada berdasarkan durasi waktu yang berulang secara teratur."
+    }
+  ];
+
   const seniSinglePool = [
     {
       text: "Unsur fisik seni rupa dua dimensi yang merupakan lintasan dari suatu titik yang bergerak dan berfungsi memberikan batas bidang adalah...",
@@ -1595,6 +2738,188 @@ function generateFallbackExamQuestions(
       ],
       ans: "RIGHT:A",
       exp: "Strengths dalam SWOT adalah kekuatan atau keunggulan komparatif internal yang dimiliki produk usaha."
+    },
+    {
+      text: "Seorang wirausahawan Prakarya yang bekerja dengan sungguh-sungguh tanpa terpengaruh oleh perasaan emosional negatif serta selalu introspeksi diri menerapkan bentuk kerja prestatif...",
+      kompetensi: "Sikap Kerja Prestatif Wirausaha",
+      options: [
+        { key: "A", text: "Kerja Mawas (Emosional Terkendali)" },
+        { key: "B", text: "Kerja Ikhlas" },
+        { key: "C", text: "Kerja Cerdas" },
+        { key: "D", text: "Kerja Keras Fisik" },
+        { key: "E", text: "Kerja Tuntas" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Kerja mawas diri artinya mampu mengendalikan emosi, introspeksi, dan mengutamakan profesionalisme."
+    },
+    {
+      text: "Tingkat penjualan di mana total pendapatan usaha kerajinan tepat sama dengan total biaya yang dikeluarkan (tidak untung dan tidak rugi) disebut...",
+      kompetensi: "Perhitungan Titik Impas / Break Even Point (BEP)",
+      options: [
+        { key: "A", text: "Break Even Point (BEP)" },
+        { key: "B", text: "Return on Investment (ROI)" },
+        { key: "C", text: "Margin of Safety" },
+        { key: "D", text: "Payback Period" },
+        { key: "E", text: "Net Present Value" }
+      ],
+      ans: "RIGHT:A",
+      exp: "BEP (Break Even Point) adalah titik impas di mana total revenue sama dengan total cost."
+    },
+    {
+      text: "Menggali ide produk kerajinan yang terinspirasi dari cerita rakyat, mitos, tarian daerah, atau lagu tradisional tergolong dalam kelompok kerajinan berdasarkan inspirasi...",
+      kompetensi: "Kerajinan Inspirasi Budaya Lokal Nonbenda",
+      options: [
+        { key: "A", text: "Budaya Lokal Nonbenda (Nirmatra)" },
+        { key: "B", text: "Artefak / Objek Budaya Fisik" },
+        { key: "C", text: "Rekayasa Mekanik Modern" },
+        { key: "D", text: "Teknologi Tepat Guna" },
+        { key: "E", text: "Grafika Digital Vektor" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Cerita rakyat, mitos, tarian, dan lagu adalah warisan budaya takbenda (nonbenda) yang dapat menginspirasi bentuk kerajinan."
+    },
+    {
+      text: "Proses mengolah kembali limbah plastik bekas kemasan minuman menjadi tas atau dompet belanja tanpa mengubah struktur molekul dasarnya dinamakan prinsip...",
+      kompetensi: "Pengolahan Bahan Limbah (Recycle & Reuse)",
+      options: [
+        { key: "A", text: "Recycle (Daur Ulang Kreatif)" },
+        { key: "B", text: "Redefine" },
+        { key: "C", text: "Recharge" },
+        { key: "D", text: "Replacement" },
+        { key: "E", text: "Refining" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Recycle adalah mendaur ulang sampah/limbah menjadi barang kerajinan baru yang memiliki nilai guna dan nilai ekonomi."
+    },
+    {
+      text: "Dalam pembuatan kerajinan tekstil, prinsip hiasan yang menitikberatkan pada pembuatan ragam hias pada permukaan kain setelah kain selesai dibuat dinamakan...",
+      kompetensi: "Prinsip Desain Kerajinan Tekstil",
+      options: [
+        { key: "A", text: "Desain Hias (Decorative Design)" },
+        { key: "B", text: "Desain Struktural (Structural Design)" },
+        { key: "C", text: "Desain Geometris Murni" },
+        { key: "D", text: "Desain Industri Masal" },
+        { key: "E", text: "Desain Ergonomis Otomatis" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Decorative design (desain hias) adalah sentuhan hiasan (sulam, bordir, sablon) yang ditambahkan pada permukaan kerajinan tekstil."
+    },
+    {
+      text: "Tahapan produksi kerajinan di mana ide-ide kreatif dituangkan dalam bentuk visual berupa gambar visualisasi awal sebelum dijadikan produk nyata disebut...",
+      kompetensi: "Tahapan Produksi & Sketsa Kerajinan",
+      options: [
+        { key: "A", text: "Pembuatan Sketsa (Rancang Visual)" },
+        { key: "B", text: "Finishing & Pengemasan" },
+        { key: "C", text: "Perakitan Komponen" },
+        { key: "D", text: "Analisis Pasar Eksternal" },
+        { key: "E", text: "Pembahanan Baku" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Membuat sketsa adalah langkah menerjemahkan ide pemikiran menjadi rancangan gambar visual."
+    },
+    {
+      text: "Teknik cetak dalam produk grafika yang menggunakan acuan cetak berupa kasa/screen yang dilapisi bahan peka cahaya (emulsi) seperti pada sablon dinamakan...",
+      kompetensi: "Produk Grafika & Teknik Cetak Saring",
+      options: [
+        { key: "A", text: "Cetak Saring (Screen Printing / Sablon)" },
+        { key: "B", text: "Cetak Tinggi (Relief Print / Woodcut)" },
+        { key: "C", text: "Cetak Dalam (Intaglio / Etching)" },
+        { key: "D", text: "Cetak Datar (Lithography / Offset)" },
+        { key: "E", text: "Cetak Fotografi Analog" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Cetak saring (sablon) menggunakan screen bermesh halus untuk mentransfer tinta ke media cetak."
+    },
+    {
+      text: "Alat pengatur gerak sederhana berbasis sistem mekanik/elektronik yang berfungsi memutus dan menghubungkan arus listrik secara otomatis dinamakan...",
+      kompetensi: "Rekayasa Sistem Alat Pengatur Gerak",
+      options: [
+        { key: "A", text: "Sakelar / Relay Otomatis" },
+        { key: "B", text: "Transformator Step-Down" },
+        { key: "C", text: "Resistor Tetap" },
+        { key: "D", text: "Kapasitor Elektrolit" },
+        { key: "E", text: "Induktor Ferit" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Sakelar atau sakelar otomatis (relay) berfungsi mengendalikan aliran arus listrik dalam sistem rekayasa."
+    },
+    {
+      text: "Penggunaan alat pelindung diri (APD) seperti kacamata goggle, sarung tangan, dan masker saat proses pengamplasan dan pemotongan bahan kerajinan merupakan penerapan standar...",
+      kompetensi: "Keselamatan dan Kesehatan Kerja (K3)",
+      options: [
+        { key: "A", text: "K3 (Keselamatan dan Kesehatan Kerja)" },
+        { key: "B", text: "BOM (Bill of Materials)" },
+        { key: "C", text: "SOP Distribusi" },
+        { key: "D", text: "TQM (Total Quality Management)" },
+        { key: "E", text: "ISO 9001 Manajemen Administrasi" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Penerapan K3 bertujuan melindungi tenaga kerja dari bahaya kecelakaan dan penyakit akibat kerja."
+    },
+    {
+      text: "Dalam wirausaha rekayasa alat elektronik sederhana, sumber arus listrik yang berasal dari baterai atau akumulator (aki) dinamakan arus...",
+      kompetensi: "Kelistrikan Dasar Produk Rekayasa",
+      options: [
+        { key: "A", text: "DC (Direct Current / Arus Searah)" },
+        { key: "B", text: "AC (Alternating Current / Arus Bolak-Balik)" },
+        { key: "C", text: "Arus Induksi Magnetik High Frequency" },
+        { key: "D", text: "Arus Reaktansi Kapasitif" },
+        { key: "E", text: "Arus Tiga Fasa" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Baterai dan aki menghasilkan arus searah atau Direct Current (DC)."
+    },
+    {
+      text: "Metode pemasaran langsung produk kerajinan di mana produsen menjual barang secara tatap muka atau melalui pameran tanpa perantara grosir dinamakan...",
+      kompetensi: "Strategi Pemasaran Langsung (Direct Marketing)",
+      options: [
+        { key: "A", text: "Pemasaran Langsung (Direct Selling)" },
+        { key: "B", text: "Pemasaran Konsinyasi Bertingkat" },
+        { key: "C", text: "Distribusi Grosir Skala Besar" },
+        { key: "D", text: "Importir Tunggal" },
+        { key: "E", text: "Franchise Lisensi Internasional" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Direct selling adalah penjualan langsung produk kerajinan dari wirausahawan ke konsumen akhir."
+    },
+    {
+      text: "Karakteristik wirausahawan yang siap menanggung risiko terhitung (calculated risk) atas keputusan usaha kerajinan yang diambil disebut...",
+      kompetensi: "Karakteristik Wirausahawan Sukses",
+      options: [
+        { key: "A", text: "Berani Mengambil Risiko Terukur" },
+        { key: "B", text: "Pengambil Risiko Tanpa Perhitungan" },
+        { key: "C", text: "Sifat Konservatif Pasif" },
+        { key: "D", text: "Ketergantungan pada Investor" },
+        { key: "E", text: "Sikap Egosentris" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Wirausahawan unggul tidak takut mengambil risiko, namun risiko tersebut telah dikalkulasi dengan matang."
+    },
+    {
+      text: "Hasil cetakan pada teknik cetak tinggi (relief print) diperoleh dari bagian acuan cetak yang...",
+      kompetensi: "Produk Grafika Cetak Tinggi (Relief)",
+      options: [
+        { key: "A", text: "Menjolak / Timbul (Lebih Tinggi dari Permukaan Dasar)" },
+        { key: "B", text: "Cekung / Terdalam ke Dalam Acuan" },
+        { key: "C", text: "Rata Sama Tinggi dengan Seluruh Acuan" },
+        { key: "D", text: "Berlubang-lubang Mikroskopis" },
+        { key: "E", text: "Cair Transparan" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Cetak tinggi (seperti stempel/woodcut) memanfaatkan bagian acuan yang menonjol untuk menerima tinta."
+    },
+    {
+      text: "Membuat sampel awal produk kerajinan dalam bentuk 3D yang berfungsi untuk diuji kekuatan struktur dan estetika fungsinya dinamakan proses...",
+      kompetensi: "Prototyping Produk Kerajinan",
+      options: [
+        { key: "A", text: "Prototyping (Pembuatan Model Tiruan Awal)" },
+        { key: "B", text: "Mass Production" },
+        { key: "C", text: "Brainstorming Curah Pendapat" },
+        { key: "D", text: "Quality Audit SNI" },
+        { key: "E", text: "Pemasaran Konsinyasi" }
+      ],
+      ans: "RIGHT:A",
+      exp: "Prototyping adalah tahapan membuat sampel fisik awal (model tiruan 3D) untuk evaluasi dan uji coba produk."
     }
   ];
 
@@ -1627,7 +2952,9 @@ function generateFallbackExamQuestions(
     }
   ];
 
-  if (isJawaSubject) currentSinglePool = jawaSinglePool;
+  if (isTariSubject) currentSinglePool = seniTariSinglePool;
+  else if (isMusikSubject) currentSinglePool = seniMusikSinglePool;
+  else if (isJawaSubject) currentSinglePool = jawaSinglePool;
   else if (isEnglishSubject) currentSinglePool = englishSinglePool;
   else if (isGeoSubject) currentSinglePool = geoSinglePool;
   else if (isSosiologiSubject) currentSinglePool = sosiologiSinglePool;
@@ -1642,7 +2969,7 @@ function generateFallbackExamQuestions(
   else if (isAswajaSubject) currentSinglePool = aswajaSinglePool;
   else if (isPpknSubject) currentSinglePool = ppknSinglePool;
   else if (isPjokSubject) currentSinglePool = pjokSinglePool;
-  else if (isSeniSubject) currentSinglePool = seniSinglePool;
+  else if (isSeniSubject || isRupaSubject) currentSinglePool = seniSinglePool;
   else if (isPkwuSubject) currentSinglePool = pkwuSinglePool;
   else if (isInformaticsSubject) currentSinglePool = informaticsSinglePool;
   else if (isIndoSubject) currentSinglePool = indoSinglePool;
@@ -1650,11 +2977,13 @@ function generateFallbackExamQuestions(
   else if (isArabicSubject || isFiqihSubject) currentSinglePool = arabicFiqihSinglePool;
 
   for (let i = 0; i < pgCount; i++) {
+    // Pure curricular question rotation without synthetic meta-pedagogy questions
     const item = currentSinglePool[i % currentSinglePool.length];
-    let textStr = item.text;
-    if (i >= currentSinglePool.length) {
-      textStr += ` (Variasi Soal Model ${Math.floor(i / currentSinglePool.length) + 1})`;
-    }
+    const textStr = item.text;
+    const kompetensiTarget = item.kompetensi;
+    const options = item.options.map(opt => ({ ...opt }));
+    const ans = item.ans;
+    const exp = item.exp;
 
     questions.push({
       id: `gen-q-${num}`,
@@ -1664,10 +2993,10 @@ function generateFallbackExamQuestions(
       isArabic: !!(item as any).isArabic,
       hasLatex: isMathSubject,
       difficulty: i % 3 === 0 ? 'mudah' : i % 3 === 1 ? 'sedang' : 'sulit',
-      kompetensiTarget: item.kompetensi,
-      options: item.options.map(opt => ({ ...opt })),
-      rawRightAnswer: item.ans,
-      explanation: item.exp
+      kompetensiTarget: kompetensiTarget,
+      options: options,
+      rawRightAnswer: ans,
+      explanation: exp
     });
     num++;
   }
@@ -1708,13 +3037,121 @@ function generateFallbackExamQuestions(
       text: "Manakah di antara pernyataan berikut yang tergolong sebagai kalimat opini dalam teks pembahasan pangan lokal? (Pilihlah semua jawaban yang benar)",
       kompetensi: "Analisis Kalimat Opini Kontekstual",
       options: [
-        { key: "A", text: "Sagu sangat layak menggantikan beras sebagai makanan pokok utama" },
+        { key: "A", text: "Sagu sangat layak menggantikan beras sebagai makanan pokok utama masyarakat" },
         { key: "B", text: "Kandungan karbohidrat per 100 gram singkong kering setara dengan nasi putih" },
         { key: "C", text: "Sepertinya masyarakat perkotaan lebih memilih tiwul instan karena kepraktisannya" },
         { key: "D", text: "Tanaman sukun dapat dibudidayakan di daerah lahan marginal kering" },
         { key: "E", text: "Inovasi makanan olahan talas dirasa belum maksimal dipromosikan oleh instansi terkait" }
       ],
       ans: "RIGHT:A,C,E"
+    },
+    {
+      text: "Manakah di antara ciri-ciri kebahasaan berikut yang menjadi karakteristik baku teks eksplanasi ilmiah? (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Kaidah Kebahasaan Teks Eksplanasi",
+      options: [
+        { key: "A", text: "Menggunakan istilah ilmiah/teknis yang relevan dengan bidang ilmu yang dibahas" },
+        { key: "B", text: "Menggunakan konjungsi kausalitas (seperti: sebab, karena, oleh karena itu)" },
+        { key: "C", text: "Menggunakan kata ganti orang pertama (aku, saya) secara dominan dalam narasi" },
+        { key: "D", text: "Banyak memakai kalimat pasif dan kata kerja material atau relasional" },
+        { key: "E", text: "Memuat alur pengembaraan tokoh fiktif dengan dialog dramatik" }
+      ],
+      ans: "RIGHT:A,B,D"
+    },
+    {
+      text: "Dalam kajian apresiasi puisi, manakah butir-butir berikut yang tergolong ke dalam struktur batin (hakikat puisi)? (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Klasifikasi Struktur Batin Puisi",
+      options: [
+        { key: "A", text: "Tipografi dan tata wajah larik" },
+        { key: "B", text: "Tema (gagasan pokok/sense)" },
+        { key: "C", text: "Rasa / perasaan penyair (feeling)" },
+        { key: "D", text: "Diksi dan asonansi rima" },
+        { key: "E", text: "Amanat / pesan moral (intention)" }
+      ],
+      ans: "RIGHT:B,C,E"
+    },
+    {
+      text: "Manakah di antara unsur-unsur berikut yang memperkuat keotentikan cerita pendek bertema lingkungan dan kearifan lokal nusantara? (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Unsur Cerpen Kearifan Lokal & Lingkungan",
+      options: [
+        { key: "A", text: "Penggambaran latar tempat alamiah pedesaan atau pesisir secara detail dan hidup" },
+        { key: "B", text: "Penyertaan nilai tradisi adat istiadat leluhur dalam menjaga ekosistem hutan atau mata air" },
+        { key: "C", text: "Penggunaan istilah sains antariksa yang sama sekali tidak berhubungan dengan konteks" },
+        { key: "D", text: "Penyajian konflik batin masyarakat adat menghadapi ancaman deforestasi modern" },
+        { key: "E", text: "Peniadaan penokohan dan alur cerita demi estetika abstrak" }
+      ],
+      ans: "RIGHT:A,B,D"
+    },
+    {
+      text: "Manakah di antara syarat-syarat berikut yang wajib dipenuhi agar suatu kalimat dinyatakan sebagai kalimat efektif? (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Syarat-Syarat Kalimat Efektif Baku",
+      options: [
+        { key: "A", text: "Kesepadanan struktur (memiliki unsur subjek dan predikat yang jelas)" },
+        { key: "B", text: "Menggunakan pengulangan kata bersinonim (pleonasme) agar lebih puitis" },
+        { key: "C", text: "Kehematan kata (tidak bertele-tele atau menggunakan kata jamak berulang)" },
+        { key: "D", text: "Keparalelan bentuk (kesamaan bentuk gramatikal kata dalam perincian)" },
+        { key: "E", text: "Penghapusan tanda baca koma dan titik di sepanjang paragraf" }
+      ],
+      ans: "RIGHT:A,C,D"
+    },
+    {
+      text: "Manakah larik-larik kutipan puisi berikut yang memanfaatkan majas perbandingan (metafora atau simile)? (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Majas Perbandingan Puisi",
+      options: [
+        { key: "A", text: "Matahari memancarkan sinar ultraviolet setiap siang" },
+        { key: "B", text: "Senyummu laksana telaga zamrud di tengah padang pasir" },
+        { key: "C", text: "Waktu adalah pedang bermata dua yang tak kenal ampun" },
+        { key: "D", text: "Angin bertiup kencang dengan kecepatan empat puluh knot" },
+        { key: "E", text: "Bocah malang itu adalah bintang kejora bagi kedua orang tuanya" }
+      ],
+      ans: "RIGHT:B,C,E"
+    },
+    {
+      text: "Manakah di antara unsur 5W+1H berikut yang wajib ada pada bagian kepala berita (lead) teks berita inovasi? (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Kelengkapan Unsur Kepala Berita",
+      options: [
+        { key: "A", text: "What (Peristiwa/inovasi apa yang diciptakan)" },
+        { key: "B", text: "Who (Siapa tokoh/lembaga pencipta inovasi)" },
+        { key: "C", text: "Why (Mengapa inovasi tersebut urgen dikembangkan)" },
+        { key: "D", text: "Gossip pribadi kehidupan asmara sang ilmuwan" },
+        { key: "E", text: "Prediksi astronomi ratusan tahun mendatang" }
+      ],
+      ans: "RIGHT:A,B,C"
+    },
+    {
+      text: "Manakah di bawah ini yang merupakan ciri-ciri dari penalaran deduktif dalam sebuah esai argumentasi? (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Karakteristik Penalaran Deduktif",
+      options: [
+        { key: "A", text: "Diawali dari premis-premis pengamatan kasus khusus baru disimpulkan di akhir" },
+        { key: "B", text: "Dimulai dari pernyataan umum atau dalil teoretis (tesis) sebagai premis mayor" },
+        { key: "C", text: "Kesimpulan bersifat spekulatif tanpa jaminan kebenaran dari premisnya" },
+        { key: "D", text: "Diikuti penjelasan terperinci, contoh bukti, dan data penjelas sebagai premis minor" },
+        { key: "E", text: "Menghasilkan simpulan logis yang diturunkan langsung dari premis dasarnya" }
+      ],
+      ans: "RIGHT:B,D,E"
+    },
+    {
+      text: "Manakah di antara kutipan teks deskripsi berikut yang memuat pencerapan indra penglihatan (visual) dan pendengaran (auditif)? (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Identifikasi Citraan Pancaindra Teks Deskripsi",
+      options: [
+        { key: "A", text: "Air terjun perak itu bergemuruh deras menghantam bebatuan hitam di dasar lembah" },
+        { key: "B", text: "Rasa asin air laut terasa pekat di lidah nelayan yang sedang melaut" },
+        { key: "C", text: "Kilatan petir menyilaukan mata disusul dentuman guntur yang memekakkan telinga" },
+        { key: "D", text: "Aroma melati semerbak tercium lembut dari sanggul pengantin" },
+        { key: "E", text: "Ombak putih berbuih mendesir merdu menyapu pasir pantai yang keemasan" }
+      ],
+      ans: "RIGHT:A,C,E"
+    },
+    {
+      text: "Dalam mengapresiasi teks prosa fiksi kearifan lokal, nilai-nilai kehidupan yang dapat diidentifikasi pembaca mencakup... (Pilihlah semua jawaban yang benar)",
+      kompetensi: "Nilai Kehidupan dalam Prosa Fiksi",
+      options: [
+        { key: "A", text: "Nilai religius (hubungan transendental hamba dengan Sang Pencipta)" },
+        { key: "B", text: "Nilai moral / etika (kebajikan bersikap dan menghormati sesama makhluk)" },
+        { key: "C", text: "Nilai anarkisme dan permusuhan antargolongan" },
+        { key: "D", text: "Nilai sosial gotong royong dan kepedulian lingkungan hidup" },
+        { key: "E", text: "Nilai kepasrahan fatalistis tanpa ikhtiar" }
+      ],
+      ans: "RIGHT:A,B,D"
     }
   ];
 
@@ -2078,10 +3515,7 @@ function generateFallbackExamQuestions(
 
   for (let i = 0; i < multiCount; i++) {
     const item = currentMultiPool[i % currentMultiPool.length];
-    let textStr = item.text;
-    if (i >= currentMultiPool.length) {
-      textStr += ` (Variasi Pilihan Ganda Kompleks ${Math.floor(i / currentMultiPool.length) + 1})`;
-    }
+    const textStr = item.text;
 
     questions.push({
       id: `gen-q-${num}`,
@@ -2148,6 +3582,30 @@ function generateFallbackExamQuestions(
       kompetensi: "Bahasa Teks Argumentasi",
       ans: "RIGHT:FAKTA",
       exp: "Kalimat fakta didasarkan pada kenyataan objektif yang dapat diverifikasi datanya."
+    },
+    {
+      text: "Paragraf yang kalimat utamanya atau ide pokoknya terletak di bagian akhir paragraf dinamakan paragraf...",
+      kompetensi: "Identifikasi Paragraf Induktif",
+      ans: "RIGHT:INDUKTIF",
+      exp: "Paragraf induktif meletakkan gagasan pokok di akhir sebagai kesimpulan dari rincian penjelas."
+    },
+    {
+      text: "Kumpulan larik bersajak yang membentuk satu kesatuan unit utuh dalam struktur fisik teks puisi dinamakan...",
+      kompetensi: "Struktur Fisik Puisi (Bait)",
+      ans: "RIGHT:BAIT",
+      exp: "Bait adalah satu kesatuan dalam puisi yang terdiri atas beberapa baris larik."
+    },
+    {
+      text: "Majas atau gaya bahasa yang mengumpamakan benda-benda mati seolah-olah memiliki sifat, perilaku, atau nyawa seperti manusia disebut...",
+      kompetensi: "Majas Personifikasi Puisi",
+      ans: "RIGHT:PERSONIFIKASI",
+      exp: "Personifikasi melekatkan watak insani pada objek nirnyawa."
+    },
+    {
+      text: "Tahapan awal struktur naskah cerita fiksi (cerpen/novel) yang berfungsi mengenalkan tokoh, watak dasar, serta latar ruang dan waktu cerita dinamakan...",
+      kompetensi: "Struktur Orientasi Prosa Fiksi",
+      ans: "RIGHT:ORIENTASI",
+      exp: "Orientasi adalah bagian pengenalan situasi, tokoh, dan latar cerita."
     }
   ];
 
@@ -2475,6 +3933,25 @@ function generateFallbackExamQuestions(
         { id: 1, text: "Kepala Berita / Lead (Memuat unsur 5W+1H inti secara padat)" },
         { id: 2, text: "Tubuh Berita (Berisi uraian kronologi detail dan latar belakang)" },
         { id: 3, text: "Ekor Berita (Informasi tambahan penunjang yang kurang penting)" }
+      ]
+    },
+    {
+      text: "Urutkan susunan tahapan struktur teks eksplanasi ilmiah secara runtut dan logis!",
+      kompetensi: "Urutan Struktur Teks Eksplanasi",
+      items: [
+        { id: 1, text: "Pernyataan Umum (Identifikasi fenomena alam/sosial yang akan diterangkan)" },
+        { id: 2, text: "Deretan Penjelas / Kausalitas (Rangkaian proses sebab-akibat terjadinya fenomena)" },
+        { id: 3, text: "Interpretasi / Ulasan (Simpulan atau pandangan reflektif atas dampak fenomena)" }
+      ]
+    },
+    {
+      text: "Urutkan tahapan alur dramatik (tahapan plot) dalam karya prosa fiksi naratif dari awal hingga akhir!",
+      kompetensi: "Urutan Alur Plot Prosa Fiksi",
+      items: [
+        { id: 1, text: "Pengenalan Situasi Cerita / Orientasi (Introduction)" },
+        { id: 2, text: "Pemunculan Masalah / Konflik (Rising Action)" },
+        { id: 3, text: "Puncak Ketegangan / Klimaks (Climax)" },
+        { id: 4, text: "Penyelesaian Masalah / Resolusi (Resolution / Ending)" }
       ]
     }
   ];
@@ -2842,6 +4319,34 @@ function generateFallbackExamQuestions(
         { key: "B", text: "Kalimat Opini (Pendapat subjektif)" },
         { key: "C", text: "Kalimat Persuasi / Ajakan" }
       ]
+    },
+    {
+      text: "Jodohkan kutipan baris puisi berikut dengan gaya bahasa (majas) dominan yang digunakannya!",
+      kompetensi: "Kecocokan Majas Puisi",
+      premises: [
+        { id: 1, text: "Ombak lautan berlari mengejar bayang-bayang sampan nelayan." },
+        { id: 2, text: "Buku adalah jendela dunia yang membuka cakrawala pemikiran." },
+        { id: 3, text: "Teriakan semangatnya mengguncang langit dan meretakkan bumi." }
+      ],
+      responses: [
+        { key: "A", text: "Majas Personifikasi (Sifat insani pada objek mati)" },
+        { key: "B", text: "Majas Metafora (Perbandingan langsung tanpa kata pembanding)" },
+        { key: "C", text: "Majas Hiperbola (Pernyataan berlebih-lebihan melampaui kenyataan)" }
+      ]
+    },
+    {
+      text: "Jodohkan bagian struktur teks eksplanasi ilmiah berikut dengan fungsi utamanya!",
+      kompetensi: "Kecocokan Fungsi Struktur Eksplanasi",
+      premises: [
+        { id: 1, text: "Pernyataan Umum" },
+        { id: 2, text: "Deretan Penjelas" },
+        { id: 3, text: "Interpretasi" }
+      ],
+      responses: [
+        { key: "A", text: "Mengenalkan identitas fenomena alam/sosial yang akan diterangkan" },
+        { key: "B", text: "Menguraikan tahapan proses sebab-akibat (kausalitas) secara terperinci" },
+        { key: "C", text: "Memberikan simpulan, ulasan, atau evaluasi konsekuensi dari fenomena" }
+      ]
     }
   ];
 
@@ -3193,8 +4698,32 @@ function generateFallbackExamQuestions(
     {
       text: "Jelaskan perbedaan esensial antara kalimat fakta dan kalimat opini yang sering Anda jumpai dalam teks argumentasi, lalu buatlah masing-masing satu contoh kalimat bertema promosi diversifikasi pangan lokal nusantara!",
       kompetensi: "Sintesis Contoh Fakta-Opini",
-      ans: "Fakta bersifat objektif, memiliki data riil dan teruji kebenarannya. Contoh: 'Sagu mengandung serat pangan larut yang baik untuk usus'. Opini bersifat subjektif dan berupa saran/keyakinan penulis. Contoh: 'Sagu terasa lebih lezat jika diolah menjadi kudapan modern'.",
-      rubric: "Skor 90-100 jika definisi tepat dan contoh relevan pangan lokal."
+      ans: "Fakta bersifat objektif, memiliki data riil dan teruji kebenarannya. Contoh: 'Sagu mengandung serat pangan larut yang baik untuk kesehatan usus'. Opini bersifat subjektif dan berupa saran/keyakinan penulis. Contoh: 'Sagu terasa jauh lebih nikmat dan lezat jika diolah menjadi kudapan modern'.",
+      rubric: "Skor 90-100 jika definisi tepat dan kedua contoh kalimat relevan dengan tema pangan lokal."
+    },
+    {
+      text: "Dalam apresiasi puisi tingkat lanjut, jelaskan bagaimana pemanfaatan kata konkret dan citraan (visual, auditif, atau taktil) dapat membangkitkan suasana batin (mood) pembaca, serta berikan contoh larik puisi yang mengilustrasikannya!",
+      kompetensi: "Analisis Citraan dan Diksi Konkret Puisi",
+      ans: "Kata konkret dan citraan mengonstruksi imajinasi inderawi pembaca sehingga gagasan abstrak puisi terasa hidup. Contoh: larik 'embun dingin menetes di ujung ranting kering' memadukan citraan penglihatan dan perabaan untuk menciptakan suasana hening dan kesyahduan.",
+      rubric: "Skor 90-100 jika penjelasan fungsi citraan mendalam dan disertai contoh larik yang tepat."
+    },
+    {
+      text: "Susunlah sebuah paragraf deretan penjelas (kausalitas) teks eksplanasi ilmiah yang menjelaskan mengapa alih fungsi lahan hutan menjadi perkebunan monokultur dapat memicu bencana banjir bandang dan tanah longsor!",
+      kompetensi: "Konstruksi Hubungan Kausalitas Teks Eksplanasi",
+      ans: "Penggundulan hutan menghilangkan tajuk pohon penahan laju air hujan dan mengurangi kapasitas infiltrasi tanah karena akar tanaman monokultur dangkal. Akibatnya, air larian permukaan (runoff) meluap drastis, mengikis lapisan tanah humus, dan bermuara menjadi limpasan banjir bandang ke wilayah hilir.",
+      rubric: "Skor 90-100 jika memuat hubungan sebab-akibat yang runtut secara ilmiah dengan konjungsi kausalitas yang tepat."
+    },
+    {
+      text: "Bandingkan metode penggambaran karakter tokoh secara analitik (langsung) dan dramatik (tidak langsung) dalam cerpen bertema pelestarian lingkungan hidup! Manakah yang lebih menggugah emosi pembaca beserta alasannya?",
+      kompetensi: "Analisis Komparatif Teknik Penokohan Prosa",
+      ans: "Metode analitik memaparkan watak secara langsung oleh narator, sedangkan dramatik memperlihatkannya lewat lakuan fisik, dialog, tatapan, dan respon lingkungan. Teknik dramatik umumnya lebih menggugah karena memberikan ruang imajinasi bagi pembaca untuk menyimpulkan kepedihan atau keteguhan tokoh secara langsung.",
+      rubric: "Skor 90-100 jika pembandingan kedua teknik akurat disertai argumentasi kritis yang meyakinkan."
+    },
+    {
+      text: "Cermatilah paragraf rumpang berikut:\n'Pemerintah daerah daripada kabupaten Batang di harapkan agar supaya segera merelokasi para pedagang-pedagang ke pasar darurat.'\nIdentifikasi kesalahan kaidah tata bahasa dan ejaan (EYD V) pada kalimat tersebut, lalu tuliskan perbaikan kalimatnya menjadi kalimat yang efektif dan baku!",
+      kompetensi: "Penyuntingan Kalimat Efektif dan EYD V",
+      ans: "Kesalahan: 1) Pemborosan kata 'daripada', 2) Penulisan kata kerja pasif 'di harapkan' harusnya serangkai 'diharapkan', 3) Pleonasme 'agar supaya' harus dipilih salah satu, 4) Pengulangan jamak 'para pedagang-pedagang' harusnya 'para pedagang'. Perbaikan efektif: 'Pemerintah Kabupaten Batang diharapkan segera merelokasi para pedagang ke pasar darurat.'",
+      rubric: "Skor 90-100 jika seluruh kesalahan berhasil diidentifikasi dan hasil penyuntingan memenuhi standar EYD V."
     }
   ];
 
@@ -4084,6 +5613,26 @@ ${cpContent}
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
 Dokumen ini disusun untuk mata pelajaran ${mapel} kelas ${kelas}.`;
 }
+
+// Ensure all unhandled /api/* routes return JSON, NEVER HTML!
+app.all('/api/*', (req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    error: `Endpoint API '${req.method} ${req.path}' tidak ditemukan.`,
+  });
+});
+
+// Global API error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api')) {
+    console.error('Unhandled API Error:', err);
+    return res.status(500).json({
+      success: false,
+      error: err?.message || 'Terjadi kesalahan pada server backend.',
+    });
+  }
+  next(err);
+});
 
 // Vite middleware & Static serving
 async function startServer() {

@@ -7,6 +7,13 @@ import {
   SAMPLE_ADMIN_DOCS,
   MADRASAH_IDENTITY,
 } from './data/mockAndPresets';
+import {
+  fetchServerData,
+  syncToServer,
+  saveExamToServer,
+  saveDocToServer,
+  appendLogToServer,
+} from './services/storageService';
 import { Header } from './components/Header';
 import { Navigation, NavTab } from './components/Navigation';
 import { DashboardView } from './components/DashboardView';
@@ -158,6 +165,38 @@ export default function App() {
     }, 4000);
   };
 
+  // Fetch centralized server database on initial load
+  useEffect(() => {
+    fetchServerData().then((serverData) => {
+      if (serverData) {
+        if (serverData.users && serverData.users.length > 0) {
+          setUsers(serverData.users);
+          localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(serverData.users));
+          setCurrentUser((curr) => {
+            const found = serverData.users.find((u) => u.id === curr.id);
+            return found || curr;
+          });
+        }
+        if (serverData.madrasahIdentity) {
+          setMadrasahIdentity(serverData.madrasahIdentity);
+          localStorage.setItem(STORAGE_KEY_MADRASAH, JSON.stringify(serverData.madrasahIdentity));
+        }
+        if (Array.isArray(serverData.exams) && serverData.exams.length > 0) {
+          setExams(serverData.exams);
+          setCurrentExamPackage(serverData.exams[0]);
+          localStorage.setItem(STORAGE_KEY_EXAMS, JSON.stringify(serverData.exams));
+        }
+        if (Array.isArray(serverData.docs) && serverData.docs.length > 0) {
+          setDocs(serverData.docs);
+          localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(serverData.docs));
+        }
+        if (Array.isArray(serverData.logs) && serverData.logs.length > 0) {
+          setLogs(serverData.logs);
+        }
+      }
+    });
+  }, []);
+
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
     setIsLoggedIn(true);
@@ -175,11 +214,12 @@ export default function App() {
       userName: user.name,
       role: user.role,
       timestamp: new Date().toLocaleTimeString('id-ID') + ' WIB',
-      ip: '10.10.10.104 (LXC LAN)',
+      ip: 'Tunnel Web Access',
       userAgent: navigator.userAgent.substring(0, 30) + '...',
       action: 'Otorisasi PIN Berhasil',
     };
     setLogs((prev) => [newLog, ...prev]);
+    appendLogToServer(newLog);
   };
 
   const handleLogout = () => {
@@ -191,7 +231,13 @@ export default function App() {
   // Fetch server health on mount
   useEffect(() => {
     fetch('/api/health')
-      .then((r) => r.json())
+      .then((r) => {
+        const ct = r.headers.get('content-type') || '';
+        if (r.ok && ct.includes('application/json')) {
+          return r.json();
+        }
+        throw new Error(`Non-JSON health response (${r.status})`);
+      })
       .then((data) => {
         setServerStatus({
           online: data.status === 'ok',
@@ -213,26 +259,50 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY_ADMIN_SUB_TAB, adminSubTab);
   }, [adminSubTab]);
 
-  // 30-Second Auto-save draft (PRD Section 5.3: REL-03)
+  // Periodic Auto-save sync to server
   useEffect(() => {
     const timer = setInterval(() => {
-      localStorage.setItem(STORAGE_KEY_EXAMS, JSON.stringify(exams));
-      localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(docs));
-      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-      localStorage.setItem(STORAGE_KEY_MADRASAH, JSON.stringify(madrasahIdentity));
-      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+      syncToServer({
+        users,
+        madrasahIdentity,
+        exams,
+        docs,
+      });
     }, 30000);
     return () => clearInterval(timer);
-  }, [exams, docs, currentUser, madrasahIdentity, users]);
-
-  // Save users to localStorage instantly on changes
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
-  }, [users]);
+  }, [exams, docs, madrasahIdentity, users]);
 
   const handleUpdateMadrasahIdentity = (newIdentity: MadrasahIdentity) => {
     setMadrasahIdentity(newIdentity);
     localStorage.setItem(STORAGE_KEY_MADRASAH, JSON.stringify(newIdentity));
+    syncToServer({ madrasahIdentity: newIdentity });
+  };
+
+  const handleUpdateUsers = (newUsersOrUpdater: any) => {
+    setUsers((prev) => {
+      const updated = typeof newUsersOrUpdater === 'function' ? newUsersOrUpdater(prev) : newUsersOrUpdater;
+      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(updated));
+      syncToServer({ users: updated });
+      return updated;
+    });
+  };
+
+  const handleUpdateExams = (newExamsOrUpdater: any) => {
+    setExams((prev) => {
+      const updated = typeof newExamsOrUpdater === 'function' ? newExamsOrUpdater(prev) : newExamsOrUpdater;
+      localStorage.setItem(STORAGE_KEY_EXAMS, JSON.stringify(updated));
+      syncToServer({ exams: updated });
+      return updated;
+    });
+  };
+
+  const handleUpdateDocs = (newDocsOrUpdater: any) => {
+    setDocs((prev) => {
+      const updated = typeof newDocsOrUpdater === 'function' ? newDocsOrUpdater(prev) : newDocsOrUpdater;
+      localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(updated));
+      syncToServer({ docs: updated });
+      return updated;
+    });
   };
 
   // Persist immediately on saves
@@ -256,6 +326,7 @@ export default function App() {
         next = [updatedPkg, ...prev];
       }
       localStorage.setItem(STORAGE_KEY_EXAMS, JSON.stringify(next));
+      saveExamToServer(updatedPkg);
       return next;
     });
     setCurrentExamPackage(updatedPkg);
@@ -275,6 +346,7 @@ export default function App() {
       });
       const next = [newDoc, ...filtered];
       localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(next));
+      saveDocToServer(newDoc);
       return next;
     });
   };
@@ -289,7 +361,7 @@ export default function App() {
       userId: user.id,
       userName: user.name,
       role: user.role,
-      ip: '192.168.10.24 (Proxmox LAN)',
+      ip: 'Tunnel Web Access',
       timestamp: new Date().toLocaleTimeString('id-ID', {
         hour: '2-digit',
         minute: '2-digit',
@@ -299,6 +371,7 @@ export default function App() {
       action: 'Beralih Profil Pengguna',
     };
     setLogs((prev) => [newLog, ...prev.slice(0, 19)]);
+    appendLogToServer(newLog);
   };
 
   const handleSelectExamPreset = (presetIndex: number) => {
@@ -318,16 +391,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] flex flex-col font-sans text-[#1a1f2e]">
+    <div className="min-h-screen bg-[#f6f5ef] flex flex-col font-sans text-slate-900">
       {!isLoggedIn ? (
         <PinLoginView
           users={users}
           onLoginSuccess={handleLoginSuccess}
           onShowToast={showToast}
         />
-      ) : currentUser.role === 'guru' ? (
+      ) : (
         <>
-          {/* STANDARD TEACHER LAYOUT */}
+          {/* PRESTIGIOUS INSTITUTIONAL MADRASAH WORKSPACE */}
           {/* Institutional Top Header */}
           <Header
             currentUser={currentUser}
@@ -408,373 +481,23 @@ export default function App() {
           </main>
 
           {/* Institutional Footer (no-print) */}
-          <footer className="bg-white border-t border-slate-200 py-6 text-xs text-slate-500 no-print">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center space-x-2">
-                <span className="font-heading font-bold text-[#1e4d7b]">
+          <footer className="bg-[#052b1a] text-emerald-100/90 border-t-2 border-amber-400 py-6 text-xs no-print mt-auto shadow-inner">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center space-x-2.5">
+                <span className="font-heading font-black text-amber-300 tracking-wider">
                   MA NU 01 BANYUPUTIH BATANG
                 </span>
-                <span>•</span>
-                <span>Sistem Asesmen & Administrasi Kurikulum Merdeka</span>
+                <span className="text-emerald-500">•</span>
+                <span className="text-emerald-100/80">Sistem Asesmen CBT & Administrasi Kurikulum Merdeka</span>
               </div>
-              <div className="flex items-center space-x-4 text-slate-400">
-                <span>Kabupaten Batang · Akreditasi A</span>
-                <span>v1.0.0</span>
+              <div className="flex items-center space-x-4 text-emerald-300/80 font-medium">
+                <span>Kab. Batang · Terakreditasi A (Unggul)</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-900 border border-amber-400/40 text-amber-300 text-[11px] font-bold">
+                  LP Ma'arif NU
+                </span>
               </div>
             </div>
           </footer>
-        </>
-      ) : (
-        <>
-          {/* MODERN DEDICATED ADMIN SIDEBAR LAYOUT */}
-          <div className="flex min-h-screen relative bg-slate-50">
-            {/* Desktop Fixed Left Sidebar */}
-            <aside className="hidden lg:flex flex-col w-64 bg-slate-950 text-slate-200 border-r border-slate-800 fixed inset-y-0 left-0 z-30 no-print">
-              <div className="p-5 border-b border-slate-900 flex items-center space-x-3">
-                <div className="p-1.5 bg-slate-900 rounded-lg border border-slate-800">
-                  <Building2 className="w-6 h-6 text-emerald-400" />
-                </div>
-                <div>
-                  <h2 className="font-heading font-black text-xs text-white tracking-widest uppercase">
-                    MA NU 01
-                  </h2>
-                  <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider mt-0.5">
-                    PANEL ADMINISTRATOR
-                  </p>
-                </div>
-              </div>
-
-              {/* Sidebar Navigation Items */}
-              <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-6 scrollbar-thin">
-                {[
-                  {
-                    group: 'KONTROL UTAMA',
-                    items: [
-                      { label: 'Dashboard Utama', tab: 'dashboard' as NavTab, subTab: null, icon: LayoutDashboard },
-                      { label: 'Data Mata Pelajaran', tab: 'admin_panel' as NavTab, subTab: 'mapel' as any, icon: BookOpen },
-                      { label: 'Data Guru & Plotting', tab: 'admin_panel' as NavTab, subTab: 'guru' as any, icon: Users },
-                      { label: 'Identitas Madrasah', tab: 'identitas_madrasah' as NavTab, subTab: null, icon: Building2 },
-                    ]
-                  },
-                  {
-                    group: 'MODUL AKADEMIK',
-                    items: [
-                      { label: 'Generate Soal Ujian', tab: 'soal' as NavTab, subTab: null, icon: PenTool },
-                      { label: 'Administrasi Guru', tab: 'administrasi' as NavTab, subTab: null, icon: FileSpreadsheet },
-                    ]
-                  },
-                  {
-                    group: 'ARSIP & SISTEM',
-                    items: [
-                      { label: 'Riwayat Dokumen', tab: 'bank_soal' as NavTab, subTab: null, icon: History },
-                      { label: 'Server & Log Akses', tab: 'admin_panel' as NavTab, subTab: 'server' as any, icon: Cpu },
-                      { label: 'Pengaturan & Backup', tab: 'admin_panel' as NavTab, subTab: 'pengaturan' as any, icon: Settings },
-                    ]
-                  }
-                ].map((g) => (
-                  <div key={g.group} className="space-y-1.5">
-                    <span className="px-3.5 text-[9px] text-slate-500 font-extrabold uppercase tracking-widest block">
-                      {g.group}
-                    </span>
-                    <div className="space-y-1">
-                      {g.items.map((item) => {
-                        const Icon = item.icon;
-                        const isTabActive = activeTab === item.tab;
-                        const isSubActive = item.subTab ? (activeTab === item.tab && adminSubTab === item.subTab) : true;
-                        const isActive = isTabActive && isSubActive;
-
-                        return (
-                          <button
-                            key={item.label}
-                            type="button"
-                            onClick={() => {
-                              setActiveTab(item.tab);
-                              if (item.subTab) setAdminSubTab(item.subTab);
-                            }}
-                            className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
-                              isActive
-                                ? 'bg-gradient-to-r from-emerald-950/40 via-[#1e4d7b]/30 to-blue-950/20 text-white border border-slate-800/80 shadow-inner'
-                                : 'text-slate-400 hover:text-white hover:bg-slate-900/60 border border-transparent'
-                            }`}
-                          >
-                            {isActive && (
-                              <div className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-emerald-400 rounded-r-full"></div>
-                            )}
-                            <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
-                            <span>{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </nav>
-
-              {/* Sidebar Footer / Current Admin Card */}
-              <div className="p-4 border-t border-slate-900 space-y-3">
-                <div className="flex items-center space-x-2.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-900">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-extrabold shadow-inner">
-                    {currentUser.name.charAt(0)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-bold text-white truncate leading-none">
-                      {currentUser.name.split(',')[0]}
-                    </div>
-                    <div className="text-[9px] text-emerald-400 font-extrabold tracking-wider uppercase mt-1">
-                      {currentUser.role === 'admin' ? 'Admin Utama' : 'Operator TU'}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleLogout}
-                  className="w-full py-2 px-3 rounded-xl border border-red-950/60 bg-red-950/20 text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-all text-xs font-extrabold flex items-center justify-center space-x-2 cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Keluar Sistem</span>
-                </button>
-              </div>
-            </aside>
-
-            {/* Mobile Sidebar Overlay Drawer */}
-            {mobileSidebarOpen && (
-              <div className="lg:hidden fixed inset-0 z-40 flex no-print">
-                {/* Backdrop overlay */}
-                <div
-                  className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity"
-                  onClick={() => setMobileSidebarOpen(false)}
-                ></div>
-
-                {/* Drawer Menu Body */}
-                <aside className="relative flex-1 flex flex-col max-w-[260px] w-full bg-slate-950 text-slate-300 border-r border-slate-800 animate-slide-in">
-                  <div className="p-5 border-b border-slate-900 flex items-center justify-between">
-                    <div className="flex items-center space-x-2.5">
-                      <Building2 className="w-5 h-5 text-emerald-400" />
-                      <span className="font-heading font-extrabold text-xs text-white tracking-widest uppercase">
-                        MA NU 01
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setMobileSidebarOpen(false)}
-                      className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-5">
-                    {[
-                      {
-                        group: 'KONTROL UTAMA',
-                        items: [
-                          { label: 'Dashboard Utama', tab: 'dashboard' as NavTab, subTab: null, icon: LayoutDashboard },
-                          { label: 'Data Mata Pelajaran', tab: 'admin_panel' as NavTab, subTab: 'mapel' as any, icon: BookOpen },
-                          { label: 'Data Guru & Plotting', tab: 'admin_panel' as NavTab, subTab: 'guru' as any, icon: Users },
-                          { label: 'Identitas Madrasah', tab: 'identitas_madrasah' as NavTab, subTab: null, icon: Building2 },
-                        ]
-                      },
-                      {
-                        group: 'MODUL AKADEMIK',
-                        items: [
-                          { label: 'Generate Soal Ujian', tab: 'soal' as NavTab, subTab: null, icon: PenTool },
-                          { label: 'Administrasi Guru', tab: 'administrasi' as NavTab, subTab: null, icon: FileSpreadsheet },
-                        ]
-                      },
-                      {
-                        group: 'ARSIP & SISTEM',
-                        items: [
-                          { label: 'Riwayat Dokumen', tab: 'bank_soal' as NavTab, subTab: null, icon: History },
-                          { label: 'Server & Log Akses', tab: 'admin_panel' as NavTab, subTab: 'server' as any, icon: Cpu },
-                          { label: 'Pengaturan & Backup', tab: 'admin_panel' as NavTab, subTab: 'pengaturan' as any, icon: Settings },
-                        ]
-                      }
-                    ].map((g) => (
-                      <div key={g.group} className="space-y-1">
-                        <span className="px-3.5 text-[9px] text-slate-500 font-extrabold uppercase tracking-widest block">
-                          {g.group}
-                        </span>
-                        <div className="space-y-0.5">
-                          {g.items.map((item) => {
-                            const Icon = item.icon;
-                            const isTabActive = activeTab === item.tab;
-                            const isSubActive = item.subTab ? (activeTab === item.tab && adminSubTab === item.subTab) : true;
-                            const isActive = isTabActive && isSubActive;
-
-                            return (
-                              <button
-                                key={item.label}
-                                type="button"
-                                onClick={() => {
-                                  setActiveTab(item.tab);
-                                  if (item.subTab) setAdminSubTab(item.subTab);
-                                  setMobileSidebarOpen(false);
-                                }}
-                                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold ${
-                                  isActive
-                                    ? 'bg-gradient-to-r from-emerald-950/40 to-[#1e4d7b]/20 text-white border border-slate-900'
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-                                }`}
-                              >
-                                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
-                                <span>{item.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </nav>
-
-                  <div className="p-4 border-t border-slate-900">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full py-2.5 px-3 rounded-xl border border-red-950/60 bg-red-950/20 text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-all text-xs font-extrabold flex items-center justify-center space-x-2"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Keluar Sistem</span>
-                    </button>
-                  </div>
-                </aside>
-              </div>
-            )}
-
-            {/* Desktop / Mobile Main Viewport Wrapper */}
-            <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
-              {/* Top Mobile Bar & Navigation Header */}
-              <header className="bg-white border-b border-slate-200/80 h-16 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 no-print shadow-2xs">
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => setMobileSidebarOpen(true)}
-                    className="lg:hidden p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition"
-                  >
-                    <Menu className="w-5 h-5" />
-                  </button>
-                  
-                  {/* Current Section Title */}
-                  <div className="hidden sm:block">
-                    <span className="text-[10px] text-emerald-700 font-extrabold tracking-wider uppercase">
-                      MA NU 01 Banyuputih
-                    </span>
-                    <h1 className="text-sm font-black text-slate-800 leading-tight">
-                      {activeTab === 'dashboard' && 'Dashboard Manajemen Madrasah'}
-                      {activeTab === 'soal' && 'Sistem Pembuat Soal Ujian'}
-                      {activeTab === 'administrasi' && 'Sistem Dokumen Administrasi Guru'}
-                      {activeTab === 'identitas_madrasah' && 'Konfigurasi Profil Satuan Resmi'}
-                      {activeTab === 'bank_soal' && 'Riwayat & Bank Arsip Dokumen'}
-                      {activeTab === 'admin_panel' && (
-                        <>
-                          {adminSubTab === 'mapel' && 'Manajemen Kurikulum: Mata Pelajaran'}
-                          {adminSubTab === 'guru' && 'Manajemen Sumber Daya: Akun & Plotting Guru'}
-                          {adminSubTab === 'server' && 'Manajemen Sistem: Pemantauan Proxmox & Log'}
-                          {adminSubTab === 'pengaturan' && 'Pengaturan Administrator, Keamanan & Backup Data'}
-                        </>
-                      )}
-                    </h1>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  {/* Server Health Status Ring */}
-                  <div className="hidden md:flex items-center space-x-2 text-[11px] text-slate-500 font-bold bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                    </span>
-                    <span>Proxmox: Online</span>
-                  </div>
-
-                  {/* Profile Indicator */}
-                  <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50/50">
-                    <div className="w-5 h-5 rounded-md bg-[#1e4d7b] text-white flex items-center justify-center text-[10px] font-black">
-                      {currentUser.name.charAt(0)}
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 hidden sm:inline">
-                      {currentUser.name.split(',')[0]}
-                    </span>
-                  </div>
-                </div>
-              </header>
-
-              {/* Main Contents */}
-              <main className="flex-1 p-4 sm:p-6 lg:p-8">
-                {activeTab === 'dashboard' && (
-                  <DashboardView
-                    currentUser={currentUser}
-                    onNavigate={(tab) => {
-                      if (tab === 'identitas_madrasah') {
-                        setActiveTab('identitas_madrasah');
-                      } else {
-                        setActiveTab(tab);
-                      }
-                    }}
-                    recentExams={exams}
-                    onSelectExamPreset={handleSelectExamPreset}
-                    madrasahIdentity={madrasahIdentity}
-                    users={users}
-                    docs={docs}
-                    logs={logs}
-                  />
-                )}
-
-                {activeTab === 'soal' && (
-                  <ExamGeneratorView
-                    currentUser={currentUser}
-                    currentPackage={currentExamPackage}
-                    onSavePackage={handleSaveExam}
-                    madrasahIdentity={madrasahIdentity}
-                  />
-                )}
-
-                {activeTab === 'administrasi' && (
-                  <AdministrationView
-                    currentUser={currentUser}
-                    onSaveDocument={handleSaveDoc}
-                    savedDocs={docs}
-                    madrasahIdentity={madrasahIdentity}
-                  />
-                )}
-
-                {activeTab === 'identitas_madrasah' && (
-                  <IdentitasMadrasahView
-                    identity={madrasahIdentity}
-                    onUpdateIdentity={handleUpdateMadrasahIdentity}
-                  />
-                )}
-
-                {activeTab === 'bank_soal' && (
-                  <BankSoalAndHistoryView
-                    exams={exams}
-                    documents={docs}
-                    onLoadExam={handleLoadExamFromBank}
-                  />
-                )}
-
-                {activeTab === 'admin_panel' && (
-                  <AdminPanelView
-                    users={users}
-                    onUpdateUsers={setUsers}
-                    logs={logs}
-                    madrasahIdentity={madrasahIdentity}
-                    onUpdateIdentity={handleUpdateMadrasahIdentity}
-                    activeSubTab={adminSubTab}
-                    onChangeSubTab={setAdminSubTab}
-                    currentUser={currentUser}
-                    onUpdateCurrentUser={setCurrentUser}
-                    exams={exams}
-                    onUpdateExams={setExams}
-                    docs={docs}
-                    onUpdateDocs={setDocs}
-                    onShowToast={showToast}
-                  />
-                )}
-              </main>
-
-              {/* Small Admin Footer */}
-              <footer className="bg-white border-t border-slate-200/60 py-4 px-6 text-center text-[10px] text-slate-400 no-print">
-                © 2026 MA NU 01 Banyuputih Batang · Sistem Kurikulum Merdeka Terintegrasi Proxmox LXC
-              </footer>
-            </div>
-          </div>
         </>
       )}
 
@@ -785,7 +508,7 @@ export default function App() {
             key={t.id}
             className={`pointer-events-auto flex items-center space-x-2.5 px-4.5 py-3.5 rounded-2xl border shadow-xl animate-slide-in max-w-sm text-xs font-bold transition-all duration-300 ${
               t.type === 'success'
-                ? 'bg-slate-900 text-white border-slate-800'
+                ? 'bg-emerald-950 text-white border-emerald-800'
                 : t.type === 'error'
                 ? 'bg-rose-950 text-rose-200 border-rose-900'
                 : 'bg-amber-950 text-amber-200 border-amber-900'

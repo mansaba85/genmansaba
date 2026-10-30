@@ -124,32 +124,37 @@ export const IdentitasMadrasahView: React.FC<IdentitasMadrasahViewProps> = ({
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto py-2">
-      {/* Title Bar: Exact Icon & Typography matching uploaded screenshot */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20">
-            <Building2 className="w-5 h-5" />
+      {/* Title Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border-2 border-slate-200/90 shadow-sm">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-800 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Building2 className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-heading text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Identitas Madrasah (KOP & Laporan)</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Kelola data satuan pendidikan, logo lembaga, kepala madrasah, dan parameter resmi untuk KOP naskah soal serta administrasi guru.
+            <div className="flex items-center space-x-2">
+              <h1 className="font-heading text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <span>Identitas Resmi Madrasah (Kop & Laporan)</span>
+              </h1>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-900 uppercase">
+                Profil Satuan
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              MA NU 01 Banyuputih · Kelola data satuan pendidikan, logo lembaga, dan parameter resmi untuk naskah soal dan administrasi guru.
             </p>
           </div>
         </div>
 
         {savedSuccess && (
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold animate-in fade-in slide-in-from-top-1">
+          <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Data Identitas Tersimpan & Sinkron!</span>
+            <span>Data Identitas Tersimpan!</span>
           </div>
         )}
       </div>
 
-      {/* Main Card: Visual Replica of user's uploaded image */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-6">
+      {/* Main Card */}
+      <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-6">
         <form onSubmit={handleSave} className="space-y-6">
           {/* Top Section: Logo in Dashed Container + Nama Lengkap & Alamat */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -173,8 +178,8 @@ export const IdentitasMadrasahView: React.FC<IdentitasMadrasahViewProps> = ({
                 title="Klik atau seret gambar ke sini untuk mengganti logo madrasah"
                 className={`w-32 h-32 sm:w-36 sm:h-36 rounded-3xl border-2 border-dashed relative cursor-pointer overflow-hidden transition-all duration-200 flex flex-col items-center justify-center p-3 group ${
                   isDragging
-                    ? 'border-purple-600 bg-purple-50 ring-4 ring-purple-100 scale-102'
-                    : 'border-slate-300 bg-slate-50/60 hover:border-purple-400 hover:bg-slate-100/70 shadow-2xs'
+                    ? 'border-emerald-600 bg-emerald-50 ring-4 ring-emerald-100 scale-102'
+                    : 'border-slate-300 bg-slate-50/60 hover:border-emerald-500 hover:bg-slate-100/70 shadow-2xs'
                 }`}
               >
                 {formData.logoUrl ? (

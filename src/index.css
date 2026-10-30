@@ -1,35 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #1e4d7b;
-  --primary-light: #2563eb;
-  --primary-glow: rgba(37, 99, 235, 0.15);
-  --accent: #d97706;
-  --green: #10b981;
-  --green-glow: rgba(16, 185, 129, 0.15);
+  --primary: #045f3b;
+  --primary-hover: #03482d;
+  --navy: #0f2742;
+  --navy-light: #1e3a5f;
+  --accent: #b45309;
   --canvas: #f8fafc;
   --surface: #ffffff;
-  --surface-glass: rgba(255, 255, 255, 0.85);
   --ink: #0f172a;
-  --ink-muted: #64748b;
+  --ink-muted: #475569;
+  --border-hairline: #e2e8f0;
 }
 
 body {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--canvas);
   color: var(--ink);
   min-height: 100vh;
-  letter-spacing: -0.01em;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(30, 77, 123, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
-  background-attachment: fixed;
+  letter-spacing: -0.015em;
+  -webkit-tap-highlight-color: transparent;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 .font-heading {
-  font-family: 'Poppins', sans-serif;
-  letter-spacing: -0.02em;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.font-institutional {
+  font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
 }
 
 .font-mono-code {
@@ -44,48 +44,18 @@ body {
   font-size: 1.25rem;
 }
 
-/* Modern Futuristic UI Utilities */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+/* Modern No-Scrollbar Utility for Touch Navigation */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.glass-panel-hover {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-panel-hover:hover {
-  transform: translateY(-2px);
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 0 12px 32px -4px rgba(30, 77, 123, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
-}
-
-.cyber-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.glow-pill-emerald {
-  background: rgba(16, 185, 129, 0.08);
-  color: #065f46;
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.12);
-}
-
-.glow-pill-blue {
-  background: rgba(30, 77, 123, 0.08);
-  color: #1e4d7b;
-  border: 1px solid rgba(30, 77, 123, 0.25);
-  box-shadow: 0 0 12px rgba(30, 77, 123, 0.12);
+/* Touch manipulation utility for responsive mobile devices */
+.touch-manipulation {
+  touch-action: manipulation;
 }
 
 @media print {
@@ -129,4 +99,3 @@ body {
     display: table-header-group;
   }
 }
-

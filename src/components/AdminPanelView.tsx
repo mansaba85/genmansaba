@@ -670,6 +670,11 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       const res = await fetch('/api/v1/ninerouter/test', {
         method: 'POST',
       });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        const text = await res.text();
+        throw new Error(`Respons server non-JSON (${res.status}): ${text.slice(0, 100)}`);
+      }
       const data = await res.json();
       setTest9RouterResult(data);
     } catch (err: any) {
@@ -1116,9 +1121,9 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       return <ArrowUpDown className="w-3 h-3 text-slate-400 ml-1 shrink-0" />;
     }
     return sortMapelDirection === 'asc' ? (
-      <ChevronUp className="w-3.5 h-3.5 text-[#1e4d7b] ml-1 shrink-0" />
+      <ChevronUp className="w-3.5 h-3.5 text-emerald-800 ml-1 shrink-0" />
     ) : (
-      <ChevronDown className="w-3.5 h-3.5 text-[#1e4d7b] ml-1 shrink-0" />
+      <ChevronDown className="w-3.5 h-3.5 text-emerald-800 ml-1 shrink-0" />
     );
   };
 
@@ -1127,9 +1132,9 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       return <ArrowUpDown className="w-3 h-3 text-slate-400 ml-1 shrink-0" />;
     }
     return sortGuruDirection === 'asc' ? (
-      <ChevronUp className="w-3.5 h-3.5 text-[#1e4d7b] ml-1 shrink-0" />
+      <ChevronUp className="w-3.5 h-3.5 text-emerald-800 ml-1 shrink-0" />
     ) : (
-      <ChevronDown className="w-3.5 h-3.5 text-[#1e4d7b] ml-1 shrink-0" />
+      <ChevronDown className="w-3.5 h-3.5 text-emerald-800 ml-1 shrink-0" />
     );
   };
 
@@ -1165,12 +1170,12 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Admin Panel Quick Sub-Tabs Nav */}
-      <div className="bg-white p-1.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-1.5 overflow-x-auto scrollbar-none no-print">
+      <div className="bg-white p-1.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar no-print">
         {[
-          { id: 'mapel' as AdminSubTab, label: '1. Mata Pelajaran', icon: BookOpen, count: mapelList.length },
-          { id: 'guru' as AdminSubTab, label: '2. Data Guru & Plotting', icon: Users, count: users.length },
-          { id: 'server' as AdminSubTab, label: '3. Server & AI Gateway', icon: Cpu },
-          { id: 'pengaturan' as AdminSubTab, label: '4. Pengaturan & Backup', icon: Settings },
+          { id: 'mapel' as AdminSubTab, label: 'Mata Pelajaran', icon: BookOpen, count: mapelList.length },
+          { id: 'guru' as AdminSubTab, label: 'Data Guru & Plotting', icon: Users, count: users.length },
+          { id: 'server' as AdminSubTab, label: 'Server & AI Gateway', icon: Cpu },
+          { id: 'pengaturan' as AdminSubTab, label: 'Pengaturan & Backup', icon: Settings },
         ].map((tabItem) => {
           const Icon = tabItem.icon;
           const isActive = subTab === tabItem.id;
@@ -1179,19 +1184,19 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
               key={tabItem.id}
               type="button"
               onClick={() => setSubTab(tabItem.id)}
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              className={`flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 touch-manipulation ${
                 isActive
-                  ? 'bg-[#1e4d7b] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-emerald-800 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
               <span>{tabItem.label}</span>
               {tabItem.count !== undefined && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                <span className={`text-[11px] font-mono tabular-nums ${
+                  isActive ? 'text-white/80' : 'text-slate-400'
                 }`}>
-                  {tabItem.count}
+                  ({tabItem.count})
                 </span>
               )}
             </button>
@@ -2658,11 +2663,11 @@ services:
     container_name: manu01_merdeka_app
     restart: unless-stopped
     ports:
-      # Port mapping: Ganti HOST_PORT (misal: 3080, 8085, dll) jika port 3000 sudah dipakai container lain
-      - "\${HOST_PORT:-3000}:\${PORT:-3000}"
+      # Port otomatis: Docker & Portainer otomatis memilihkan port host yang kosong (anti-bentrok)
+      - "3000"
     environment:
       - NODE_ENV=production
-      - PORT=\${PORT:-3000}
+      - PORT=3000
       - OPENAI_BASE_URL=\${OPENAI_BASE_URL:-https://9router.manubanyuputih.id/v1}
       - OPENAI_API_KEY=\${OPENAI_API_KEY:-}
       - OPENAI_MODEL=\${OPENAI_MODEL:-komoboku}
@@ -2690,11 +2695,11 @@ services:
     container_name: manu01_merdeka_app
     restart: unless-stopped
     ports:
-      # Port mapping: Ganti HOST_PORT (misal: 3080, 8085) jika port 3000 sudah dipakai
-      - "\${HOST_PORT:-3000}:\${PORT:-3000}"
+      # Port otomatis: Portainer otomatis memberikan port host yang belum terpakai
+      - "3000"
     environment:
       - NODE_ENV=production
-      - PORT=\${PORT:-3000}
+      - PORT=3000
       - OPENAI_BASE_URL=\${OPENAI_BASE_URL:-https://9router.manubanyuputih.id/v1}
       - OPENAI_API_KEY=\${OPENAI_API_KEY:-}
       - OPENAI_MODEL=\${OPENAI_MODEL:-komoboku}

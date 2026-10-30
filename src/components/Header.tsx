@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User } from '../types';
-import { LogOut } from 'lucide-react';
+import { LogOut, ChevronDown, Check, UserCheck, Shield, Sparkles } from 'lucide-react';
 import { LogoMadrasahSvg } from './KopMadrasah';
 
 interface HeaderProps {
@@ -17,67 +17,125 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   currentUser,
+  allUsers,
+  onSelectUser,
   onLogout,
+  serverStatus,
 }) => {
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+
   return (
-    <header className="glass-panel border-b border-slate-200/80 sticky top-0 z-30 shadow-xs no-print">
+    <header className="bg-[#053b26] border-b-2 border-amber-500/30 text-white sticky top-0 z-40 no-print shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Institution Logo & Identity */}
-          <div className="flex items-center space-x-3">
-            <LogoMadrasahSvg className="w-9 h-9" />
-            <div>
-              <span className="font-heading font-extrabold text-sm sm:text-base text-slate-900 tracking-tight block">
-                MA NU 01 BANYUPUTIH
-              </span>
-              <span className="text-[10px] sm:text-xs text-slate-500 font-medium tracking-wide block">
-                Sistem Asesmen & Administrasi Kurikulum Merdeka
-              </span>
+        <div className="flex items-center justify-between h-18 gap-4">
+          
+          {/* Brand Identity Zone */}
+          <div className="flex items-center space-x-3.5 min-w-0">
+            <div className="w-11 h-11 rounded-xl bg-white/95 p-1.5 flex items-center justify-center shrink-0 shadow-xs border border-amber-400/40">
+              <LogoMadrasahSvg className="w-full h-full" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center space-x-2">
+                <span className="font-heading font-extrabold text-sm sm:text-base tracking-tight text-white block truncate">
+                  MA NU 01 BANYUPUTIH
+                </span>
+                <span className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-400 text-slate-950 uppercase tracking-wider">
+                  UNGGUL (A)
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-100/80 font-normal truncate flex items-center space-x-1.5 mt-0.5">
+                <span>LP Ma'arif NU Batang</span>
+                <span className="text-emerald-400/50">·</span>
+                <span className="hidden sm:inline">Sistem Asesmen & Kurikulum Merdeka</span>
+              </p>
             </div>
           </div>
 
-          {/* Connection status & Secure Logout */}
-          <div className="flex items-center space-x-2.5 sm:space-x-4">
-            {/* Elegant Connection Indicator (Unboxed, Minimalist) */}
-            <div className="hidden md:flex items-center space-x-2 text-xs text-slate-500 font-medium">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-              </span>
-              <span>Sistem Terhubung</span>
-            </div>
-
-            {/* Logged in User Pill + Logout Button */}
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50/50">
-                <div className="w-6 h-6 rounded-md bg-[#1e4d7b] text-white flex items-center justify-center text-xs font-extrabold">
-                  {currentUser.name.charAt(0)}
+          {/* User Profile & Quick Actions */}
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+            {/* User Switcher Pill */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                className="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-emerald-400/20 text-left transition cursor-pointer"
+                title="Klik untuk beralih akun pendidik"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 border border-emerald-300/40 text-amber-200 flex items-center justify-center text-xs font-bold shrink-0">
+                  {currentUser.role === 'admin' ? (
+                    <Shield className="w-4 h-4 text-amber-300" />
+                  ) : (
+                    <span>{currentUser.name.charAt(0)}</span>
+                  )}
                 </div>
-                <div className="text-left">
-                  <div className="text-[11px] font-bold text-slate-800 leading-none">
+                <div className="hidden sm:block text-left min-w-0 max-w-[140px] md:max-w-[190px]">
+                  <div className="text-xs font-bold text-white truncate leading-tight">
                     {currentUser.name.split(',')[0]}
                   </div>
-                  <div className="text-[9px] text-[#1e4d7b] font-bold uppercase tracking-wider mt-0.5">
-                    {currentUser.role === 'guru'
-                      ? 'Guru Mapel'
-                      : currentUser.role === 'admin'
-                      ? 'Admin Madrasah'
-                      : 'Operator TU'}
+                  <div className="text-[10px] text-emerald-200/90 truncate flex items-center space-x-1 mt-0.5">
+                    <span>{currentUser.role === 'guru' ? 'Guru Mapel' : 'Administrator'}</span>
+                    <span className="text-emerald-400/60">·</span>
+                    <span className="text-amber-300 truncate">{currentUser.mapel?.[0] || 'Umum'}</span>
                   </div>
                 </div>
-              </div>
+                <ChevronDown className="w-3.5 h-3.5 text-emerald-200/80 shrink-0" />
+              </button>
 
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="p-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-900 transition-all shadow-2xs flex items-center space-x-1.5 text-xs font-bold cursor-pointer"
-                  title="Keluar dari Akun"
+              {/* User Switcher Dropdown */}
+              {showUserDropdown && (
+                <div
+                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-slate-800 animate-in fade-in zoom-in-95 duration-100"
+                  onClick={() => setShowUserDropdown(false)}
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Keluar</span>
-                </button>
+                  <div className="px-3 py-2 border-b border-slate-100">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Ganti Akun Pendidik / Admin
+                    </span>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Pilih profil guru untuk simulasi pembuatan soal & modul
+                    </p>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto p-1 space-y-0.5">
+                    {allUsers.map((u) => {
+                      const isSelected = u.id === currentUser.id;
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => onSelectUser(u)}
+                          className={`w-full px-3 py-2 rounded-xl text-left flex items-center justify-between text-xs transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-50 text-emerald-900 font-bold'
+                              : 'hover:bg-slate-50 text-slate-700'
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold">{u.name}</div>
+                            <div className="text-[10px] text-slate-500 truncate">
+                              {u.role === 'guru' ? `Guru ${u.mapel?.join(', ')}` : 'Administrator'}
+                            </div>
+                          </div>
+                          {isSelected && <Check className="w-4 h-4 text-emerald-700 shrink-0 ml-2" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
+
+            {/* Logout Action */}
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="h-9 px-3 rounded-xl bg-white/10 hover:bg-rose-600/80 hover:text-white border border-white/15 transition-all text-xs font-semibold flex items-center space-x-1.5 cursor-pointer text-emerald-100"
+                title="Keluar dari sesi"
+              >
+                <LogOut className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">Keluar</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
