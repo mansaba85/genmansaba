@@ -1,16 +1,32 @@
 @import "tailwindcss";
 
 :root {
+  /* Locked Brand Palette: NU Emerald Green + Gold + Navy */
   --primary: #045f3b;
+  --primary-shell: #03482d;
   --primary-hover: #03482d;
   --navy: #0f2742;
   --navy-light: #1e3a5f;
-  --accent: #b45309;
+  --gold: #f59e0b;
+  --gold-dark: #b45309;
   --canvas: #f8fafc;
   --surface: #ffffff;
   --ink: #0f172a;
   --ink-muted: #475569;
   --border-hairline: #e2e8f0;
+
+  /* 3-Tier Radius System */
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-pill: 9999px;
+
+  /* 6 Saturated Question Type Colors */
+  --type-single: #045f3b;
+  --type-multiple: #1d4ed8;
+  --type-short: #b45309;
+  --type-ordering: #6d28d9;
+  --type-matching: #0f766e;
+  --type-essay: #be123c;
 }
 
 body {
@@ -18,14 +34,14 @@ body {
   background-color: var(--canvas);
   color: var(--ink);
   min-height: 100vh;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.012em;
   -webkit-tap-highlight-color: transparent;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 .font-heading {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.022em;
 }
 
 .font-institutional {
@@ -34,14 +50,34 @@ body {
 
 .font-mono-code {
   font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .font-arabic {
   font-family: 'Amiri', 'Noto Naskh Arabic', serif;
   direction: rtl;
   text-align: right;
-  line-height: 2.1;
-  font-size: 1.25rem;
+  line-height: 2.2;
+  font-size: 1.3rem;
+}
+
+/* Disciplined Surface & Control Helpers */
+.card-flat {
+  background-color: var(--surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.btn-control {
+  border-radius: var(--radius-control);
+  min-height: 40px;
+}
+
+@media (max-width: 768px) {
+  .btn-control {
+    min-height: 44px;
+  }
 }
 
 /* Modern No-Scrollbar Utility for Touch Navigation */

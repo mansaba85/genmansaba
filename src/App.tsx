@@ -391,7 +391,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f5ef] flex flex-col font-sans text-slate-900">
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans text-[#0f172a] pb-14 md:pb-0">
       {!isLoggedIn ? (
         <PinLoginView
           users={users}
@@ -400,26 +400,25 @@ export default function App() {
         />
       ) : (
         <>
-          {/* PRESTIGIOUS INSTITUTIONAL MADRASAH WORKSPACE */}
-          {/* Institutional Top Header */}
+          {/* Unified Topbar (Header + Desktop Navigation) */}
           <Header
             currentUser={currentUser}
             allUsers={users}
             onSelectUser={handleSelectUser}
             onLogout={handleLogout}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             serverStatus={serverStatus}
           />
 
-          {/* Navigation Tab Bar (no-print) */}
-          <div className="no-print">
-            <Navigation
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              userRole={currentUser.role}
-            />
-          </div>
+          {/* Mobile 4-Item Bottom Navigation */}
+          <Navigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            userRole={currentUser.role}
+          />
 
-          {/* Main Container */}
+          {/* Unified Main Container (max-w-7xl across all pages) */}
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {activeTab === 'dashboard' && (
               <DashboardView
@@ -427,10 +426,12 @@ export default function App() {
                 onNavigate={setActiveTab}
                 recentExams={exams}
                 onSelectExamPreset={handleSelectExamPreset}
+                onLoadExam={handleLoadExamFromBank}
                 madrasahIdentity={madrasahIdentity}
                 users={users}
                 docs={docs}
                 logs={logs}
+                serverStatus={serverStatus}
               />
             )}
 
@@ -480,43 +481,42 @@ export default function App() {
             )}
           </main>
 
-          {/* Institutional Footer (no-print) */}
-          <footer className="bg-[#052b1a] text-emerald-100/90 border-t-2 border-amber-400 py-6 text-xs no-print mt-auto shadow-inner">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center space-x-2.5">
-                <span className="font-heading font-black text-amber-300 tracking-wider">
+          {/* Clean Institutional Footer (no-print) */}
+          <footer className="bg-[#03482d] text-emerald-100/90 border-t border-white/15 py-5 text-xs no-print mt-auto">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center space-x-2">
+                <span className="font-heading font-bold text-white tracking-wide">
                   MA NU 01 BANYUPUTIH BATANG
                 </span>
-                <span className="text-emerald-500">•</span>
+                <span className="text-emerald-400/50">·</span>
                 <span className="text-emerald-100/80">Sistem Asesmen CBT & Administrasi Kurikulum Merdeka</span>
               </div>
-              <div className="flex items-center space-x-4 text-emerald-300/80 font-medium">
-                <span>Kab. Batang · Terakreditasi A (Unggul)</span>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-900 border border-amber-400/40 text-amber-300 text-[11px] font-bold">
-                  LP Ma'arif NU
-                </span>
+              <div className="flex items-center space-x-3 text-emerald-200/80 font-medium">
+                <span>LP Ma'arif NU Kab. Batang</span>
+                <span className="text-emerald-400/50">·</span>
+                <span className="text-amber-300 font-semibold">Terakreditasi A (Unggul)</span>
               </div>
             </div>
           </footer>
         </>
       )}
 
-      {/* Modern Toast Notification Container */}
-      <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none no-print">
+      {/* Toast Notification Container */}
+      <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none no-print">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto flex items-center space-x-2.5 px-4.5 py-3.5 rounded-2xl border shadow-xl animate-slide-in max-w-sm text-xs font-bold transition-all duration-300 ${
+            className={`pointer-events-auto flex items-center space-x-2.5 px-4 py-3 rounded-[16px] border shadow-md max-w-sm text-xs font-bold transition-all duration-200 ${
               t.type === 'success'
-                ? 'bg-emerald-950 text-white border-emerald-800'
+                ? 'bg-[#045f3b] text-white border-[#03482d]'
                 : t.type === 'error'
-                ? 'bg-rose-950 text-rose-200 border-rose-900'
-                : 'bg-amber-950 text-amber-200 border-amber-900'
+                ? 'bg-rose-800 text-white border-rose-900'
+                : 'bg-amber-600 text-slate-950 border-amber-700'
             }`}
           >
-            {t.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-            {t.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
-            {t.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
+            {t.type === 'success' && <CheckCircle2 className="w-4 h-4 text-amber-300 shrink-0" />}
+            {t.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-200 shrink-0" />}
+            {t.type === 'warning' && <AlertTriangle className="w-4 h-4 text-slate-950 shrink-0" />}
             <span>{t.message}</span>
           </div>
         ))}

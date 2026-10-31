@@ -147,15 +147,16 @@ export interface MadrasahIdentity {
 
 export type AdminDocType =
   | 'rpp'
+  | 'modul_ajar'
   | 'cp'
   | 'atp'
   | 'prota'
   | 'prosem'
   | 'prota_prosem'
   | 'kktp'
-  | 'modul_ajar'
-  | 'umpan_balik'
-  | 'presensi_kbm';
+  | 'lkpd'
+  | 'presensi_kbm'
+  | 'umpan_balik';
 
 export interface AdminDocConfig {
   docType: AdminDocType;
@@ -171,16 +172,25 @@ export interface AdminDocConfig {
   kepalaMadrasah: string;
   nipKepala: string;
   nilaiKBC: string[];
+  insersiKBC?: Record<string, string>;
   modelPembelajaran: string;
   customNotes?: string;
   capaianPembelajaranTeks?: string;
+  tujuanPembelajaranTeks?: string;
+  lintasDisiplinIlmu?: string;
   instruksiKhusus?: string;
-  // RPP Merdeka fields
+  // RPP & Modul Ajar KBC fields
   karakteristikPesertaDidik?: string;
   dimensiProfilLulusan?: string[];
   jumlahPertemuan?: string;
   jamPerPertemuan?: string;
   jenisAsesmen?: string[];
+  // PROSEM & KKTP & Umpan Balik fields
+  agendaMadrasah?: string;
+  intervalKKTP?: string;
+  respondenSurvei?: string;
+  skalaSurvei?: string;
+  aspekUmpanBalik?: string;
 }
 
 export interface GeneratedAdminDoc {

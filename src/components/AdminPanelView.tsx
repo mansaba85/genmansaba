@@ -1176,418 +1176,361 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   });
 
   return (
-    <div className="space-y-6">
-      {/* Admin Panel Quick Sub-Tabs Nav */}
-      <div className="bg-white p-1.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar no-print">
-        {[
-          { id: 'mapel' as AdminSubTab, label: 'Mata Pelajaran', icon: BookOpen, count: mapelList.length },
-          { id: 'guru' as AdminSubTab, label: 'Data Guru & Plotting', icon: Users, count: users.length },
-          { id: 'server' as AdminSubTab, label: 'Server & AI Gateway', icon: Cpu },
-          { id: 'pengaturan' as AdminSubTab, label: 'Pengaturan & Backup', icon: Settings },
-        ].map((tabItem) => {
-          const Icon = tabItem.icon;
-          const isActive = subTab === tabItem.id;
-          return (
-            <button
-              key={tabItem.id}
-              type="button"
-              onClick={() => setSubTab(tabItem.id)}
-              className={`flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 touch-manipulation ${
-                isActive
-                  ? 'bg-emerald-800 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-              }`}
-            >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-              <span>{tabItem.label}</span>
-              {tabItem.count !== undefined && (
-                <span className={`text-[11px] font-mono tabular-nums ${
-                  isActive ? 'text-white/80' : 'text-slate-400'
-                }`}>
-                  ({tabItem.count})
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* SUBTAB 1: DATA MAPEL */}
-      {subTab === 'mapel' && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Action & Template Bar */}
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="p-1.5 rounded-lg bg-blue-50 text-[#1e4d7b]">
-                    <BookOpen className="w-4 h-4" />
-                  </span>
-                  <h3 className="font-heading font-bold text-slate-900 text-sm">
-                    Manajemen Mata Pelajaran & Kurikulum
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Gunakan template standar Kemenag / LP Ma'arif NU, impor file CSV, atau unduh format template untuk pengisian massal.
-                </p>
-              </div>
-
-              {/* Template & Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleDownloadTemplateMapel}
-                  className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 shadow-2xs transition cursor-pointer"
-                  title="Unduh file template CSV untuk diisi di Excel"
-                >
-                  <Download className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Download Template</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMapelImportText('');
-                    setMapelImportFeedback(null);
-                    setShowImportMapelModal(true);
-                  }}
-                  className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 shadow-2xs transition cursor-pointer"
-                  title="Impor mata pelajaran dari file atau teks CSV"
-                >
-                  <FileUp className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Import dari File</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowPresetMapelModal(true)}
-                  className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 shadow-2xs transition cursor-pointer"
-                  title="Pilih template preset kurikulum standar"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                  <span>Template Preset</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleExportMapel}
-                  className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 shadow-2xs transition cursor-pointer"
-                  title="Ekspor seluruh mata pelajaran aktif ke CSV"
-                >
-                  <FileDown className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Ekspor CSV</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNewMapelName('');
-                    setMapelSuccess('');
-                    setMapelError('');
-                    setShowAddMapelModal(true);
-                  }}
-                  className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-[#1e4d7b] hover:bg-[#153a5e] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Tambah Mapel</span>
-                </button>
-              </div>
-            </div>
+    <div className="space-y-4">
+      {/* Left Sidebar Sub-Navigation + Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* LEFT SUB-NAVIGATION SIDEBAR (Bootstrap .list-group) */}
+        <aside className="lg:col-span-3 bg-white rounded-md border border-slate-300 overflow-hidden lg:sticky lg:top-20 no-print">
+          <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-800">
+            Menu Administrator
           </div>
 
-          {/* List Mapel Grid Full Width */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center space-x-2">
-                <BookOpen className="w-4 h-4 text-[#1e4d7b]" />
-                <h2 className="font-heading font-semibold text-xs sm:text-sm text-slate-900">
-                  Daftar Mata Pelajaran Aktif ({mapelList.length} Mapel)
-                </h2>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-[11px] font-bold text-[#1e4d7b] bg-blue-50/80 border border-blue-100/50 px-2.5 py-1 rounded-md">
-                  Status: Siap Digunakan
-                </span>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                  <tr>
-                    <th className="p-4 w-16 text-center">No</th>
-                    <th 
-                      className="p-4 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
-                      onClick={() => handleSortMapel('name')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Nama Mata Pelajaran</span>
-                        {renderSortIndicator('name')}
-                      </div>
-                    </th>
-                    <th 
-                      className="p-4 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
-                      onClick={() => handleSortMapel('teachers')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Jumlah Guru Pengampu</span>
-                        {renderSortIndicator('teachers')}
-                      </div>
-                    </th>
-                    <th className="p-4 text-right w-24">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {sortedMapelList.map((mapel, index) => {
-                    const teacherCount = getMapelTeacherCount(mapel);
-                    return (
-                      <tr key={mapel} className="hover:bg-slate-50/40 transition">
-                        <td className="p-4 text-center font-mono text-slate-400 font-bold">
-                          {index + 1}
-                        </td>
-                        <td className="p-4 font-bold text-slate-800 text-xs sm:text-sm">
-                          {mapel}
-                        </td>
-                        <td className="p-4">
-                          {teacherCount > 0 ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/60">
-                              Diampu oleh {teacherCount} Guru
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-50 text-slate-400 border border-slate-100">
-                              Belum ada guru pengampu
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteMapel(mapel)}
-                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
-                            title="Hapus Mata Pelajaran"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {sortedMapelList.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="p-8 text-center text-slate-400">
-                        Tidak ada mata pelajaran aktif.
-                      </td>
-                    </tr>
+          <nav className="divide-y divide-slate-200 flex lg:flex-col overflow-x-auto">
+            {[
+              { id: 'guru' as AdminSubTab, label: 'Akun Guru & Plotting', count: users.length },
+              { id: 'mapel' as AdminSubTab, label: 'Mata Pelajaran', count: mapelList.length },
+              { id: 'identitas' as AdminSubTab, label: 'Identitas & Kop' },
+              { id: 'pengaturan' as AdminSubTab, label: 'Backup & Keamanan' },
+              { id: 'server' as AdminSubTab, label: 'Diagnostik AI & Log' },
+            ].map((tabItem) => {
+              const isActive = subTab === tabItem.id;
+              return (
+                <button
+                  key={tabItem.id}
+                  type="button"
+                  onClick={() => setSubTab(tabItem.id)}
+                  className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs text-left transition cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'bg-[#045f3b] text-white font-bold'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 font-medium'
+                  }`}
+                >
+                  <span className="truncate">{tabItem.label}</span>
+                  {tabItem.count !== undefined && (
+                    <span className={`text-[11px] tabular-nums ${isActive ? 'text-emerald-100' : 'text-slate-500'}`}>
+                      ({tabItem.count})
+                    </span>
                   )}
-                </tbody>
-              </table>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Compact System Summary in Sidebar */}
+          <div className="hidden lg:block px-3.5 py-2.5 bg-slate-50 border-t border-slate-200 space-y-1 text-[11px] text-slate-600">
+            <div className="flex items-center justify-between">
+              <span>Paket Soal:</span>
+              <strong className="text-slate-900 tabular-nums">{exams.length}</strong>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Dokumen Admin:</span>
+              <strong className="text-slate-900 tabular-nums">{docs.length}</strong>
             </div>
           </div>
-        </div>
-      )}
+        </aside>
 
-      {/* SUBTAB 2: DATA GURU & PLOTTING */}
-      {subTab === 'guru' && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Action & Template Bar */}
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
-                    <Users className="w-4 h-4" />
-                  </span>
-                  <h3 className="font-heading font-bold text-slate-900 text-sm">
-                    Manajemen Tenaga Pendidik & Plotting Mapel
-                  </h3>
+        {/* RIGHT MAIN CONTENT AREA */}
+        <div className="lg:col-span-9 space-y-4 min-w-0">
+          {/* SUBTAB 1: DATA MAPEL */}
+          {subTab === 'mapel' && (
+            <div className="space-y-4">
+              {/* Action & Template Bar */}
+              <div className="bg-white border border-slate-300 rounded-md p-4 space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                  <div>
+                    <h3 className="font-heading font-bold text-slate-900 text-sm">
+                      Manajemen Mata Pelajaran & Kurikulum ({mapelList.length} Mapel)
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Gunakan template standar Kemenag / LP Ma'arif NU, impor file CSV, atau tambah manual.
+                    </p>
+                  </div>
+
+                  {/* Template & Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={handleDownloadTemplateMapel}
+                      className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                    >
+                      Template CSV
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMapelImportText('');
+                        setMapelImportFeedback(null);
+                        setShowImportMapelModal(true);
+                      }}
+                      className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                    >
+                      Import CSV
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPresetMapelModal(true)}
+                      className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                    >
+                      Preset Kemenag
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportMapel}
+                      className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                    >
+                      Ekspor CSV
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewMapelName('');
+                        setMapelSuccess('');
+                        setMapelError('');
+                        setShowAddMapelModal(true);
+                      }}
+                      className="px-3 py-1.5 rounded bg-[#045f3b] hover:bg-[#03482d] text-white font-semibold cursor-pointer"
+                    >
+                      + Tambah Mapel
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Kelola penugasan mata pelajaran, PIN login mandiri, gunakan template data guru MA NU 01, atau impor massal via file Excel/CSV.
-                </p>
               </div>
 
-              {/* Template & Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleDownloadTemplateGuru}
-                  className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 shadow-2xs transition cursor-pointer"
-                  title="Unduh format template CSV data guru untuk diisi di Excel"
-                >
-                  <Download className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Download Template</span>
-                </button>
+              {/* Compact Mapel Table */}
+              <div className="bg-white rounded-md border border-slate-300 overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-50 font-bold text-xs text-slate-800">
+                  Daftar Mata Pelajaran Aktif
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGuruImportText('');
-                    setGuruImportFeedback(null);
-                    setShowImportGuruModal(true);
-                  }}
-                  className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 shadow-2xs transition cursor-pointer"
-                  title="Impor data guru secara massal dari file CSV"
-                >
-                  <FileUp className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Import dari File</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowPresetGuruModal(true)}
-                  className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 shadow-2xs transition cursor-pointer"
-                  title="Terapkan template dewan guru standar madrasah"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Template Guru</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleExportGuru}
-                  className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 shadow-2xs transition cursor-pointer"
-                  title="Ekspor seluruh akun guru aktif beserta PIN ke file CSV"
-                >
-                  <FileDown className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Ekspor CSV</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleOpenAddGuru}
-                  className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-[#1e4d7b] hover:bg-[#153a5e] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Tambah Guru</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Guru Data Table Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                  <tr>
-                    <th 
-                      className="p-4 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
-                      onClick={() => handleSortGuru('name')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Nama Lengkap & NIP</span>
-                        {renderGuruSortIndicator('name')}
-                      </div>
-                    </th>
-                    <th 
-                      className="p-4 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
-                      onClick={() => handleSortGuru('role')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Hak Akses</span>
-                        {renderGuruSortIndicator('role')}
-                      </div>
-                    </th>
-                    <th 
-                      className="p-4 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
-                      onClick={() => handleSortGuru('mapelCount')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Plotting Mata Pelajaran</span>
-                        {renderGuruSortIndicator('mapelCount')}
-                      </div>
-                    </th>
-                    <th className="p-4">PIN Login</th>
-                    <th className="p-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {sortedUsersList.map((u) => {
-                    const isPinVisible = !!revealedPins[u.id];
-                    return (
-                      <tr key={u.id} className="hover:bg-slate-50/40 transition">
-                        <td className="p-4">
-                          <div className="flex items-center space-x-2.5">
-                            <img
-                              src={u.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.name)}`}
-                              alt={u.name}
-                              className="w-8 h-8 rounded-full border border-slate-100 object-cover"
-                            />
-                            <div>
-                              <div className="font-bold text-slate-900 text-xs">{u.name}</div>
-                              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                NIP/NUPTK: {u.nip}
-                              </div>
-                            </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                      <tr>
+                        <th className="py-2 px-3 w-12 text-center">No</th>
+                        <th
+                          className="py-2 px-3 cursor-pointer select-none hover:bg-slate-100"
+                          onClick={() => handleSortMapel('name')}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Nama Mata Pelajaran</span>
+                            {renderSortIndicator('name')}
                           </div>
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              u.role === 'admin'
-                                ? 'bg-purple-100 text-purple-800'
-                                : u.role === 'guru'
-                                ? 'bg-blue-100 text-[#1e4d7b]'
-                                : 'bg-emerald-100 text-emerald-800'
-                            }`}
-                          >
-                            {u.role}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex flex-wrap gap-1 max-w-[280px]">
-                            {u.mapel.map((mapel) => (
-                              <span
-                                key={mapel}
-                                className="inline-block bg-slate-100 text-slate-800 text-[10px] px-2 py-0.5 rounded font-medium border border-slate-200/40"
-                              >
-                                {mapel}
-                              </span>
-                            ))}
+                        </th>
+                        <th
+                          className="py-2 px-3 cursor-pointer select-none hover:bg-slate-100"
+                          onClick={() => handleSortMapel('teachers')}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Guru Pengampu</span>
+                            {renderSortIndicator('teachers')}
                           </div>
-                        </td>
-                        <td className="p-4 font-mono">
-                          <div className="flex items-center space-x-1.5">
-                            <span className="font-bold text-slate-800">
-                              {isPinVisible ? u.pin || '123456' : '••••••'}
-                            </span>
-                            <button
-                              onClick={() => togglePinReveal(u.id)}
-                              className="p-1 rounded text-slate-400 hover:text-[#1e4d7b] cursor-pointer"
-                              title={isPinVisible ? 'Sembunyikan PIN' : 'Tampilkan PIN'}
-                            >
-                              {isPinVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="flex items-center justify-end space-x-1">
-                            <button
-                              onClick={() => handleOpenEditGuru(u)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-[#1e4d7b] hover:bg-slate-100 cursor-pointer"
-                              title="Edit Profil & Plotting"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteGuru(u.id, u.name)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                              title="Hapus Akun"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
+                        </th>
+                        <th className="py-2 px-3 text-right w-20">Aksi</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 text-slate-700">
+                      {sortedMapelList.map((mapel, index) => {
+                        const teacherCount = getMapelTeacherCount(mapel);
+                        return (
+                          <tr key={mapel} className="hover:bg-slate-50/70">
+                            <td className="py-2 px-3 text-center text-slate-500 tabular-nums">
+                              {index + 1}
+                            </td>
+                            <td className="py-2 px-3 font-semibold text-slate-900">
+                              {mapel}
+                            </td>
+                            <td className="py-2 px-3 text-slate-600">
+                              {teacherCount > 0 ? `${teacherCount} guru` : 'Belum di-plot'}
+                            </td>
+                            <td className="py-2 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMapel(mapel)}
+                                className="text-rose-700 hover:underline font-medium cursor-pointer"
+                              >
+                                Hapus
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {sortedMapelList.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="p-6 text-center text-slate-400">
+                            Tidak ada mata pelajaran aktif.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-        </div>
-      )}
+          {/* SUBTAB 2: DATA GURU & PLOTTING */}
+          {subTab === 'guru' && (
+            <div className="space-y-4">
+              {/* Action & Template Bar */}
+              <div className="bg-white border border-slate-300 rounded-md p-4 space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                  <div>
+                    <h3 className="font-heading font-bold text-slate-900 text-sm">
+                      Manajemen Tenaga Pendidik & Plotting Mapel ({users.length} Akun)
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Kelola penugasan mata pelajaran, PIN login mandiri, atau impor massal via CSV.
+                    </p>
+                  </div>
+
+                  {/* Template & Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={handleDownloadTemplateGuru}
+                      className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                    >
+                      Template CSV
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGuruImportText('');
+                        setGuruImportFeedback(null);
+                        setShowImportGuruModal(true);
+                      }}
+                      className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                    >
+                      Import CSV
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPresetGuruModal(true)}
+                      className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                    >
+                      Template Guru
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportGuru}
+                      className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+                    >
+                      Ekspor CSV
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenAddGuru}
+                      className="px-3 py-1.5 rounded bg-[#045f3b] hover:bg-[#03482d] text-white font-semibold cursor-pointer"
+                    >
+                      + Tambah Guru
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Compact Guru Data Table Card */}
+              <div className="bg-white rounded-md border border-slate-300 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                      <tr>
+                        <th
+                          className="py-2.5 px-3 cursor-pointer select-none hover:bg-slate-100"
+                          onClick={() => handleSortGuru('name')}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Nama Lengkap & NIP</span>
+                            {renderGuruSortIndicator('name')}
+                          </div>
+                        </th>
+                        <th
+                          className="py-2.5 px-3 cursor-pointer select-none hover:bg-slate-100"
+                          onClick={() => handleSortGuru('role')}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Peran</span>
+                            {renderGuruSortIndicator('role')}
+                          </div>
+                        </th>
+                        <th
+                          className="py-2.5 px-3 cursor-pointer select-none hover:bg-slate-100"
+                          onClick={() => handleSortGuru('mapelCount')}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Mata Pelajaran Diampu</span>
+                            {renderGuruSortIndicator('mapelCount')}
+                          </div>
+                        </th>
+                        <th className="py-2.5 px-3">PIN Login</th>
+                        <th className="py-2.5 px-3 text-right">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 text-slate-700">
+                      {sortedUsersList.map((u) => {
+                        const isPinVisible = !!revealedPins[u.id];
+                        return (
+                          <tr key={u.id} className="hover:bg-slate-50/70">
+                            <td className="py-2.5 px-3">
+                              <div className="font-semibold text-slate-900">{u.name}</div>
+                              <div className="text-[11px] text-slate-500 font-mono">NIP: {u.nip}</div>
+                            </td>
+                            <td className="py-2.5 px-3 capitalize font-medium text-slate-700">
+                              {u.role}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-700 max-w-xs">
+                              {u.mapel && u.mapel.length > 0 ? u.mapel.join(', ') : '-'}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono">
+                              <div className="flex items-center space-x-1.5">
+                                <span className="font-bold text-slate-800 tabular-nums">
+                                  {isPinVisible ? u.pin || '123456' : '••••••'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => togglePinReveal(u.id)}
+                                  className="p-1 rounded text-slate-400 hover:text-[#045f3b] cursor-pointer"
+                                  title={isPinVisible ? 'Sembunyikan PIN' : 'Tampilkan PIN'}
+                                >
+                                  {isPinVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditGuru(u)}
+                                  className="text-[#045f3b] hover:underline font-semibold cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteGuru(u.id, u.name)}
+                                  className="p-1.5 rounded-[8px] text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                  title="Hapus Akun"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
       {/* SUBTAB 3: IDENTITAS MADRASAH */}
       {subTab === 'identitas' && (
@@ -2371,6 +2314,8 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           </div>
         </div>
       )}
+        </div>
+      </div>
 
       {/* MODAL 1: RESTORE BACKUP PREVIEW & CONFIRMATION */}
       {showRestoreModal && parsedBackupData && (

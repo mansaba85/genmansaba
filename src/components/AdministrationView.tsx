@@ -7,44 +7,73 @@ import { KopMadrasah } from './KopMadrasah';
 import { MADRASAH_IDENTITY } from '../data/mockAndPresets';
 import {
   FileSpreadsheet,
-  BookOpen,
-  Calendar,
-  CheckCircle2,
-  HeartHandshake,
-  MessageSquare,
   Sparkles,
   Download,
   Printer,
   Copy,
   Check,
   RefreshCw,
-  Layers,
-  Award,
   ExternalLink,
-  Users,
 } from 'lucide-react';
 
 export const PANCA_CINTA_KBC = [
   {
     nilai: 'Cinta kepada Allah dan Rasul-Nya',
-    deskripsi: 'Sumber dan fondasi utama spiritual yang menempatkan niat belajar serta mengajar sebagai bentuk ibadah.'
+    deskripsi: 'Fondasi spiritual yang menempatkan niat belajar serta mengajar sebagai ibadah dan keteladanan akhlak Rasulullah SAW.',
+    defaultInsersi: 'Niat thalabul ilmi karena Allah SWT, mengawali KBM dengan doa & tadabbur ayat/hadis terkait materi.',
   },
   {
     nilai: 'Cinta kepada Ilmu Pengetahuan',
-    deskripsi: 'Semangat belajar dengan hati terbuka untuk menjadikan ilmu sebagai sarana pencerahan, bukan sekadar hafalan atau alat dominasi.'
+    deskripsi: 'Semangat belajar mendalam (Deep Learning) dengan hati terbuka untuk menjadikan ilmu sebagai sarana pencerahan dan kemaslahatan.',
+    defaultInsersi: 'Membiasakan tabayyun (verifikasi ilmiah), berpikir kritis-analitis, dan adab menghormati guru serta sumber ilmu.',
   },
   {
     nilai: 'Cinta kepada Diri dan Sesama',
-    deskripsi: 'Sikap welas asih yang seimbang pada diri sendiri serta menumbuhkan empati, kepedulian, dan persaudaraan antarmanusia.'
+    deskripsi: 'Sikap welas asih (rahmah), menjaga kesehatan mental/fisik, empati, kolaborasi santun, dan ukhuwah tanpa perundungan.',
+    defaultInsersi: 'Kerja kelompok kolaboratif saling membantu (ta\'awun), menghargai perbedaan pendapat (tasamuh), dan tutor sebaya.',
   },
   {
     nilai: 'Cinta kepada Lingkungan (Alam)',
-    deskripsi: 'Kesadaran ekoteologis bahwa manusia adalah bagian dari sistem kehidupan yang bertanggung jawab merawat alam ciptaan Tuhan.'
+    deskripsi: 'Kesadaran ekoteologis bahwa manusia adalah khalifah di bumi yang wajib merawat kelestarian dan kebersihan alam ciptaan Tuhan.',
+    defaultInsersi: 'Menjaga kebersihan kelas/madrasah, hemat energi & kertas, serta mengaitkan materi dengan pelestarian ekosistem.',
   },
   {
     nilai: 'Cinta kepada Tanah Air',
-    deskripsi: 'Rasa tanggung jawab untuk menjaga persatuan, menghormati perbedaan, dan membangun negeri melalui karya nyata.'
-  }
+    deskripsi: 'Tanggung jawab menjaga persatuan bangsa (ukhuwah wathaniyah), menghormati kearifan lokal, dan berkarya nyata untuk negeri.',
+    defaultInsersi: 'Studi kasus kontekstual Indonesia/lokal, menumbuhkan sikap moderat (tawassuth) dan cinta produk/budaya bangsa.',
+  },
+];
+
+// 8 Dimensi Profil Lulusan (Pembelajaran Mendalam & KMA 1503/2025 + Kepdirjen Pendis 6077/2025)
+export const DELAPAN_DIMENSI_PROFIL_LULUSAN = [
+  '1. Keimanan & Ketakwaan terhadap Tuhan YME serta Akhlak Mulia',
+  '2. Kewargaan (Berkebinekaan & Moderasi Beragama / Tawassuth)',
+  '3. Penalaran Kritis',
+  '4. Kreativitas',
+  '5. Kolaborasi (Gotong Royong)',
+  '6. Kemandirian',
+  '7. Kesehatan (Jasmani & Mental / Well-being)',
+  '8. Komunikasi (Berkeadaban / Ta\'addub)',
+];
+
+// 4 Jenis Asesmen KBC (termasuk Asesmen Sikap / Jurnal Anekdotal Karakter KBC)
+export const JENIS_ASESMEN_KBC = [
+  {
+    key: 'Asesmen Diagnostik (Awal Pembelajaran)',
+    desc: 'Pemetaan kesiapan awal kognitif, gaya belajar, dan kondisi afektif/kesejahteraan siswa',
+  },
+  {
+    key: 'Asesmen Sikap & Karakter KBC (Jurnal Anekdotal / Observasi Adab)',
+    desc: 'Observasi pengamalan Panca Cinta, adab thalabul ilmi, empati, dan catatan kejadian anekdotal',
+  },
+  {
+    key: 'Asesmen Formatif (Proses KBM & LKPD)',
+    desc: 'Unjuk kerja diskusi, penyelesaian LKPD, dan umpan balik reflektif selama pembelajaran',
+  },
+  {
+    key: 'Asesmen Sumatif (Akhir Lingkup Materi / TP)',
+    desc: 'Tes tertulis / proyek akhir untuk mengukur ketercapaian Tujuan Pembelajaran (KKTP)',
+  },
 ];
 
 interface AdministrationViewProps {
@@ -77,29 +106,48 @@ export const AdministrationView: React.FC<AdministrationViewProps> = ({
     nilaiKBC: [
       'Cinta kepada Allah dan Rasul-Nya',
       'Cinta kepada Ilmu Pengetahuan',
-      'Cinta kepada Diri dan Sesama'
+      'Cinta kepada Diri dan Sesama',
     ],
-    modelPembelajaran: 'Problem Based Learning (PBL) & Understanding by Design (UbD)',
+    insersiKBC: {
+      'Cinta kepada Allah dan Rasul-Nya':
+        'Niat thalabul ilmi karena Allah SWT, mengawali KBM dengan doa & tadabbur ayat/hadis terkait materi.',
+      'Cinta kepada Ilmu Pengetahuan':
+        'Membiasakan tabayyun (verifikasi ilmiah), berpikir kritis-analitis, dan adab menghormati guru serta sumber ilmu.',
+      'Cinta kepada Diri dan Sesama':
+        'Kerja kelompok kolaboratif saling membantu (ta\'awun), menghargai perbedaan pendapat (tasamuh), dan tutor sebaya.',
+    },
+    modelPembelajaran: 'Problem Based Learning (PBL) & Pendekatan Pembelajaran Mendalam (Mindful, Meaningful, Joyful)',
     capaianPembelajaranTeks: '',
+    tujuanPembelajaranTeks: '',
+    lintasDisiplinIlmu: 'Bahasa Indonesia/Arab (Literasi Teks), Ekologi/Sains (Konteks Alam), Tradisi Aswaja & Moderasi Beragama',
     instruksiKhusus: '',
-    karakteristikPesertaDidik: 'Kemampuan awal heterogen, kecenderungan gaya belajar visual dan kinestetik, santun dan aktif dalam diskusi kelompok.',
+    karakteristikPesertaDidik:
+      'Kemampuan awal heterogen, kecenderungan gaya belajar visual dan kinestetik, santun dan aktif dalam diskusi kelompok.',
     dimensiProfilLulusan: [
-      'Beriman, Bertakwa kepada Tuhan YME, & Berakhlak Mulia',
-      'Bernalar Kritis',
-      'Mandiri',
-      'Bergotong Royong',
-      'Berkeadaban (Ta\'addub)',
+      '1. Keimanan & Ketakwaan terhadap Tuhan YME serta Akhlak Mulia',
+      '3. Penalaran Kritis',
+      '5. Kolaborasi (Gotong Royong)',
+      '6. Kemandirian',
+      '8. Komunikasi (Berkeadaban / Ta\'addub)',
     ],
     jumlahPertemuan: '2 Pertemuan',
     jamPerPertemuan: '2 JP (2 x 45 menit)',
     jenisAsesmen: [
       'Asesmen Diagnostik (Awal Pembelajaran)',
+      'Asesmen Sikap & Karakter KBC (Jurnal Anekdotal / Observasi Adab)',
       'Asesmen Formatif (Proses KBM & LKPD)',
-      'Asesmen Sumatif (Akhir TP)',
+      'Asesmen Sumatif (Akhir Lingkup Materi / TP)',
     ],
+    agendaMadrasah:
+      'Minggu ke-1 Juli: MATSAMA & Awal Tahun Ajaran; Minggu ke-3 September: ASTS (Asesmen Sumatif Tengah Semester); Minggu ke-1 & 2 Desember: ASESGA/ASAS; Minggu ke-3 Desember: Pengolahan Rapor & Libur Semester.',
+    intervalKKTP:
+      '0 - 60% (Perlu Bimbingan / Belum Mencapai), 61 - 74% (Cukup / Layak dengan Remedial Terbatas), 75 - 87% (Baik / Cakap & Tuntas), 88 - 100% (Sangat Baik / Mahir & Pengayaan)',
+    respondenSurvei: 'Peserta Didik (Refleksi Suasana Kelas Berbasis Cinta)',
+    skalaSurvei: 'Skala Likert 1 - 4 (1 = Kurang, 2 = Cukup, 3 = Baik, 4 = Sangat Baik)',
+    aspekUmpanBalik:
+      'Suasana Kelas Ramah & Penuh Kasih Sayang (Joyful & Welcoming), Kejelasan & Kebermaknaan Materi (Meaningful Learning), Keteladanan Adab & Empati Guru (Panca Cinta KBC), Keadilan & Dukungan Belajar bagi Semua Siswa',
   });
 
-  // Handler for Kelas change that automatically fills Fase (X -> E, XI/XII -> F)
   const handleKelasChange = (newKelas: 'X' | 'XI' | 'XII') => {
     const autoFase: 'E' | 'F' = newKelas === 'X' ? 'E' : 'F';
     setConfig((prev) => ({
@@ -109,65 +157,63 @@ export const AdministrationView: React.FC<AdministrationViewProps> = ({
     }));
   };
 
-  // Sample CP Provider by Subject
   const getSampleCPText = (mapel: string): string => {
     const m = (mapel || '').toLowerCase();
     if (m.includes('matematika')) {
-      return `Pada akhir Fase E, peserta didik dapat menggeneralisasi sifat-sifat operasi bilangan berpangkat (eksponen) dan logaritma, serta menggunakan barisan dan deret (aritmetika dan geometri). Peserta didik dapat menyelesaikan sistem persamaan linear tiga variabel dan sistem pertidaksamaan linear dua variabel. Peserta didik dapat menyelesaikan masalah yang berkaitan dengan perbandingan trigonometri pada segitiga siku-siku.
+      return `Pada akhir Fase ${config.fase}, peserta didik dapat menggeneralisasi sifat-sifat operasi bilangan berpangkat (eksponen) dan logaritma, serta menggunakan barisan dan deret (aritmetika dan geometri). Peserta didik dapat menyelesaikan sistem persamaan linear tiga variabel dan sistem pertidaksamaan linear dua variabel, serta perbandingan trigonometri pada segitiga siku-siku.
 
 Elemen Bilangan:
-Peserta didik dapat menggeneralisasi sifat-sifat bilangan berpangkat (termasuk bilangan pangkat pecahan). Mereka dapat menerapkan barisan dan deret aritmetika dan geometri dalam berbagai konteks masalah kontekstual termasuk bunga majemuk dan anuitas.
+Peserta didik dapat menggeneralisasi sifat-sifat bilangan berpangkat serta menerapkan barisan dan deret aritmetika dan geometri dalam berbagai konteks masalah nyata.
 
 Elemen Aljabar dan Fungsi:
-Peserta didik dapat menyelesaikan sistem persamaan linear tiga variabel dan sistem pertidaksamaan linear dua variabel. Mereka dapat memodelkan fenomena hubungan kuadratik dan menyelesaikan persamaan serta fungsi kuadrat.
+Peserta didik dapat menyelesaikan sistem persamaan linear tiga variabel, sistem pertidaksamaan linear dua variabel, serta fungsi kuadrat.
 
 Elemen Geometri & Trigonometri:
-Peserta didik dapat menyelesaikan permasalahan segitiga siku-siku yang melibatkan perbandingan trigonometri dan aplikasinya dalam pengukuran nyata di lingkungan madrasah.
+Peserta didik dapat menyelesaikan permasalahan segitiga siku-siku yang melibatkan perbandingan trigonometri dan aplikasinya.
 
 Elemen Analisis Data dan Peluang:
-Peserta didik dapat merepresentasikan dan menginterpretasi data dengan sajian diagram yang sesuai serta menentukan peluang kejadian saling lepas dan bersyarat.`;
+Peserta didik dapat merepresentasikan dan menginterpretasi data serta menentukan peluang kejadian saling lepas dan bersyarat.`;
     }
     if (m.includes('arab')) {
-      return `Pada akhir Fase E, peserta didik memiliki kemampuan berbahasa Arab reseptif dan produktif dalam konteks kehidupan sehari-hari, madrasah, dan nilai-nilai Islam Aswaja.
+      return `Pada akhir Fase ${config.fase}, peserta didik memiliki kemampuan berbahasa Arab reseptif dan produktif dalam konteks kehidupan sehari-hari, madrasah, dan nilai-nilai Islam Aswaja.
 
 Elemen Menyimak (Istima'):
-Peserta didik mampu mengeksplorasi informasi yang didengar tentang perkenalan diri (ta'aruf), keluarga dan madrasah, serta fasilitas belajar dengan memahami ide pokok dan detail informasi.
+Peserta didik mampu mengeksplorasi informasi yang didengar tentang perkenalan diri (ta'aruf), keluarga, dan madrasah.
 
 Elemen Berbicara (Kalam):
-Peserta didik mampu berdialog sederhana, mengajukan pertanyaan, dan menyampaikan pendapat atau pengalaman secara lisan dengan pelafalan makharijul huruf yang fasih dan percaya diri.
+Peserta didik mampu berdialog sederhana dan menyampaikan gagasan secara lisan dengan makharijul huruf yang tepat dan santun.
 
 Elemen Membaca dan Memirsa (Qira'ah):
-Peserta didik mampu membaca dan memahami teks naratif, deskriptif, dan dialog Arab berharakat maupun gundul sederhana serta menemukan gagasan utama.
+Peserta didik mampu membaca dan memahami teks naratif, deskriptif, dan percakapan bahasa Arab serta menemukan gagasan utama.
 
 Elemen Menulis dan Mempresentasikan (Kitabah):
-Peserta didik mampu menyusun kalimat dan paragraf sederhana menggunakan kaidah tarkib dasar (dhamir, isim isyarah, jumlah ismiyyah, jumlah fi'liyyah) dengan tulisan Arab yang rapi dan benar.`;
+Peserta didik mampu menyusun kalimat dan paragraf sederhana menggunakan kaidah tarkib dasar dengan tulisan Arab yang benar.`;
     }
     if (m.includes('indonesia')) {
-      return `Pada akhir Fase E, peserta didik memiliki kemampuan berbahasa untuk berkomunikasi dan bernalar sesuai dengan tujuan, konteks sosial, akademis, dan dunia kerja.
+      return `Pada akhir Fase ${config.fase}, peserta didik memiliki kemampuan berbahasa untuk berkomunikasi dan bernalar sesuai dengan tujuan, konteks sosial, akademis, dan dunia kerja.
 
 Elemen Menyimak:
-Peserta didik mampu mengevaluasi dan mengkreasi informasi berupa gagasan, pikiran, perasaan, pandangan, arahan atau pesan yang akurat dari menyimak berbagai tipe teks lisan dan audiovisual.
+Peserta didik mampu mengevaluasi dan mengkreasi informasi berupa gagasan, pikiran, pandangan, atau pesan yang akurat dari menyimak berbagai tipe teks.
 
 Elemen Membaca dan Memirsa:
-Peserta didik mampu mengevaluasi informasi berupa gagasan, pikiran, pandangan, arahan atau pesan dari berbagai tipe teks (deskripsi, laporan, narasi, eksposisi, dan puisi) dari teks visual dan audiovisual.
+Peserta didik mampu mengevaluasi informasi dari berbagai tipe teks (deskripsi, laporan hasil observasi, eksposisi, negosiasi, dan sastra).
 
 Elemen Berbicara dan Mempresentasikan:
-Peserta didik mampu mengolah dan menyajikan gagasan, pikiran, pandangan, arahan atau pesan untuk tujuan pengajuan usul, perumusan masalah, dan solusi dalam bentuk monolog, dialog, dan gelar wicara secara logis, runtut, kritis, dan kreatif.
+Peserta didik mampu mengolah dan menyajikan gagasan untuk pengajuan usul, perumusan masalah, dan solusi secara logis, runtut, kritis, dan santun.
 
 Elemen Menulis:
-Peserta didik mampu menulis gagasan, pikiran, pandangan, pengetahuan metakognisi untuk berbagai tujuan secara logis, kritis, dan kreatif dalam bentuk teks fiksi maupun nonfiksi.`;
+Peserta didik mampu menulis gagasan, pikiran, dan pengetahuan metakognisi secara logis, kritis, dan kreatif dalam bentuk teks fiksi maupun nonfiksi.`;
     }
-    // Default Fiqih / Mapel Keagamaan Madrasah
-    return `Pada akhir Fase E, peserta didik memiliki kemampuan menganalisis ketentuan bersuci (thaharah), shalat fardhu dan sunnah, pengurusan jenazah, serta zakat, haji dan umrah sesuai mazhab Syafi'i berlandaskan nilai-nilai Aswaja An-Nahdliyah.
+    return `Pada akhir Fase ${config.fase}, peserta didik memiliki kemampuan menganalisis ketentuan bersuci (thaharah), ibadah mahdhah dan ghairu mahdhah, serta muamalah sesuai syariat Islam berlandaskan nilai-nilai Aswaja An-Nahdliyah dan Kurikulum Berbasis Cinta (KBC).
 
 Elemen Fiqih Ibadah:
-Peserta didik mampu menganalisis tata cara bersuci (thaharah) dari hadas dan najis, mendiagnosis hal-hal yang membatalkan wudhu dan tayamum, serta memahami rukun shalat, shalat berjamaah, dan pengurusan jenazah berlandaskan dalil Al-Qur'an dan hadits shahih.
+Peserta didik mampu menganalisis tata cara bersuci (thaharah) dari hadas dan najis, ketertiban shalat fardhu dan sunnah, zakat, serta pengurusan jenazah berlandaskan dalil Al-Qur'an dan hadis.
 
 Elemen Fiqih Muamalah:
-Peserta didik mampu mengidentifikasi prinsip-prinsip kepemilikan harta dalam Islam, akad jual beli, khiyar, dan pencegahan transaksi terlarang (riba, gharar, maysir) dengan semangat kasih sayang, kejujuran, dan kemaslahatan umat.
+Peserta didik mampu mengidentifikasi prinsip kepemilikan harta dalam Islam, akad jual beli, khiyar, dan kerja sama ekonomi dengan semangat kejujuran, kasih sayang (rahmah), dan kemaslahatan umat.
 
 Elemen Adab dan Kemasyarakatan:
-Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth (moderat) dalam mempraktikkan ibadah di tengah keberagaman masyarakat madrasah.`;
+Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi), tawassuth (moderat), dan kepedulian sosial-lingkungan dalam mempraktikkan syariat di madrasah dan masyarakat.`;
   };
 
   const handleLoadSampleCP = () => {
@@ -175,13 +221,22 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
     setConfig((prev) => ({
       ...prev,
       capaianPembelajaranTeks: sampleText,
-      alokasiWaktu:
-        prev.alokasiWaktu ||
-        (activeDocType === 'rpp' ? '4 JP (2 Pertemuan x 45 Menit)' : '72 JP (2 JP x 36 Minggu)'),
     }));
   };
 
-  // Sync config when madrasahIdentity updates
+  const handleFillDefaultInsersiKBC = () => {
+    const nextInsersi: Record<string, string> = { ...(config.insersiKBC || {}) };
+    PANCA_CINTA_KBC.forEach((item) => {
+      if (config.nilaiKBC.includes(item.nilai)) {
+        nextInsersi[item.nilai] = `${item.defaultInsersi} (Konteks materi: ${config.topikMateri || config.mapel}).`;
+      }
+    });
+    setConfig((prev) => ({
+      ...prev,
+      insersiKBC: nextInsersi,
+    }));
+  };
+
   useEffect(() => {
     setConfig((prev) => ({
       ...prev,
@@ -193,6 +248,7 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [docMeta, setDocMeta] = useState<{ isFallback?: boolean; source?: string; fallbackReason?: string }>({});
   const [generatedMarkdown, setGeneratedMarkdown] = useState<string>(
     savedDocs.find((d) => d.type === activeDocType)?.contentMarkdown || ''
   );
@@ -202,40 +258,44 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
   const getDocRightTitle = (docType: AdminDocType) => {
     switch (docType) {
       case 'rpp':
-        return 'RENCANA PELAKSANAAN PEMBELAJARAN (RPP)';
+        return 'RENCANA PELAKSANAAN PEMBELAJARAN (RPP) KBC';
       case 'modul_ajar':
-        return 'MODUL AJAR KURIKULUM MERDEKA';
+        return 'MODUL AJAR KURIKULUM BERBASIS CINTA (KBC)';
       case 'cp':
-        return 'ANALISIS CAPAIAN PEMBELAJARAN (CP) ELEMEN';
+        return 'ANALISIS CAPAIAN PEMBELAJARAN (CP) & KBC';
       case 'atp':
-        return 'ALUR TUJUAN PEMBELAJARAN (ATP) KURIKULUM MERDEKA';
+        return 'ALUR TUJUAN PEMBELAJARAN (ATP) & KBC';
       case 'prota':
-        return 'PROGRAM TAHUNAN (PROTA)';
+        return 'PROGRAM TAHUNAN (PROTA) KURIKULUM MERDEKA & KBC';
       case 'prosem':
-        return 'PROGRAM SEMESTER (PROSEM)';
+        return 'PROGRAM SEMESTER (PROSEM) KURIKULUM MERDEKA & KBC';
       case 'prota_prosem':
         return 'PROGRAM TAHUNAN & SEMESTER';
       case 'kktp':
-        return 'KRITERIA KETERCAPAIAN TP (KKTP)';
+        return 'KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP)';
+      case 'lkpd':
+        return 'LEMBAR KERJA PESERTA DIDIK (LKPD) BERBASIS KBC';
+      case 'presensi_kbm':
+        return 'JURNAL MENGAJAR & PRESENSI HARIAN KBM (KBC)';
       case 'umpan_balik':
-        return 'LEMBAR REFLEKSI & UMPAN BALIK';
+        return 'INSTRUMEN REFLEKSI & UMPAN BALIK PEMBELAJARAN KBC';
       default:
         return 'DOKUMEN ADMINISTRASI GURU';
     }
   };
 
   const getDocRightSubtitle = (docType: AdminDocType) => {
-    if (docType === 'rpp') {
+    if (docType === 'rpp' || docType === 'modul_ajar' || docType === 'lkpd') {
       return `KELAS ${config.kelas} (FASE ${config.fase}) | ${config.jumlahPertemuan || '2 Pertemuan'} @ ${config.jamPerPertemuan || '2 JP'} | TA: ${config.tahunPelajaran}`;
     }
     if (docType === 'cp') {
-      return `FASE ${config.fase} | ANALISIS CAPAIAN PEMBELAJARAN ELEMEN | TA: ${config.tahunPelajaran}`;
+      return `FASE ${config.fase} | ANALISIS ELEMEN CP & INSERSI KBC | TA: ${config.tahunPelajaran}`;
     }
     if (docType === 'atp') {
       return `FASE ${config.fase} | ALOKASI: ${config.alokasiWaktu || '72 JP'} | TA: ${config.tahunPelajaran}`;
     }
     if (docType === 'prota') {
-      return `FASE ${config.fase} KELAS ${config.kelas} | DISTRIBUSI ALOKASI WAKTU TAHUNAN | TA: ${config.tahunPelajaran}`;
+      return `FASE ${config.fase} KELAS ${config.kelas} | DISTRIBUSI TAHUNAN & TEMA KBC | TA: ${config.tahunPelajaran}`;
     }
     if (docType === 'prosem') {
       return `FASE ${config.fase} KELAS ${config.kelas} | SEMESTER ${config.semester === '2' ? 'GENAP' : 'GASAL'} | TA: ${config.tahunPelajaran}`;
@@ -243,7 +303,6 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
     return `TA: ${config.tahunPelajaran} | KELAS ${config.kelas} / FASE ${config.fase}`;
   };
 
-  // Load correct saved document based on active type, mapel, kelas, semester, and teacher
   useEffect(() => {
     const existing = savedDocs.find(
       (d) =>
@@ -260,46 +319,34 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
     }
   }, [activeDocType, config.mapel, config.kelas, config.semester, currentUser.name, savedDocs]);
 
-  // Sync when activeDocType changes
   const handleSelectDocType = (type: AdminDocType) => {
     setActiveDocType(type);
+    setDocMeta({});
     setConfig((prev) => ({
       ...prev,
       docType: type,
       alokasiWaktu:
-        (type === 'cp' || type === 'atp') && (!prev.alokasiWaktu || prev.alokasiWaktu.includes('Pertemuan'))
-          ? '72 JP (2 JP x 36 Minggu)'
-          : type === 'prota'
+        (type === 'cp' || type === 'atp' || type === 'prota') &&
+        (!prev.alokasiWaktu || prev.alokasiWaktu.includes('Pertemuan'))
           ? '72 JP (2 JP x 36 Minggu Efektif)'
           : type === 'prosem'
           ? '36 JP (18 Minggu Efektif x 2 JP)'
-          : type === 'rpp' && (!prev.alokasiWaktu || prev.alokasiWaktu.includes('72 JP'))
+          : (type === 'rpp' || type === 'modul_ajar' || type === 'lkpd') &&
+            (!prev.alokasiWaktu || prev.alokasiWaktu.includes('72 JP') || prev.alokasiWaktu.includes('36 JP'))
           ? '4 JP (2 Pertemuan x 45 Menit)'
           : prev.alokasiWaktu,
-      topikMateri:
-        type === 'rpp'
-          ? (prev.topikMateri || `Ketentuan Pokok Pembelajaran ${prev.mapel} Kelas ${prev.kelas}`)
-          : type === 'cp'
-          ? `Analisis Capaian Pembelajaran ${config.mapel} Fase ${config.fase}`
-          : type === 'atp'
-          ? `Alur Tujuan Pembelajaran ${config.mapel} Fase ${config.fase}`
-          : type === 'prota'
-          ? `Distribusi Alokasi Waktu Efektif Tahunan ${config.mapel}`
-          : type === 'prosem'
-          ? `Matriks Distribusi Alokasi Waktu Semester ${config.semester === '2' ? 'Genap' : 'Gasal'} ${config.mapel}`
-          : type === 'kktp'
-          ? `Kriteria Interval Ketuntasan ${config.mapel}`
-          : type === 'modul_ajar'
-          ? `Modul Ajar Deep Learning & KBC ${config.mapel}`
-          : `Instrumen Refleksi & Umpan Balik Siswa ${config.mapel}`,
     }));
   };
 
-  // Generate Admin Document via Server
   const handleGenerate = async () => {
-    let activeConfig = { ...config };
+    let activeConfig = { ...config, docType: activeDocType };
     if (
-      (activeDocType === 'cp' || activeDocType === 'atp' || activeDocType === 'rpp') &&
+      (activeDocType === 'cp' ||
+        activeDocType === 'atp' ||
+        activeDocType === 'rpp' ||
+        activeDocType === 'modul_ajar' ||
+        activeDocType === 'prota' ||
+        activeDocType === 'prosem') &&
       (!activeConfig.capaianPembelajaranTeks || activeConfig.capaianPembelajaranTeks.trim().length === 0)
     ) {
       const sampleText = getSampleCPText(activeConfig.mapel);
@@ -322,16 +369,27 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
 
       if (data.markdown) {
         setGeneratedMarkdown(data.markdown);
+        setDocMeta({
+          isFallback: Boolean(data.isFallback),
+          source: data.source || 'AI Gateway',
+          fallbackReason: data.fallbackReason || '',
+        });
         const newDoc: GeneratedAdminDoc = {
           id: `doc-${Date.now()}`,
           type: activeDocType,
           title:
             activeDocType === 'rpp'
-              ? `RPP ${activeConfig.mapel} Kelas ${activeConfig.kelas} (Fase ${activeConfig.fase})`
+              ? `RPP KBC ${activeConfig.mapel} Kelas ${activeConfig.kelas} (Fase ${activeConfig.fase})`
+              : activeDocType === 'modul_ajar'
+              ? `Modul Ajar KBC ${activeConfig.mapel} Kelas ${activeConfig.kelas} (Fase ${activeConfig.fase})`
               : activeDocType === 'cp'
-              ? `Analisis CP Elemen ${activeConfig.mapel} Fase ${activeConfig.fase}`
+              ? `Analisis CP & KBC ${activeConfig.mapel} Fase ${activeConfig.fase}`
               : activeDocType === 'atp'
-              ? `ATP Kurikulum Merdeka ${activeConfig.mapel} Fase ${activeConfig.fase}`
+              ? `ATP & KBC ${activeConfig.mapel} Fase ${activeConfig.fase}`
+              : activeDocType === 'lkpd'
+              ? `LKPD Berbasis KBC ${activeConfig.mapel} Kelas ${activeConfig.kelas}`
+              : activeDocType === 'presensi_kbm'
+              ? `Jurnal Mengajar & Presensi KBM ${activeConfig.mapel} Kelas ${activeConfig.kelas}`
               : `${activeDocType.toUpperCase().replace('_', ' ')} ${activeConfig.mapel} Kelas ${activeConfig.kelas}`,
           config: activeConfig,
           contentMarkdown: data.markdown,
@@ -347,16 +405,12 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
     }
   };
 
-  // Download DOCX
   const handleDownloadDocx = async () => {
     if (!generatedMarkdown) return;
     const docData: GeneratedAdminDoc = {
       id: `doc-${Date.now()}`,
       type: activeDocType,
-      title:
-        activeDocType === 'rpp'
-          ? `RPP ${config.mapel} Kelas ${config.kelas} - MA NU 01 Banyuputih`
-          : `${activeDocType.toUpperCase().replace('_', ' ')} ${config.mapel} Kelas ${config.kelas}`,
+      title: `${getDocRightTitle(activeDocType)} - ${config.mapel} Kelas ${config.kelas}`,
       config,
       contentMarkdown: generatedMarkdown,
       createdAt: new Date().toISOString(),
@@ -365,26 +419,17 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
     await exportAdminDocToDocx(docData);
   };
 
-  // Copy Markdown
   const handleCopy = () => {
     navigator.clipboard.writeText(generatedMarkdown);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
   };
 
-  // Open and print document in a new tab (Cetak PDF Tab Baru)
   const handlePrintNewTab = () => {
     if (!generatedMarkdown || !printCardRef.current) return;
 
     const isLandscape = activeDocType === 'prosem';
-    const docTypeLabel =
-      activeDocType === 'rpp'
-        ? 'RENCANA PELAKSANAAN PEMBELAJARAN (RPP)'
-        : activeDocType === 'prota'
-        ? 'PROGRAM TAHUNAN (PROTA)'
-        : activeDocType === 'prosem'
-        ? 'PROGRAM SEMESTER (PROSEM)'
-        : activeDocType.toUpperCase().replace('_', ' ');
+    const docTypeLabel = getDocRightTitle(activeDocType);
     const docTitle = `${docTypeLabel} - ${config.mapel} Kelas ${config.kelas} - MA NU 01 Banyuputih`;
     const contentHtml = printCardRef.current.innerHTML;
 
@@ -396,20 +441,8 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
   <title>${docTitle}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-            heading: ['"Plus Jakarta Sans"', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -418,7 +451,6 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
       color: #0f172a;
       margin: 0;
       padding: 0;
-      -webkit-font-smoothing: antialiased;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -426,11 +458,9 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid #e2e8f0;
-      padding: 12px 20px;
-      box-shadow: 0 2px 8px -2px rgba(0,0,0,0.06);
+      background: #ffffff;
+      border-bottom: 1px solid #cbd5e1;
+      padding: 10px 20px;
     }
     .toolbar-container {
       max-width: ${isLandscape ? '1200px' : '960px'};
@@ -441,52 +471,14 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
       gap: 16px;
       flex-wrap: wrap;
     }
-    .toolbar-btn-print {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 18px;
-      background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
-      color: #ffffff;
-      font-weight: 600;
-      font-size: 13px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
-      transition: all 0.2s;
-    }
-    .toolbar-btn-print:hover {
-      opacity: 0.92;
-      transform: translateY(-1px);
-    }
-    .toolbar-btn-close {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      background: #ffffff;
-      color: #475569;
-      font-weight: 500;
-      font-size: 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .toolbar-btn-close:hover {
-      background: #f1f5f9;
-      color: #0f172a;
-    }
     .sheet-wrapper {
       max-width: ${isLandscape ? '297mm' : '210mm'};
       min-height: ${isLandscape ? '210mm' : '297mm'};
-      margin: 24px auto;
+      margin: 20px auto;
       background: #ffffff;
-      padding: ${isLandscape ? '10mm 12mm' : '20mm 18mm'};
-      border-radius: 12px;
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
-      border: 1px solid #e2e8f0;
+      padding: ${isLandscape ? '10mm 12mm' : '18mm 16mm'};
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
     }
     table {
       width: 100%;
@@ -497,403 +489,381 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
       padding: 6px 10px;
     }
     @media print {
-      .no-print, .top-toolbar {
-        display: none !important;
-      }
-      body {
-        background: #ffffff !important;
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-      .sheet-wrapper {
-        margin: 0 !important;
-        padding: 0 !important;
-        border: none !important;
-        box-shadow: none !important;
-        max-width: 100% !important;
-        min-height: auto !important;
-      }
+      .no-print, .top-toolbar { display: none !important; }
+      body { background: #ffffff !important; padding: 0 !important; margin: 0 !important; }
+      .sheet-wrapper { margin: 0 !important; padding: 0 !important; border: none !important; max-width: 100% !important; }
       @page {
         size: ${isLandscape ? 'A4 landscape' : 'A4 portrait'};
-        margin: ${isLandscape ? '8mm 8mm 8mm 8mm' : '15mm 12mm 15mm 12mm'};
+        margin: ${isLandscape ? '8mm' : '14mm 12mm'};
       }
-      table {
-        page-break-inside: auto;
-      }
-      tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
-      }
-      thead {
-        display: table-header-group;
-      }
-      .break-inside-avoid {
-        page-break-inside: avoid !important;
-      }
+      tr { page-break-inside: avoid; }
+      thead { display: table-header-group; }
+      .break-inside-avoid { page-break-inside: avoid !important; }
     }
   </style>
 </head>
 <body>
   <div class="no-print top-toolbar">
     <div class="toolbar-container">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 12px; font-weight: 700; color: #045f3b; letter-spacing: 0.02em;">
-          MA NU 01 BANYUPUTIH
-        </span>
-        <span style="color: #94a3b8;">·</span>
-        <span style="font-size: 13px; font-weight: 600; color: #0f172a;">
-          ${docTitle}
-        </span>
+      <div>
+        <strong style="font-size: 13px; color: #045f3b;">MA NU 01 BANYUPUTIH</strong> —
+        <span style="font-size: 13px; color: #0f172a;">${docTitle}</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <button onclick="window.print()" class="toolbar-btn-print">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-          <span>Cetak / Simpan PDF</span>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="window.print()" style="padding: 6px 14px; background: #045f3b; color: #fff; font-weight: 600; font-size: 12px; border: none; border-radius: 4px; cursor: pointer;">
+          Cetak / Simpan PDF
         </button>
-        <button onclick="window.close()" class="toolbar-btn-close">
+        <button onclick="window.close()" style="padding: 6px 12px; background: #fff; color: #334155; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;">
           Tutup Tab
         </button>
       </div>
     </div>
-    <div style="max-width: 960px; margin: 8px auto 0; font-size: 11px; color: #64748b;">
-      💡 <em>Petunjuk Simpan PDF:</em> Pada jendela dialog cetak browser, ubah <strong>Destination / Tujuan</strong> menjadi <strong>"Save as PDF"</strong> atau <strong>"Simpan sebagai PDF"</strong>, lalu klik Simpan.
-    </div>
   </div>
-
   <div class="sheet-wrapper">
     ${contentHtml}
   </div>
-
   <script>
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        window.print();
-      }, 500);
-    });
+    window.addEventListener('load', () => { setTimeout(() => { window.print(); }, 500); });
   </script>
 </body>
 </html>`;
 
-    // Attempt direct window.open
-    let opened = false;
-    try {
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.open();
-        printWindow.document.write(fullHtml);
-        printWindow.document.close();
-        opened = true;
-      }
-    } catch (e) {
-      console.warn('Direct window.open document write failed, falling back to Blob URL:', e);
-    }
-
-    // Fallback: Blob URL
-    if (!opened) {
-      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-    }
+    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Top Institutional Header */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border-2 border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-blue-800 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <FileSpreadsheet className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="font-heading text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                Perangkat Administrasi Guru & Kurikulum Merdeka
-              </h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-900 uppercase">
-                Resmi
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              MA NU 01 Banyuputih · Modul Ajar Deep Learning, CP, ATP, Prota, Prosem, KKTP & KBC Panca Cinta
-            </p>
-          </div>
+  // Reusable Panca Cinta KBC & Materi Insersi Table Editor
+  const renderPancaCintaEditor = () => (
+    <div className="border border-slate-300 rounded overflow-hidden bg-white">
+      <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <span className="font-bold text-xs text-slate-800">
+            Panca Cinta KBC & Materi Insersi (KMA 1503/2025 & Kepdirjen Pendis 6077/2025)
+          </span>
+          <p className="text-[11px] text-slate-500">
+            Centang pilar cinta yang ditargetkan dan isi materi insersi (konteks integrasi / dalil pendukung) untuk dokumen ini.
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={handleFillDefaultInsersiKBC}
+          className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-[#045f3b] font-semibold text-[11px] cursor-pointer shrink-0"
+        >
+          Isi Contoh Insersi Otomatis
+        </button>
+      </div>
 
-        {/* Global Export actions */}
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="divide-y divide-slate-200">
+        {PANCA_CINTA_KBC.map((item) => {
+          const isChecked = config.nilaiKBC.includes(item.nilai);
+          const insersiVal = config.insersiKBC?.[item.nilai] || '';
+          return (
+            <div key={item.nilai} className={`p-2.5 space-y-1.5 ${isChecked ? 'bg-white' : 'bg-slate-50/60'}`}>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setConfig((prev) => ({
+                        ...prev,
+                        nilaiKBC: [...prev.nilaiKBC, item.nilai],
+                        insersiKBC: {
+                          ...(prev.insersiKBC || {}),
+                          [item.nilai]: prev.insersiKBC?.[item.nilai] || item.defaultInsersi,
+                        },
+                      }));
+                    } else {
+                      setConfig((prev) => ({
+                        ...prev,
+                        nilaiKBC: prev.nilaiKBC.filter((n) => n !== item.nilai),
+                      }));
+                    }
+                  }}
+                  className="mt-0.5 rounded border-slate-300 text-[#045f3b] focus:ring-[#045f3b]"
+                />
+                <div className="flex-1">
+                  <div className="font-semibold text-xs text-slate-900">{item.nilai}</div>
+                  <div className="text-[11px] text-slate-500 leading-snug">{item.deskripsi}</div>
+                </div>
+              </label>
+
+              {isChecked && (
+                <div className="pl-6">
+                  <input
+                    type="text"
+                    value={insersiVal}
+                    onChange={(e) =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        insersiKBC: {
+                          ...(prev.insersiKBC || {}),
+                          [item.nilai]: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder={`Materi insersi / dalil / pembiasaan untuk ${item.nilai}...`}
+                    className="w-full px-2.5 py-1.5 rounded border border-slate-300 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-[#045f3b] text-[11px] text-slate-800"
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // Reusable CP Textarea Block
+  const renderCPInputBlock = (label = 'Teks Capaian Pembelajaran (CP) Elemen Acuan') => (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between flex-wrap gap-1">
+        <label className="font-semibold text-slate-700 text-xs">
+          {label} <span className="text-rose-600">*</span>
+        </label>
+        <div className="flex items-center gap-2">
+          <a
+            href="https://kurikulum.kemendikdasmen.go.id/panduan-mapel"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-slate-600 hover:text-[#045f3b] underline"
+          >
+            <span>Referensi CP</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
           <button
             type="button"
-            onClick={handleCopy}
-            disabled={!generatedMarkdown}
-            className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition disabled:opacity-40 cursor-pointer"
+            onClick={handleLoadSampleCP}
+            className="px-2 py-0.5 rounded border border-slate-300 bg-slate-50 hover:bg-slate-100 text-[#045f3b] font-semibold text-[11px] cursor-pointer"
           >
-            {copySuccess ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-            <span>{copySuccess ? 'Tersalin!' : 'Salin Teks'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleDownloadDocx}
-            disabled={!generatedMarkdown}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold transition disabled:opacity-40 cursor-pointer shadow-xs"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Download .docx</span>
-          </button>
-          <button
-            type="button"
-            onClick={handlePrintNewTab}
-            disabled={!generatedMarkdown}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-800 transition disabled:opacity-40 cursor-pointer group"
-            title="Buka dokumen di tab baru untuk cetak atau simpan ke PDF"
-          >
-            <Printer className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-800 transition-colors" />
-            <span>Cetak PDF</span>
-            <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-800 transition-colors" />
+            Muat Standar CP {config.mapel}
           </button>
         </div>
       </div>
+      <textarea
+        rows={4}
+        value={config.capaianPembelajaranTeks || ''}
+        onChange={(e) => setConfig({ ...config, capaianPembelajaranTeks: e.target.value })}
+        placeholder="Tempel teks Capaian Pembelajaran (CP) resmi atau klik 'Muat Standar CP' di kanan atas..."
+        className="w-full p-2.5 rounded border border-slate-300 bg-white focus:outline-none focus:border-[#045f3b] text-xs font-mono leading-relaxed text-slate-900"
+      />
+    </div>
+  );
 
-      {/* 8 Document Category Selector Tabs */}
-      <div className="bg-white p-1.5 rounded-2xl border border-slate-200/90 shadow-2xs no-print overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-1 min-w-max sm:min-w-0 sm:grid sm:grid-cols-4 lg:grid-cols-8">
-          {[
-            { id: 'rpp', label: 'RPP Merdeka', icon: FileSpreadsheet },
-            { id: 'modul_ajar', label: 'Modul Ajar KBC', icon: HeartHandshake },
-            { id: 'cp', label: 'Capaian (CP)', icon: BookOpen },
-            { id: 'atp', label: 'Alur (ATP)', icon: Sparkles },
-            { id: 'prota', label: 'PROTA', icon: Calendar },
-            { id: 'prosem', label: 'PROSEM', icon: Layers },
-            { id: 'kktp', label: 'KKTP Interval', icon: CheckCircle2 },
-            { id: 'umpan_balik', label: 'Umpan Balik', icon: MessageSquare },
-          ].map((t) => {
-            const Icon = t.icon;
+  const DOC_TABS: { id: AdminDocType; label: string }[] = [
+    { id: 'rpp', label: '1. RPP Merdeka' },
+    { id: 'modul_ajar', label: '2. Modul Ajar KBC' },
+    { id: 'cp', label: '3. Analisis CP' },
+    { id: 'atp', label: '4. Alur (ATP)' },
+    { id: 'prota', label: '5. PROTA' },
+    { id: 'prosem', label: '6. PROSEM' },
+    { id: 'kktp', label: '7. KKTP Interval' },
+    { id: 'lkpd', label: '8. LKPD KBC' },
+    { id: 'presensi_kbm', label: '9. Jurnal & Presensi' },
+    { id: 'umpan_balik', label: '10. Umpan Balik' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* ========================================================
+          BOOTSTRAP HEADER & NAV-TABS (10 Perangkat KBC & Merdeka)
+      ======================================================== */}
+      <div className="bg-white rounded-md border border-slate-300 overflow-hidden no-print">
+        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="font-heading text-base font-bold text-slate-900">
+              Generator Perangkat Administrasi Guru & Kurikulum Berbasis Cinta (KBC)
+            </h1>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Rujukan: KMA 1503/2025 & Kepdirjen Pendis 6077/2025 · Panca Cinta Kemenag RI · 8 Dimensi Profil Lulusan (Pembelajaran Mendalam)
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={handleCopy}
+              disabled={!generatedMarkdown}
+              className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
+            >
+              {copySuccess ? <Check className="w-3.5 h-3.5 text-[#045f3b]" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+              <span>{copySuccess ? 'Tersalin!' : 'Salin Teks'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadDocx}
+              disabled={!generatedMarkdown}
+              className="px-3 py-1.5 rounded bg-[#045f3b] hover:bg-[#03482d] text-white font-semibold disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Unduh Word (.docx)</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePrintNewTab}
+              disabled={!generatedMarkdown}
+              className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-900 text-white font-semibold disabled:opacity-40 cursor-pointer flex items-center gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Cetak PDF</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Bootstrap .nav-tabs for 10 Document Types */}
+        <div className="px-3 pt-2 bg-slate-100 border-b border-slate-300 flex items-center gap-1 overflow-x-auto">
+          {DOC_TABS.map((t) => {
             const isActive = activeDocType === t.id;
             return (
               <button
                 key={t.id}
                 type="button"
-                onClick={() => handleSelectDocType(t.id as AdminDocType)}
-                className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer touch-manipulation whitespace-nowrap ${
+                onClick={() => handleSelectDocType(t.id)}
+                className={`px-3 py-2 text-xs font-semibold rounded-t-md border transition cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                    ? 'bg-white border-slate-300 border-b-white text-[#045f3b] -mb-px font-bold'
+                    : 'bg-slate-200/70 border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                <span>{t.label}</span>
+                {t.label}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Two-Panel Layout: Parameters Left, Preview Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start print:block print:w-full">
-        {/* LEFT PANEL: Form parameters */}
-        <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-4 no-print text-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="font-heading font-bold text-sm text-slate-900 flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>Konfigurasi: {activeDocType === 'rpp' ? 'RPP Kurikulum Merdeka' : activeDocType.toUpperCase().replace('_', ' ')}</span>
-            </h2>
-            <span className="text-[10px] font-mono text-slate-400 font-bold">
-              Dokumen Administrasi
+      {/* ========================================================
+          TWO-PANEL BOOTSTRAP LAYOUT: Form Left (5 cols), Preview Right (7 cols)
+      ======================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start print:block print:w-full">
+        {/* LEFT PANEL: Form Konfigurasi */}
+        <div className="lg:col-span-5 bg-white rounded-md border border-slate-300 overflow-hidden no-print text-xs">
+          <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <span className="font-bold text-slate-800">
+              Form Konfigurasi: {getDocRightTitle(activeDocType)}
             </span>
           </div>
 
-          {activeDocType === 'rpp' ? (
-            /* Dedicated Form for RPP Kurikulum Merdeka */
-            <div className="space-y-4">
-              {/* Header Info Banner */}
-              <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50/60 border border-emerald-200/80 rounded-2xl text-xs text-emerald-950 flex items-start space-x-3">
-                <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div className="space-y-0.5">
-                  <p className="font-bold text-emerald-950 text-xs">Generator RPP Kurikulum Merdeka & KBC</p>
-                  <p className="text-[11px] text-emerald-800 leading-relaxed">
-                    Menyusun naskah RPP terintegrasi diferensiasi KBM, profil lulusan, alokasi jam, dan nilai Kurikulum Berbasis Cinta.
-                  </p>
-                </div>
+          <div className="p-4 space-y-4">
+            {/* Common Identity Fields for ALL Tabs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Mata Pelajaran *</label>
+                <input
+                  type="text"
+                  value={config.mapel}
+                  onChange={(e) => setConfig({ ...config, mapel: e.target.value })}
+                  placeholder="Contoh: Fiqih, Matematika, Bahasa Arab"
+                  className="w-full px-3 py-2 rounded border border-slate-300 bg-white focus:outline-none focus:border-[#045f3b] text-slate-900"
+                />
               </div>
 
-              {/* SECTION 1: Identitas & Kurikulum */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 space-y-3.5 shadow-2xs">
-                <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 border-b border-slate-100 pb-2">
-                  <span className="w-1.5 h-3.5 bg-emerald-600 rounded-full"></span>
-                  <span>1. Identitas Kelas & Mata Pelajaran</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Kelas */}
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                      Kelas <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {(['X', 'XI', 'XII'] as const).map((k) => (
-                        <button
-                          key={k}
-                          type="button"
-                          onClick={() => handleKelasChange(k)}
-                          className={`py-1.5 px-2 text-xs font-bold rounded-xl border transition cursor-pointer text-center ${
-                            config.kelas === k
-                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          Kelas {k}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Fase */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block font-semibold text-slate-700 text-xs">
-                        Fase Kurikulum
-                      </label>
-                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                        Otomatis
-                      </span>
-                    </div>
-                    <div className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50/80 text-slate-700 font-medium text-xs flex items-center justify-between h-[34px]">
-                      <span>{config.fase === 'E' ? 'Fase E (Kelas X)' : 'Fase F (Kelas XI / XII)'}</span>
-                      <span className="text-[10px] font-bold text-emerald-800 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                        Fase {config.fase}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Semester */}
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                      Semester <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={config.semester}
-                      onChange={(e) => setConfig({ ...config, semester: e.target.value as any })}
-                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium text-xs h-[34px]"
-                    >
-                      <option value="1">Semester 1 (Gasal / Ganjil)</option>
-                      <option value="2">Semester 2 (Genap)</option>
-                      <option value="1 & 2">Semester 1 & 2 (Tahunan)</option>
-                    </select>
-                  </div>
-
-                  {/* Mata Pelajaran */}
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                      Mata Pelajaran <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={config.mapel}
-                      onChange={(e) => setConfig({ ...config, mapel: e.target.value })}
-                      placeholder="Fiqih / Matematika / lainnya"
-                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium text-xs h-[34px]"
-                    />
-                  </div>
-                </div>
-
-                {/* Quick Mapel Selector */}
-                <div className="pt-1 flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] text-slate-400 font-medium mr-1">Pilihan Cepat:</span>
-                  {['Fiqih', 'Al-Qur\'an Hadits', 'Akidah Akhlak', 'SKI', 'Bahasa Arab', 'Matematika', 'Bahasa Indonesia', 'Informatika'].map((s) => (
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Kelas & Fase *</label>
+                <div className="grid grid-cols-3 gap-1">
+                  {(['X', 'XI', 'XII'] as const).map((k) => (
                     <button
-                      key={s}
+                      key={k}
                       type="button"
-                      onClick={() => setConfig({ ...config, mapel: s })}
-                      className={`text-[10px] px-2 py-0.5 rounded-md border transition cursor-pointer ${
-                        config.mapel === s
-                          ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                      onClick={() => handleKelasChange(k)}
+                      className={`py-2 px-2 rounded border font-semibold cursor-pointer ${
+                        config.kelas === k
+                          ? 'bg-[#045f3b] text-white border-[#045f3b]'
+                          : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
                       }`}
                     >
-                      {s}
+                      {k} ({k === 'X' ? 'Fase E' : 'Fase F'})
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* SECTION 2: Materi & Capaian Pembelajaran */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 space-y-3.5 shadow-2xs">
-                <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 border-b border-slate-100 pb-2">
-                  <span className="w-1.5 h-3.5 bg-emerald-600 rounded-full"></span>
-                  <span>2. Materi Pokok & Capaian Pembelajaran (CP)</span>
-                </div>
-
-                {/* Topik / Materi */}
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                    Topik / Materi Pokok Pembelajaran <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={config.topikMateri}
-                    onChange={(e) => setConfig({ ...config, topikMateri: e.target.value })}
-                    placeholder="Contoh: Ketentuan Thaharah dan Kebersihan Lingkungan dalam Bingkai Kasih Sayang"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium text-xs"
-                  />
-                </div>
-
-                {/* Capaian Pembelajaran (CP) */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
-                    <label className="font-semibold text-slate-700 text-xs">
-                      Capaian Pembelajaran (CP) <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <a
-                        href="https://kurikulum.kemendikdasmen.go.id/panduan-mapel"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center space-x-1 text-[10px] text-slate-500 hover:text-emerald-700 transition"
-                      >
-                        <span>Referensi CP</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                      <button
-                        type="button"
-                        onClick={handleLoadSampleCP}
-                        className="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-200 transition cursor-pointer flex items-center space-x-1"
-                      >
-                        <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                        <span>Muat Standar CP {config.mapel}</span>
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    rows={3}
-                    value={config.capaianPembelajaranTeks || ''}
-                    onChange={(e) => setConfig({ ...config, capaianPembelajaranTeks: e.target.value })}
-                    placeholder="Masukkan atau muat standar CP elemen yang diajarkan..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition text-xs font-mono leading-relaxed"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Semester *</label>
+                <select
+                  value={config.semester}
+                  onChange={(e) => setConfig({ ...config, semester: e.target.value as any })}
+                  className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                >
+                  <option value="1">Semester 1 (Gasal)</option>
+                  <option value="2">Semester 2 (Genap)</option>
+                  <option value="1 & 2">Semester 1 & 2 (Tahunan)</option>
+                </select>
               </div>
 
-              {/* SECTION 3: Desain Pembelajaran & Alokasi Waktu */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 space-y-3.5 shadow-2xs">
-                <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 border-b border-slate-100 pb-2">
-                  <span className="w-1.5 h-3.5 bg-emerald-600 rounded-full"></span>
-                  <span>3. Alokasi Waktu & Desain Pembelajaran</span>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Alokasi Waktu (JP) *</label>
+                <input
+                  type="text"
+                  value={config.alokasiWaktu}
+                  onChange={(e) => setConfig({ ...config, alokasiWaktu: e.target.value })}
+                  placeholder="Contoh: 4 JP (2 Pertemuan) atau 72 JP"
+                  className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                />
+              </div>
+            </div>
+
+            {/* Topik / Materi Pokok */}
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Topik / Materi Pokok Pembelajaran *
+              </label>
+              <input
+                type="text"
+                value={config.topikMateri}
+                onChange={(e) => setConfig({ ...config, topikMateri: e.target.value })}
+                placeholder="Contoh: Ketentuan Thaharah dan Kebersihan Lingkungan dalam Bingkai Kasih Sayang"
+                className="w-full px-3 py-2 rounded border border-slate-300 bg-white focus:outline-none focus:border-[#045f3b] text-slate-900"
+              />
+            </div>
+
+            {/* ========================================================
+                TAB-SPECIFIC FIELDS:
+                1. RPP & 2. MODUL AJAR KBC & 8. LKPD KBC
+            ======================================================== */}
+            {(activeDocType === 'rpp' || activeDocType === 'modul_ajar' || activeDocType === 'lkpd') && (
+              <div className="space-y-3.5 pt-2 border-t border-slate-200">
+                {renderCPInputBlock('Capaian Pembelajaran (CP) Elemen')}
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Rumusan Tujuan Pembelajaran (TP) / Indikator Spesifik (Opsional — jika kosong disusun dari CP)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={config.tujuanPembelajaranTeks || ''}
+                    onChange={(e) => setConfig({ ...config, tujuanPembelajaranTeks: e.target.value })}
+                    placeholder="Contoh: 1. Menganalisis ketentuan bersuci dari hadas; 2. Mempraktikkan thaharah dengan hemat air (ekoteologi KBC)..."
+                    className="w-full p-2.5 rounded border border-slate-300 bg-white text-slate-900"
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Jumlah Pertemuan */}
+                {activeDocType === 'modul_ajar' && (
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                      Jumlah Pertemuan <span className="text-rose-500">*</span>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Lintas Disiplin Ilmu (Konektivitas Materi)
                     </label>
+                    <input
+                      type="text"
+                      value={config.lintasDisiplinIlmu || ''}
+                      onChange={(e) => setConfig({ ...config, lintasDisiplinIlmu: e.target.value })}
+                      placeholder="Contoh: Biologi/Kesehatan (Higienitas), Ekologi (Konservasi Air), Bahasa Arab"
+                      className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Jumlah Pertemuan</label>
                     <select
                       value={config.jumlahPertemuan || '2 Pertemuan'}
                       onChange={(e) => {
@@ -907,22 +877,16 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
                           alokasiWaktu: `${numPertemuan * jpNum} JP (${jm} x ${jpNum} JP)`,
                         });
                       }}
-                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium text-xs h-[34px]"
+                      className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
                     >
                       <option value="1 Pertemuan">1 Pertemuan</option>
                       <option value="2 Pertemuan">2 Pertemuan</option>
                       <option value="3 Pertemuan">3 Pertemuan</option>
                       <option value="4 Pertemuan">4 Pertemuan</option>
-                      <option value="5 Pertemuan">5 Pertemuan</option>
-                      <option value="6 Pertemuan">6 Pertemuan</option>
                     </select>
                   </div>
-
-                  {/* Jam per Pertemuan */}
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                      Jam per Pertemuan <span className="text-rose-500">*</span>
-                    </label>
+                    <label className="block font-semibold text-slate-700 mb-1">Jam per Pertemuan</label>
                     <select
                       value={config.jamPerPertemuan || '2 JP (2 x 45 menit)'}
                       onChange={(e) => {
@@ -936,633 +900,425 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
                           alokasiWaktu: `${numPertemuan * jpNum} JP (${jm} x ${jpNum} JP)`,
                         });
                       }}
-                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium text-xs h-[34px]"
+                      className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
                     >
                       <option value="2 JP (2 x 45 menit)">2 JP (2 x 45 menit)</option>
                       <option value="3 JP (3 x 45 menit)">3 JP (3 x 45 menit)</option>
                       <option value="4 JP (4 x 45 menit)">4 JP (4 x 45 menit)</option>
-                      <option value="1 JP (1 x 45 menit)">1 JP (1 x 45 menit)</option>
                     </select>
                   </div>
                 </div>
 
-                {/* Model Pembelajaran */}
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                    Model Pembelajaran <span className="text-rose-500">*</span>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Model & Pendekatan Pembelajaran Mendalam
                   </label>
                   <input
                     type="text"
                     value={config.modelPembelajaran}
                     onChange={(e) => setConfig({ ...config, modelPembelajaran: e.target.value })}
-                    placeholder="Contoh: Problem Based Learning (PBL) & Understanding by Design (UbD)"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium text-xs mb-2"
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
                   />
-                  <div className="flex flex-wrap gap-1">
-                    {[
-                      'Problem Based Learning (PBL)',
-                      'Project Based Learning (PjBL)',
-                      'Discovery Learning',
-                      'Understanding by Design (UbD)',
-                    ].map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setConfig({ ...config, modelPembelajaran: m })}
-                        className={`text-[10px] px-2 py-0.5 rounded-md border transition cursor-pointer ${
-                          config.modelPembelajaran === m
-                            ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
-                {/* Karakteristik Peserta Didik */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block font-semibold text-slate-700 text-xs">
-                      Karakteristik Siswa & Diferensiasi <span className="text-rose-500">*</span>
-                    </label>
-                    <span className="text-[10px] text-slate-400">Dasar Diferensiasi KBM</span>
-                  </div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Karakteristik Peserta Didik & Strategi Diferensiasi
+                  </label>
                   <textarea
                     rows={2}
                     value={config.karakteristikPesertaDidik || ''}
                     onChange={(e) => setConfig({ ...config, karakteristikPesertaDidik: e.target.value })}
-                    placeholder="Deskripsikan kesiapan awal, gaya belajar (visual/auditori/kinestetik), dan kebutuhan peserta didik..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition text-xs mb-1.5"
+                    className="w-full p-2.5 rounded border border-slate-300 bg-white text-slate-900"
                   />
-                  <div className="flex flex-wrap gap-1">
-                    {[
-                      'Kemampuan awal heterogen',
-                      'Dominan gaya visual & kinestetik',
-                      'Santun dan aktif berkolaborasi',
-                    ].map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => {
-                          const current = config.karakteristikPesertaDidik || '';
-                          if (!current.includes(tag)) {
-                            setConfig({
-                              ...config,
-                              karakteristikPesertaDidik: current ? `${current}, ${tag}` : tag,
-                            });
-                          }
-                        }}
-                        className="text-[10px] px-2 py-0.5 rounded-md bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 text-slate-600 border border-slate-200 transition cursor-pointer"
-                      >
-                        + {tag}
-                      </button>
-                    ))}
+                </div>
+
+                {/* 8 Dimensi Profil Lulusan (Pembelajaran Mendalam) */}
+                <div className="border border-slate-300 rounded overflow-hidden">
+                  <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 font-bold text-slate-800">
+                    8 Dimensi Profil Lulusan (Pembelajaran Mendalam & KBC)
                   </div>
-                </div>
-              </div>
-
-              {/* SECTION 4: Profil Lulusan & Asesmen */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 space-y-3.5 shadow-2xs">
-                <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 border-b border-slate-100 pb-2">
-                  <span className="w-1.5 h-3.5 bg-emerald-600 rounded-full"></span>
-                  <span>4. Dimensi Profil Lulusan (P5RA & KBC) & Asesmen</span>
-                </div>
-
-                {/* Dimensi Profil Lulusan */}
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                    Pilih Dimensi Target Profil Lulusan:
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {[
-                      'Beriman, Bertakwa kepada Tuhan YME, & Berakhlak Mulia',
-                      'Bernalar Kritis',
-                      'Mandiri',
-                      'Bergotong Royong',
-                      'Berkebinekaan Global',
-                      'Kreatif',
-                      'Berkeadaban (Ta\'addub) / Nilai KBC',
-                    ].map((dimensi) => {
+                  <div className="p-2.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-white">
+                    {DELAPAN_DIMENSI_PROFIL_LULUSAN.map((dimensi) => {
                       const isSelected = (config.dimensiProfilLulusan || []).includes(dimensi);
                       return (
-                        <button
+                        <label
                           key={dimensi}
-                          type="button"
-                          onClick={() => {
-                            const current = config.dimensiProfilLulusan || [];
-                            if (isSelected) {
-                              setConfig({
-                                ...config,
-                                dimensiProfilLulusan: current.filter((d) => d !== dimensi),
-                              });
-                            } else {
-                              setConfig({
-                                ...config,
-                                dimensiProfilLulusan: [...current, dimensi],
-                              });
-                            }
-                          }}
-                          className={`flex items-center space-x-2 p-2 rounded-xl border text-left transition cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-semibold'
-                              : 'bg-slate-50/70 border-slate-200 text-slate-600 hover:bg-slate-100'
-                          }`}
+                          className="flex items-start gap-2 p-1.5 rounded hover:bg-slate-50 cursor-pointer"
                         >
-                          <div className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] shrink-0 ${
-                            isSelected ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white'
-                          }`}>
-                            {isSelected ? '✓' : ''}
-                          </div>
-                          <span className="text-[11px] leading-snug">{dimensi}</span>
-                        </button>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              const current = config.dimensiProfilLulusan || [];
+                              setConfig({
+                                ...config,
+                                dimensiProfilLulusan: e.target.checked
+                                  ? [...current, dimensi]
+                                  : current.filter((d) => d !== dimensi),
+                              });
+                            }}
+                            className="mt-0.5 rounded border-slate-300 text-[#045f3b] focus:ring-[#045f3b]"
+                          />
+                          <span className="text-[11px] text-slate-800 leading-snug">{dimensi}</span>
+                        </label>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Jenis Asesmen */}
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1.5 text-xs">
-                    Rencana Asesmen Pembelajaran:
-                  </label>
-                  <div className="space-y-1.5">
-                    {[
-                      { key: 'Asesmen Diagnostik (Awal Pembelajaran)', desc: 'Pemetaan kesiapan awal kognitif dan non-kognitif' },
-                      { key: 'Asesmen Formatif (Proses KBM & LKPD)', desc: 'Observasi keaktifan, unjuk kerja LKPD, dan adab santri KBC' },
-                      { key: 'Asesmen Sumatif (Akhir TP)', desc: 'Tes tertulis / penilaian produk akhir untuk mengukur ketercapaian KKTP' },
-                    ].map((asesmen) => {
+                {/* Jenis Asesmen (termasuk Asesmen Sikap / Jurnal Anekdotal KBC) */}
+                <div className="border border-slate-300 rounded overflow-hidden">
+                  <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 font-bold text-slate-800">
+                    Rencana Asesmen (Kognitif & Karakter/Sikap KBC)
+                  </div>
+                  <div className="p-2.5 space-y-1.5 bg-white">
+                    {JENIS_ASESMEN_KBC.map((asesmen) => {
                       const isSelected = (config.jenisAsesmen || []).includes(asesmen.key);
                       return (
-                        <button
+                        <label
                           key={asesmen.key}
-                          type="button"
-                          onClick={() => {
-                            const current = config.jenisAsesmen || [];
-                            if (isSelected) {
-                              setConfig({
-                                ...config,
-                                jenisAsesmen: current.filter((a) => a !== asesmen.key),
-                              });
-                            } else {
-                              setConfig({
-                                ...config,
-                                jenisAsesmen: [...current, asesmen.key],
-                              });
-                            }
-                          }}
-                          className={`w-full flex items-start space-x-2.5 p-2 rounded-xl border text-left transition cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
-                              : 'bg-slate-50/70 border-slate-200 text-slate-600 hover:bg-slate-100'
-                          }`}
+                          className="flex items-start gap-2 p-1.5 rounded hover:bg-slate-50 cursor-pointer"
                         >
-                          <div className={`w-3.5 h-3.5 mt-0.5 rounded flex items-center justify-center text-[10px] shrink-0 ${
-                            isSelected ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white'
-                          }`}>
-                            {isSelected ? '✓' : ''}
-                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              const current = config.jenisAsesmen || [];
+                              setConfig({
+                                ...config,
+                                jenisAsesmen: e.target.checked
+                                  ? [...current, asesmen.key]
+                                  : current.filter((a) => a !== asesmen.key),
+                              });
+                            }}
+                            className="mt-0.5 rounded border-slate-300 text-[#045f3b] focus:ring-[#045f3b]"
+                          />
                           <div>
-                            <p className="font-semibold text-xs leading-snug">{asesmen.key}</p>
-                            <p className="text-[10.5px] text-slate-500">{asesmen.desc}</p>
+                            <div className="font-semibold text-slate-900 text-[11px]">{asesmen.key}</div>
+                            <div className="text-[10.5px] text-slate-500">{asesmen.desc}</div>
                           </div>
-                        </button>
+                        </label>
                       );
                     })}
                   </div>
                 </div>
-
-                {/* Info Pengesahan Guru & Kepala Madrasah */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-100">
-                  <div>
-                    <label className="block font-medium text-slate-500 mb-1 text-[11px]">Guru Pengampu (Otomatis)</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={config.guruPengampu}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-100 text-slate-500 text-xs cursor-not-allowed font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-medium text-slate-500 mb-1 text-[11px]">Kepala Madrasah</label>
-                    <input
-                      type="text"
-                      value={config.kepalaMadrasah}
-                      onChange={(e) => setConfig({ ...config, kepalaMadrasah: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs"
-                    />
-                  </div>
-                </div>
               </div>
-            </div>
-          ) : (activeDocType === 'cp' || activeDocType === 'atp') ? (
-            /* Dedicated Form for Capaian Pembelajaran & Alur Tujuan Pembelajaran */
-            <div className="space-y-4">
-              {/* 1. Mapel & 2. Fase */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-800 mb-1">
-                    Mata Pelajaran <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={config.mapel}
-                    onChange={(e) => setConfig({ ...config, mapel: e.target.value })}
-                    placeholder="Contoh: Fiqih, Matematika..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-800 mb-1">
-                    Fase & Jenjang <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={config.fase}
-                    onChange={(e) => setConfig({ ...config, fase: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium"
-                  >
-                    <option value="E">Fase E (Kelas X)</option>
-                    <option value="F">Fase F (Kelas XI & XII)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* 3. Alokasi Jam Pelajaran */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-800">
-                    Alokasi Jam Pelajaran <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400">Total JP Fase / Tahunan</span>
-                </div>
-                <input
-                  type="text"
-                  value={config.alokasiWaktu || ''}
-                  onChange={(e) => setConfig({ ...config, alokasiWaktu: e.target.value })}
-                  placeholder="Contoh: 72 JP (2 JP x 36 Minggu) atau 108 JP"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                />
-              </div>
-
-              {/* 4. Capaian Pembelajaran (CP) * (lihat referensi CP) */}
-              <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-2">
-                <div className="flex items-center justify-between flex-wrap gap-1">
-                  <div className="flex items-center space-x-1.5 flex-wrap">
-                    <label className="font-bold text-slate-900 text-xs">
-                      Capaian Pembelajaran (CP) <span className="text-rose-500 font-bold">*</span>
-                    </label>
-                    <a
-                      href="https://kurikulum.kemendikdasmen.go.id/panduan-mapel"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1 text-[11px] font-medium text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md transition-colors border border-emerald-200/60"
-                      title="Buka Referensi CP Resmi Kemendikdasmen di tab baru"
-                    >
-                      <span>(lihat referensi CP)</span>
-                      <ExternalLink className="w-2.5 h-2.5 text-emerald-600" />
-                    </a>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleLoadSampleCP}
-                    className="text-[10px] text-emerald-700 hover:text-emerald-800 underline font-medium cursor-pointer"
-                  >
-                    Muat Contoh Teks CP
-                  </button>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/70 text-amber-900 text-[11px] leading-relaxed">
-                  <p className="font-semibold flex items-center space-x-1">
-                    <span>💡</span>
-                    <span>Panduan Pengisian:</span>
-                  </p>
-                  <p className="mt-0.5">
-                    Tempel seluruh teks CP mata pelajaran ini (semua elemen sekaligus) — AI akan memecahnya menjadi ATP.
-                  </p>
-                </div>
-
-                <textarea
-                  rows={6}
-                  value={config.capaianPembelajaranTeks || ''}
-                  onChange={(e) => setConfig({ ...config, capaianPembelajaranTeks: e.target.value })}
-                  placeholder="Tempel seluruh teks CP mata pelajaran di sini (Capaian Umum Fase beserta semua Elemen sekaligus: misal Elemen Pemahaman, Elemen Keterampilan Proses, dll.)..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition text-xs font-mono leading-relaxed"
-                />
-
-                <div className="flex justify-between items-center text-[10px] text-slate-400 pt-0.5">
-                  <span>Karakter: {(config.capaianPembelajaranTeks || '').length}</span>
-                  {config.capaianPembelajaranTeks && (
-                    <button
-                      type="button"
-                      onClick={() => setConfig({ ...config, capaianPembelajaranTeks: '' })}
-                      className="text-slate-400 hover:text-rose-600 transition underline cursor-pointer"
-                    >
-                      Kosongkan Teks CP
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* 5. Instruksi Khusus (opsional) */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-800">
-                    Instruksi Khusus <span className="text-slate-400 font-normal">(opsional)</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400">Preferensi & Fokus</span>
-                </div>
-                <textarea
-                  rows={2}
-                  value={config.instruksiKhusus || ''}
-                  onChange={(e) => setConfig({ ...config, instruksiKhusus: e.target.value })}
-                  placeholder="Contoh: Urutkan alur dari yang mudah ke kompleks, sertakan asesmen diagnostik di awal, atau tekankan adab dan nilai Aswaja..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition text-xs"
-                />
-              </div>
-
-              {/* Nilai KBC */}
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">Nilai KBC (Kurikulum Berbasis Cinta)</label>
-                <div className="space-y-1.5 bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 text-[11px]">
-                  {PANCA_CINTA_KBC.map((item) => (
-                    <label key={item.nilai} className="block p-2 rounded-xl hover:bg-slate-100 transition cursor-pointer border border-transparent hover:border-slate-200">
-                      <div className="flex items-start space-x-2.5">
-                        <input
-                          type="checkbox"
-                          checked={config.nilaiKBC.includes(item.nilai)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setConfig({ ...config, nilaiKBC: [...config.nilaiKBC, item.nilai] });
-                            } else {
-                              setConfig({
-                                ...config,
-                                nilaiKBC: config.nilaiKBC.filter((n) => n !== item.nilai),
-                              });
-                            }
-                          }}
-                          className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
-                        />
-                        <div>
-                          <span className="font-semibold text-slate-900 block">{item.nilai}</span>
-                          <span className="text-[10px] text-slate-500 block leading-normal mt-0.5">{item.deskripsi}</span>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Guru & Kepala Madrasah Info */}
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                <div>
-                  <label className="block font-medium text-slate-600 mb-1">Guru Pengampu</label>
-                  <input
-                    type="text"
-                    value={config.guruPengampu}
-                    onChange={(e) => setConfig({ ...config, guruPengampu: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-600 mb-1">Kepala Madrasah</label>
-                  <input
-                    type="text"
-                    value={config.kepalaMadrasah}
-                    onChange={(e) => setConfig({ ...config, kepalaMadrasah: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* General Form for Other Document Types */
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Mata Pelajaran</label>
-                  <input
-                    type="text"
-                    value={config.mapel}
-                    onChange={(e) => setConfig({ ...config, mapel: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Fase & Jenjang</label>
-                  <select
-                    value={config.fase}
-                    onChange={(e) => setConfig({ ...config, fase: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                  >
-                    <option value="E">Fase E (Kelas X)</option>
-                    <option value="F">Fase F (Kelas XI & XII)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Kelas</label>
-                  <select
-                    value={config.kelas}
-                    onChange={(e) => setConfig({ ...config, kelas: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                  >
-                    <option value="X">Kelas X</option>
-                    <option value="XI">Kelas XI</option>
-                    <option value="XII">Kelas XII</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Semester</label>
-                  <select
-                    value={config.semester}
-                    onChange={(e) => setConfig({ ...config, semester: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                  >
-                    <option value="1">Semester 1 (Gasal)</option>
-                    <option value="2">Semester 2 (Genap)</option>
-                    <option value="1 & 2">Satu Tahun Penuh (1 & 2)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">Topik Materi Pokok</label>
-                <input
-                  type="text"
-                  value={config.topikMateri}
-                  onChange={(e) => setConfig({ ...config, topikMateri: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">Alokasi Jam Pelajaran (JP)</label>
-                <input
-                  type="text"
-                  value={config.alokasiWaktu}
-                  onChange={(e) => setConfig({ ...config, alokasiWaktu: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">Nilai KBC (Kurikulum Berbasis Cinta)</label>
-                <div className="space-y-1.5 bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 text-[11px]">
-                  {PANCA_CINTA_KBC.map((item) => (
-                    <label key={item.nilai} className="block p-2 rounded-xl hover:bg-slate-100 transition cursor-pointer border border-transparent hover:border-slate-200">
-                      <div className="flex items-start space-x-2.5">
-                        <input
-                          type="checkbox"
-                          checked={config.nilaiKBC.includes(item.nilai)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setConfig({ ...config, nilaiKBC: [...config.nilaiKBC, item.nilai] });
-                            } else {
-                              setConfig({
-                                ...config,
-                                nilaiKBC: config.nilaiKBC.filter((n) => n !== item.nilai),
-                              });
-                            }
-                          }}
-                          className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
-                        />
-                        <div>
-                          <span className="font-semibold text-slate-900 block">{item.nilai}</span>
-                          <span className="text-[10px] text-slate-500 block leading-normal mt-0.5">{item.deskripsi}</span>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">Pendekatan Pembelajaran</label>
-                <input
-                  type="text"
-                  value={config.modelPembelajaran}
-                  onChange={(e) => setConfig({ ...config, modelPembelajaran: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                <div>
-                  <label className="block font-medium text-slate-600 mb-1 text-[11px]">Guru Pengampu (Otomatis)</label>
-                  <input
-                    type="text"
-                    disabled
-                    value={config.guruPengampu}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-100 text-slate-500 text-xs cursor-not-allowed font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-600 mb-1">Kepala Madrasah</label>
-                  <input
-                    type="text"
-                    value={config.kepalaMadrasah}
-                    onChange={(e) => setConfig({ ...config, kepalaMadrasah: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {generationError && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-start gap-2">
-              <span className="font-bold shrink-0">Info:</span>
-              <span className="flex-1">{generationError}</span>
-            </div>
-          )}
-
-          <button
-            type="button"
-            disabled={isGenerating}
-            onClick={handleGenerate}
-            className="w-full py-3 px-4 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer mt-2 shadow-xs"
-          >
-            {isGenerating ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                <span>Sedang Menyusun Perangkat Administrasi...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 text-emerald-200" />
-                <span>Generate Dokumen Administrasi</span>
-              </>
             )}
-          </button>
+
+            {/* ========================================================
+                3. ANALISIS CP & 4. ATP & 5. PROTA & 6. PROSEM
+            ======================================================== */}
+            {(activeDocType === 'cp' ||
+              activeDocType === 'atp' ||
+              activeDocType === 'prota' ||
+              activeDocType === 'prosem') && (
+              <div className="space-y-3.5 pt-2 border-t border-slate-200">
+                {renderCPInputBlock(
+                  activeDocType === 'prota' || activeDocType === 'prosem'
+                    ? 'Teks Capaian Pembelajaran (CP) Acuan Distribusi Materi'
+                    : 'Teks Capaian Pembelajaran (CP) Seluruh Elemen'
+                )}
+
+                {activeDocType === 'prosem' && (
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Agenda / Kalender Non-Efektif Madrasah (ASTS, ASAS, Libur, PHBI)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={config.agendaMadrasah || ''}
+                      onChange={(e) => setConfig({ ...config, agendaMadrasah: e.target.value })}
+                      placeholder="Contoh: Minggu 3 Sept: ASTS; Minggu 1-2 Des: ASESGA; Minggu 3-4 Des: Rapor & Libur Semester..."
+                      className="w-full p-2.5 rounded border border-slate-300 bg-white text-slate-900"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Instruksi Khusus Penyusunan {activeDocType.toUpperCase()} (Aktif di Prompt & Template)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={config.instruksiKhusus || ''}
+                    onChange={(e) => setConfig({ ...config, instruksiKhusus: e.target.value })}
+                    placeholder="Contoh: Urutkan materi dari konkret ke abstrak, petakan tema Panca Cinta per unit, atau sesuaikan dengan kitab rujukan madrasah..."
+                    className="w-full p-2.5 rounded border border-slate-300 bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================
+                7. KKTP INTERVAL
+            ======================================================== */}
+            {activeDocType === 'kktp' && (
+              <div className="space-y-3.5 pt-2 border-t border-slate-200">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Daftar Tujuan Pembelajaran (TP) / Indikator yang Dibuatkan Rubrik KKTP *
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={config.tujuanPembelajaranTeks || ''}
+                    onChange={(e) => setConfig({ ...config, tujuanPembelajaranTeks: e.target.value })}
+                    placeholder="Tuliskan TP atau indikator yang akan diukur (pisahkan per baris), misal:&#10;1. Menganalisis ketentuan dan hikmah thaharah&#10;2. Mempraktikkan tata cara bersuci sesuai syariat & penghematan air&#10;3. Menunjukkan adab kasih sayang dan kebersihan lingkungan"
+                    className="w-full p-2.5 rounded border border-slate-300 bg-white text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Rentang Interval Nilai & Kategori Ketuntasan (Bisa Disesuaikan)
+                  </label>
+                  <input
+                    type="text"
+                    value={config.intervalKKTP || ''}
+                    onChange={(e) => setConfig({ ...config, intervalKKTP: e.target.value })}
+                    placeholder="Contoh: 0-60% (Perlu Bimbingan), 61-74% (Cukup), 75-87% (Baik/Tuntas), 88-100% (Mahir)"
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================
+                9. JURNAL MENGAJAR & PRESENSI KBM
+            ======================================================== */}
+            {activeDocType === 'presensi_kbm' && (
+              <div className="space-y-3.5 pt-2 border-t border-slate-200">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Catatan Jurnal KBM & Kejadian Anekdotal Karakter KBC (Opsional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={config.instruksiKhusus || ''}
+                    onChange={(e) => setConfig({ ...config, instruksiKhusus: e.target.value })}
+                    placeholder="Contoh: Pertemuan berjalan kondusif, santri antusias berdiskusi kelompok, terdapat 2 siswa yang menjadi tutor sebaya penuh empati..."
+                    className="w-full p-2.5 rounded border border-slate-300 bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================
+                10. UMPAN BALIK & REFLEKSI KBC
+            ======================================================== */}
+            {activeDocType === 'umpan_balik' && (
+              <div className="space-y-3.5 pt-2 border-t border-slate-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Responden Instrumen</label>
+                    <select
+                      value={config.respondenSurvei || 'Peserta Didik (Refleksi Suasana Kelas Berbasis Cinta)'}
+                      onChange={(e) => setConfig({ ...config, respondenSurvei: e.target.value })}
+                      className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                    >
+                      <option value="Peserta Didik (Refleksi Suasana Kelas Berbasis Cinta)">
+                        Peserta Didik (Siswa)
+                      </option>
+                      <option value="Rekan Sejawat / Observer Supervisi KBC">
+                        Rekan Sejawat / Supervisi
+                      </option>
+                      <option value="Refleksi Mandiri Guru Pengampu">
+                        Refleksi Mandiri Guru
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Skala Penilaian</label>
+                    <select
+                      value={config.skalaSurvei || 'Skala Likert 1 - 4 (1 = Kurang, 2 = Cukup, 3 = Baik, 4 = Sangat Baik)'}
+                      onChange={(e) => setConfig({ ...config, skalaSurvei: e.target.value })}
+                      className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                    >
+                      <option value="Skala Likert 1 - 4 (1 = Kurang, 2 = Cukup, 3 = Baik, 4 = Sangat Baik)">
+                        Skala Likert 1 - 4
+                      </option>
+                      <option value="Skala Likert 1 - 5 (Sangat Kurang s.d. Sangat Memuaskan)">
+                        Skala Likert 1 - 5
+                      </option>
+                      <option value="Skala Guttman (Ya / Tidak beserta Catatan Reflektif)">
+                        Ya / Tidak + Refleksi
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Aspek yang Dinilai dalam Instrumen Umpan Balik KBC
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={config.aspekUmpanBalik || ''}
+                    onChange={(e) => setConfig({ ...config, aspekUmpanBalik: e.target.value })}
+                    placeholder="Contoh: Suasana kelas penuh kasih sayang (nir-kekerasan), kejelasan materi Deep Learning, keteladanan adab guru, keadilan..."
+                    className="w-full p-2.5 rounded border border-slate-300 bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================
+                PANCA CINTA KBC & MATERI INSERSI (Tampil di SEMUA Tab!)
+            ======================================================== */}
+            <div className="pt-2 border-t border-slate-200">
+              {renderPancaCintaEditor()}
+            </div>
+
+            {/* Pengesahan Guru & Kepala Madrasah */}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200">
+              <div>
+                <label className="block font-semibold text-slate-600 mb-1">Guru Pengampu</label>
+                <input
+                  type="text"
+                  value={config.guruPengampu}
+                  onChange={(e) => setConfig({ ...config, guruPengampu: e.target.value })}
+                  className="w-full px-2.5 py-1.5 rounded border border-slate-300 bg-slate-50 text-slate-800"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-600 mb-1">Kepala Madrasah</label>
+                <input
+                  type="text"
+                  value={config.kepalaMadrasah}
+                  onChange={(e) => setConfig({ ...config, kepalaMadrasah: e.target.value })}
+                  className="w-full px-2.5 py-1.5 rounded border border-slate-300 bg-slate-50 text-slate-800"
+                />
+              </div>
+            </div>
+
+            {generationError && (
+              <div className="p-3 bg-rose-50 border border-rose-300 rounded text-rose-800 text-xs">
+                <strong>Gagal:</strong> {generationError}
+              </div>
+            )}
+
+            <button
+              type="button"
+              disabled={isGenerating}
+              onClick={handleGenerate}
+              className="w-full py-2.5 px-4 rounded bg-[#045f3b] hover:bg-[#03482d] text-white font-semibold text-xs transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Menyusun {getDocRightTitle(activeDocType)}...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Generate {getDocRightTitle(activeDocType)}</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* RIGHT PANEL: Document Preview (Formatted for screen and high-precision A4 Print/PDF) */}
-        <div ref={printCardRef} className={`admin-print-card lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm space-y-6 print:w-full print:p-0 print:border-none print:shadow-none print:m-0 ${activeDocType === 'prosem' ? 'overflow-x-auto' : ''}`}>
-          {/* Header Kop Resmi Madrasah Sesuai Format Resmi MA NU 01 Banyuputih */}
-          <KopMadrasah
-            identity={madrasahIdentity}
-            rightTitle={getDocRightTitle(activeDocType)}
-            rightSubtitle={getDocRightSubtitle(activeDocType)}
-            ta={config.tahunPelajaran}
-          />
-
-          {generatedMarkdown ? (
-            <div className="space-y-4">
-              {/* Institutional Document Info Table */}
-              <div className="border border-slate-300 rounded-lg p-3 bg-slate-50/70 text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-800 print:bg-slate-100/50 print:text-[10px] print:p-2">
-                <div>
-                  <span className="font-semibold text-slate-900">Mata Pelajaran:</span> {config.mapel} (Fase {config.fase} / Kelas {config.kelas})
-                </div>
-                <div>
-                  <span className="font-semibold text-slate-900">Tahun Pelajaran:</span> {config.tahunPelajaran} (Semester {config.semester})
-                </div>
-                <div>
-                  <span className="font-semibold text-slate-900">Topik / Materi:</span> {config.topikMateri}
-                </div>
-                <div>
-                  <span className="font-semibold text-slate-900">Alokasi Waktu:</span> {config.alokasiWaktu}
-                </div>
-                <div className="sm:col-span-2 pt-1 border-t border-slate-200 mt-1 flex justify-between">
-                  <span>
-                    <span className="font-semibold text-slate-900">Guru Pengampu:</span> {config.guruPengampu} (NIP. {config.nipGuru})
-                  </span>
-                  <span className="hidden sm:inline text-slate-500 text-[10px]">MA NU 01 Banyuputih</span>
-                </div>
+        {/* RIGHT PANEL: Pratinjau Dokumen & Lembar Cetak A4 */}
+        <div className="lg:col-span-7 space-y-3 print:w-full">
+          {/* Bootstrap Alert for AI vs Emergency Fallback */}
+          {generatedMarkdown && docMeta.source && (
+            <div
+              className={`px-4 py-2.5 rounded-md border text-xs flex flex-wrap items-center justify-between gap-2 no-print ${
+                docMeta.isFallback
+                  ? 'bg-amber-50 border-amber-300 text-amber-900'
+                  : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+              }`}
+            >
+              <div>
+                {docMeta.isFallback ? (
+                  <>
+                    <strong>Mode Template Darurat (KBC Terintegrasi):</strong> Gateway AI belum merespons
+                    {docMeta.fallbackReason ? ` (${docMeta.fallbackReason})` : ''}. Naskah tetap menyertakan pilihan Panca Cinta & Materi Insersi Anda.
+                  </>
+                ) : (
+                  <>
+                    <strong>Hasil Generate AI ({docMeta.source}):</strong> Naskah disusun sesuai KMA 1503/2025, Kepdirjen Pendis 6077/2025, dan Panca Cinta KBC pilihan Anda.
+                  </>
+                )}
               </div>
-
-              {/* Rich Markdown & Real Tables Body */}
-              <AdminMarkdownRenderer content={generatedMarkdown} />
-
-              {/* Official 2-Column Signature Block */}
-              <div className="pt-6 border-t-2 border-slate-300 grid grid-cols-2 text-xs text-slate-900 mt-8 break-inside-avoid print:mt-8 print:text-[11px]">
-                <div>
-                  <p className="text-slate-600">Mengetahui,</p>
-                  <p className="font-semibold text-slate-900">Kepala MA NU 01 Banyuputih</p>
-                  <div className="h-16 sm:h-20" />
-                  <p className="font-bold underline text-slate-900">{config.kepalaMadrasah}</p>
-                  <p className="text-slate-500 text-[11px] print:text-[10px]">NIP. {config.nipKepala}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-slate-600">Banyuputih, 21 September 2026</p>
-                  <p className="font-semibold text-slate-900">Guru Pengampu Mata Pelajaran</p>
-                  <div className="h-16 sm:h-20" />
-                  <p className="font-bold underline text-slate-900">{config.guruPengampu}</p>
-                  <p className="text-slate-500 text-[11px] print:text-[10px]">NIP. {config.nipGuru}</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="py-16 text-center text-slate-400 space-y-2">
-              <FileSpreadsheet className="w-10 h-10 mx-auto opacity-40 text-slate-400" />
-              <p className="text-sm font-medium text-slate-600">Belum ada dokumen administrasi yang digenerate.</p>
-              <p className="text-xs text-slate-400">
-                Pilih tab dokumen di atas (RPP Merdeka, Modul Ajar, CP & ATP, PROTA, PROSEM, KKTP, Umpan Balik) lalu klik "Generate Dokumen Administrasi".
-              </p>
             </div>
           )}
+
+          <div
+            ref={printCardRef}
+            className={`admin-print-card bg-white p-6 sm:p-8 rounded-md border border-slate-300 space-y-6 print:w-full print:p-0 print:border-none print:shadow-none print:m-0 ${
+              activeDocType === 'prosem' ? 'overflow-x-auto' : ''
+            }`}
+          >
+            {/* Kop Resmi Madrasah */}
+            <KopMadrasah
+              identity={madrasahIdentity}
+              rightTitle={getDocRightTitle(activeDocType)}
+              rightSubtitle={getDocRightSubtitle(activeDocType)}
+              ta={config.tahunPelajaran}
+            />
+
+            {generatedMarkdown ? (
+              <div className="space-y-4">
+                {/* Institutional Document Info Table */}
+                <div className="border border-slate-300 rounded p-3 bg-slate-50/70 text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-800 print:bg-slate-100/50 print:text-[10px] print:p-2">
+                  <div>
+                    <span className="font-semibold text-slate-900">Mata Pelajaran:</span> {config.mapel} (Fase {config.fase} / Kelas {config.kelas})
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-900">Tahun Pelajaran:</span> {config.tahunPelajaran} (Semester {config.semester})
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-900">Topik / Materi:</span> {config.topikMateri}
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-900">Alokasi Waktu:</span> {config.alokasiWaktu}
+                  </div>
+                  <div className="sm:col-span-2 pt-1 border-t border-slate-200 mt-1">
+                    <span className="font-semibold text-slate-900">Target Panca Cinta (KBC):</span>{' '}
+                    {config.nilaiKBC.length > 0 ? config.nilaiKBC.join(' · ') : 'Panca Cinta Kemenag RI'}
+                  </div>
+                  <div className="sm:col-span-2 pt-1 border-t border-slate-200 mt-0.5 flex justify-between">
+                    <span>
+                      <span className="font-semibold text-slate-900">Guru Pengampu:</span> {config.guruPengampu} (NIP. {config.nipGuru})
+                    </span>
+                    <span className="hidden sm:inline text-slate-500 text-[10px]">MA NU 01 Banyuputih</span>
+                  </div>
+                </div>
+
+                {/* Rich Markdown & Real Tables Body */}
+                <AdminMarkdownRenderer content={generatedMarkdown} />
+
+                {/* Official 2-Column Signature Block */}
+                <div className="pt-6 border-t-2 border-slate-300 grid grid-cols-2 text-xs text-slate-900 mt-8 break-inside-avoid print:mt-8 print:text-[11px]">
+                  <div>
+                    <p className="text-slate-600">Mengetahui,</p>
+                    <p className="font-semibold text-slate-900">Kepala MA NU 01 Banyuputih</p>
+                    <div className="h-16 sm:h-20" />
+                    <p className="font-bold underline text-slate-900">{config.kepalaMadrasah}</p>
+                    <p className="text-slate-500 text-[11px] print:text-[10px]">NIP. {config.nipKepala}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-slate-600">Banyuputih, 21 September 2026</p>
+                    <p className="font-semibold text-slate-900">Guru Pengampu Mata Pelajaran</p>
+                    <div className="h-16 sm:h-20" />
+                    <p className="font-bold underline text-slate-900">{config.guruPengampu}</p>
+                    <p className="text-slate-500 text-[11px] print:text-[10px]">NIP. {config.nipGuru}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-16 text-center text-slate-500 space-y-2">
+                <FileSpreadsheet className="w-9 h-9 mx-auto opacity-40 text-slate-400" />
+                <p className="text-sm font-semibold text-slate-700">
+                  Belum ada naskah {getDocRightTitle(activeDocType)} untuk mata pelajaran ini.
+                </p>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Lengkapi parameter dan Materi Insersi Panca Cinta KBC di panel kiri, lalu klik tombol <strong>Generate</strong>.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

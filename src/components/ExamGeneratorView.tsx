@@ -115,6 +115,182 @@ interface ExamGeneratorViewProps {
   madrasahIdentity?: MadrasahIdentity;
 }
 
+type QuestionTypeKey = keyof ExamFormConfig['selectedTypes'];
+
+const QUESTION_TYPE_META: Record<
+  QuestionTypeKey,
+  {
+    label: string;
+    shortLabel: string;
+    sub: string;
+    badgeBg: string;
+    lightBg: string;
+    borderAccent: string;
+    dotColor: string;
+  }
+> = {
+  single_choice: {
+    label: 'PG Tunggal',
+    shortLabel: 'PG Tunggal',
+    sub: 'Pilihan Ganda A–E',
+    badgeBg: 'bg-[#045f3b] text-white',
+    lightBg: 'bg-[#045f3b]/10 text-[#045f3b] border-[#045f3b]/25',
+    borderAccent: 'border-l-4 border-l-[#045f3b]',
+    dotColor: 'bg-[#045f3b]',
+  },
+  multiple_choice: {
+    label: 'PG Jamak',
+    shortLabel: 'PG Jamak',
+    sub: 'Multi Kunci Jawaban',
+    badgeBg: 'bg-[#1d4ed8] text-white',
+    lightBg: 'bg-[#1d4ed8]/10 text-[#1d4ed8] border-[#1d4ed8]/25',
+    borderAccent: 'border-l-4 border-l-[#1d4ed8]',
+    dotColor: 'bg-[#1d4ed8]',
+  },
+  short_answer: {
+    label: 'Jawaban Singkat',
+    shortLabel: 'Singkat',
+    sub: 'Isian Pendek Presisi',
+    badgeBg: 'bg-[#b45309] text-white',
+    lightBg: 'bg-[#b45309]/10 text-[#b45309] border-[#b45309]/25',
+    borderAccent: 'border-l-4 border-l-[#b45309]',
+    dotColor: 'bg-[#b45309]',
+  },
+  ordering: {
+    label: 'Mengurutkan',
+    shortLabel: 'Ordering',
+    sub: 'Urutan Kronologis',
+    badgeBg: 'bg-[#6d28d9] text-white',
+    lightBg: 'bg-[#6d28d9]/10 text-[#6d28d9] border-[#6d28d9]/25',
+    borderAccent: 'border-l-4 border-l-[#6d28d9]',
+    dotColor: 'bg-[#6d28d9]',
+  },
+  matching: {
+    label: 'Menjodohkan',
+    shortLabel: 'Matching',
+    sub: 'Pasangan Pernyataan',
+    badgeBg: 'bg-[#0f766e] text-white',
+    lightBg: 'bg-[#0f766e]/10 text-[#0f766e] border-[#0f766e]/25',
+    borderAccent: 'border-l-4 border-l-[#0f766e]',
+    dotColor: 'bg-[#0f766e]',
+  },
+  essay: {
+    label: 'Uraian / Essay',
+    shortLabel: 'Essay',
+    sub: 'Analisis & Rubrik',
+    badgeBg: 'bg-[#be123c] text-white',
+    lightBg: 'bg-[#be123c]/10 text-[#be123c] border-[#be123c]/25',
+    borderAccent: 'border-l-4 border-l-[#be123c]',
+    dotColor: 'bg-[#be123c]',
+  },
+};
+
+interface BatchProgressItem {
+  batchIndex: number;
+  startNum: number;
+  endNum: number;
+  count: number;
+  selectedTypes: ExamFormConfig['selectedTypes'];
+  typesSummary: string;
+  status: 'pending' | 'running' | 'success' | 'fallback';
+  source?: string;
+  fallbackReason?: string;
+  durationMs?: number;
+}
+
+function buildClientBatches(selectedTypes: ExamFormConfig['selectedTypes'], maxPerBatch = 7): BatchProgressItem[] {
+  const expanded: QuestionTypeKey[] = [];
+  const order: QuestionTypeKey[] = [
+    'single_choice',
+    'multiple_choice',
+    'short_answer',
+    'ordering',
+    'matching',
+    'essay',
+  ];
+
+  for (const key of order) {
+    const qty = Math.max(0, Number(selectedTypes[key]) || 0);
+    for (let i = 0; i < qty; i++) {
+      expanded.push(key);
+    }
+  }
+
+  if (expanded.length === 0) {
+    expanded.push('single_choice', 'single_choice', 'single_choice', 'single_choice', 'essay');
+  }
+
+  const batches: BatchProgressItem[] = [];
+  for (let i = 0; i < expanded.length; i += maxPerBatch) {
+    const chunk = expanded.slice(i, i + maxPerBatch);
+    const batchTypes: ExamFormConfig['selectedTypes'] = {
+      single_choice: 0,
+      multiple_choice: 0,
+      short_answer: 0,
+      ordering: 0,
+      matching: 0,
+      essay: 0,
+    };
+    chunk.forEach((t) => {
+      batchTypes[t] += 1;
+    });
+
+    const summaryParts = order
+      .filter((k) => batchTypes[k] > 0)
+      .map((k) => `${batchTypes[k]} ${QUESTION_TYPE_META[k].shortLabel}`);
+
+    batches.push({
+      batchIndex: batches.length + 1,
+      startNum: i + 1,
+      endNum: i + chunk.length,
+      count: chunk.length,
+      selectedTypes: batchTypes,
+      typesSummary: summaryParts.join(', '),
+      status: 'pending',
+    });
+  }
+
+  return batches;
+}
+
+function renderDifficultyDots(difficulty?: string) {
+  const norm = (difficulty || 'sedang').toLowerCase();
+  if (norm === 'mudah') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800" title="Tingkat Kesulitan: Mudah">
+        <span className="inline-flex items-center gap-0.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-600" />
+          <span className="w-2 h-2 rounded-full bg-slate-300" />
+          <span className="w-2 h-2 rounded-full bg-slate-300" />
+        </span>
+        <span>Mudah</span>
+      </span>
+    );
+  }
+  if (norm === 'sulit' || norm === 'hots') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-[11px] font-bold text-rose-800" title="Tingkat Kesulitan: Sulit / HOTS">
+        <span className="inline-flex items-center gap-0.5">
+          <span className="w-2 h-2 rounded-full bg-rose-600" />
+          <span className="w-2 h-2 rounded-full bg-rose-600" />
+          <span className="w-2 h-2 rounded-full bg-rose-600" />
+        </span>
+        <span>Sulit (HOTS)</span>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-[11px] font-bold text-amber-900" title="Tingkat Kesulitan: Sedang">
+      <span className="inline-flex items-center gap-0.5">
+        <span className="w-2 h-2 rounded-full bg-amber-500" />
+        <span className="w-2 h-2 rounded-full bg-amber-500" />
+        <span className="w-2 h-2 rounded-full bg-slate-300" />
+      </span>
+      <span>Sedang</span>
+    </span>
+  );
+}
+
 export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
   currentUser,
   currentPackage,
@@ -129,7 +305,15 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
   const [cbtText, setCbtText] = useState<string>(() =>
     formatExamToCbtText(currentPackage.config, currentPackage.questions)
   );
-  const [viewMode, setViewMode] = useState<'textbox' | 'paper'>('textbox');
+
+  // 3-Step Wizard State: 1 = Konfigurasi, 2 = Proses Batch, 3 = Review & Ekspor
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
+  const [batchProgressList, setBatchProgressList] = useState<BatchProgressItem[]>([]);
+  const [currentBatchIdx, setCurrentBatchIdx] = useState<number>(0);
+  const [activeModelName, setActiveModelName] = useState<string>('9router AI (komoboku)');
+
+  // Step 3 Review Sub-Mode: 'cards' (Review Kartu Soal), 'textbox' (CBT IDE), 'paper' (Pratinjau Kertas Cetak)
+  const [viewMode, setViewMode] = useState<'cards' | 'textbox' | 'paper'>('cards');
   const [cbtSubMode, setCbtSubMode] = useState<'standard' | 'ckeditor_html'>('standard');
   const [equationAsImageInText, setEquationAsImageInText] = useState<boolean>(false);
   const [imageFormat, setImageFormat] = useState<'png' | 'svg'>('png');
@@ -146,7 +330,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
   const [isAddingNewQuestion, setIsAddingNewQuestion] = useState<boolean>(false);
   const [newQuestionData, setNewQuestionData] = useState<{
     text: string;
-    type: 'single_choice' | 'multiple_choice' | 'short_answer' | 'ordering' | 'matching' | 'essay';
+    type: QuestionTypeKey;
     options: { key: string; text: string }[];
     rawRightAnswer: string;
     explanation: string;
@@ -173,7 +357,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
   const [cbtImagePrompt, setCbtImagePrompt] = useState<string>('');
 
   // Auto-generate images on bulk generation
-  const [autoGenerateImages, setAutoGenerateImages] = useState<boolean>(true);
+  const [autoGenerateImages, setAutoGenerateImages] = useState<boolean>(false);
 
   // Image Generator & Manager States
   const [imageModalQuestion, setImageModalQuestion] = useState<QuestionItem | null>(null);
@@ -223,7 +407,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
         );
         setQuestions(updated);
         setCbtText(formatExamToCbtText(formData, updated, { equationAsImage: equationAsImageInText, imageFormat }));
-        setStatusMessage(`✨ Gambar diagram untuk Soal No. ${q.number} berhasil dibuat dan dipasang!`);
+        setStatusMessage(`Gambar diagram untuk Soal No. ${q.number} berhasil dibuat dan dipasang.`);
       } else {
         setStatusMessage(`Gagal membuat gambar: ${data.error || 'Server tidak merespons'}`);
       }
@@ -261,7 +445,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
         if (editingQuestion && editingQuestion.id === activeQ.id) {
           setEditingQuestion({ ...editingQuestion, imageUrl: finalUrl });
         }
-        setStatusMessage(`✨ Ilustrasi diagram Soal No. ${activeQ.number} siap digunakan!`);
+        setStatusMessage(`Ilustrasi diagram Soal No. ${activeQ.number} siap digunakan.`);
       } else {
         setImageError(data.error || 'Gagal menghasilkan gambar dengan AI');
       }
@@ -309,7 +493,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     }
   };
 
-  // Direct Image Generation while filling new question
   const handleGenerateImageForNewQuestion = async () => {
     if (!newQuestionData.text.trim()) {
       setStatusMessage('Silakan tuliskan teks soal terlebih dahulu untuk panduan AI merender diagram.');
@@ -334,7 +517,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
           imageUrl: finalUrl,
           imagePrompt: prev.imagePrompt || data.promptUsed,
         }));
-        setStatusMessage('Gambar diagram berhasil dibuat dan dipasang ke butir soal!');
+        setStatusMessage('Gambar diagram berhasil dibuat dan dipasang ke butir soal.');
       } else {
         setImageError(data.error || 'Gagal menghasilkan gambar');
       }
@@ -345,7 +528,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     }
   };
 
-  // Save New Question
   const handleSaveNewQuestion = () => {
     if (!newQuestionData.text.trim()) {
       setStatusMessage('Teks butir soal tidak boleh kosong.');
@@ -376,7 +558,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
       })
     );
     setIsAddingNewQuestion(false);
-    // Reset form
     setNewQuestionData({
       text: '',
       type: 'single_choice',
@@ -395,7 +576,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     setStatusMessage(`Butir soal No. ${nextNum} berhasil ditambahkan ke naskah.`);
   };
 
-  // Generate Image Directly in Edit Question Modal
   const handleGenerateImageForEditQuestion = async () => {
     if (!editingQuestion || !editingQuestion.text.trim()) return;
     setIsGeneratingImage(true);
@@ -421,7 +601,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
               }
             : null
         );
-        setStatusMessage('Gambar diagram soal berhasil diperbarui!');
+        setStatusMessage('Gambar diagram soal berhasil diperbarui.');
       }
     } catch {
       setStatusMessage('Gagal memperbarui diagram soal.');
@@ -430,7 +610,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     }
   };
 
-  // Insert Generated Image Directly into CBT Textbox
   const handleInsertCbtImage = async () => {
     if (!cbtImagePrompt.trim()) return;
     setIsGeneratingImage(true);
@@ -479,7 +658,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Sync when currentPackage changes from presets
+  // Sync when currentPackage changes from presets / Dashboard load
   React.useEffect(() => {
     setFormData(currentPackage.config);
     setQuestions(currentPackage.questions);
@@ -494,7 +673,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     );
   }, [currentPackage, equationAsImageInText, imageFormat]);
 
-  // Handle Form Input Changes
   const handleInputChange = (field: keyof ExamFormConfig, value: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -502,10 +680,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     }));
   };
 
-  const handleTypeQuotaChange = (
-    typeKey: keyof ExamFormConfig['selectedTypes'],
-    delta: number
-  ) => {
+  const handleTypeQuotaChange = (typeKey: QuestionTypeKey, delta: number) => {
     setFormData((prev) => {
       const currentVal = prev.selectedTypes[typeKey] || 0;
       const newVal = Math.max(0, Math.min(100, currentVal + delta));
@@ -519,10 +694,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     });
   };
 
-  const handleDirectQuotaChange = (
-    typeKey: keyof ExamFormConfig['selectedTypes'],
-    valStr: string
-  ) => {
+  const handleDirectQuotaChange = (typeKey: QuestionTypeKey, valStr: string) => {
     const parsed = parseInt(valStr, 10);
     const newVal = isNaN(parsed) ? 0 : Math.max(0, Math.min(100, parsed));
     setFormData((prev) => ({
@@ -555,86 +727,182 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     });
   };
 
-  // Generate Exam via Backend / Gemini API
+  // Real Per-Batch Exam Generation (Step 1 -> Step 2 -> Step 3)
   const handleGenerate = async () => {
+    const batches = buildClientBatches(formData.selectedTypes, 7);
+    setBatchProgressList(batches);
+    setCurrentBatchIdx(0);
+    setWizardStep(2);
     setIsGenerating(true);
     setStatusMessage(null);
-    setGenerationStep('Menganalisis Capaian Pembelajaran & materi target...');
+    setGenerationStep(`Menyiapkan ${batches.length} batch penyusunan soal...`);
 
-    const progressSteps = [
-      'Menghubungkan ke 9router AI Engine Fast-Track...',
-      'Hermes Agent merumuskan naskah soal & opsi jawaban A-E...',
-      'Memvalidasi format kunci RIGHT:, KaTeX LaTeX & RTL Arab...',
-      'Menyusun naskah akhir & menyinkronkan ke dokumen Word & CBT...',
-    ];
-    let stepIdx = 0;
-    const intervalId = setInterval(() => {
-      stepIdx = (stepIdx + 1) % progressSteps.length;
-      setGenerationStep(progressSteps[stepIdx]);
-    }, 1800);
+    const accumulatedQuestions: QuestionItem[] = [];
+    let anyFallback = false;
+    const fallbackReasons: string[] = [];
+    const sourcesUsed = new Set<string>();
 
     try {
-      const data = await fetchApiJson('/api/v1/soal/generate', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...formData,
-          autoGenerateImages,
-          imageStyle,
-        }),
-      });
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        setCurrentBatchIdx(i + 1);
+        setGenerationStep(
+          `Memproses Batch ${i + 1} dari ${batches.length} (Soal #${batch.startNum}–#${batch.endNum}: ${batch.typesSummary})...`
+        );
 
-      if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
-        setQuestions(data.questions);
-        const formatted = formatExamToCbtText(formData, data.questions);
+        setBatchProgressList((prev) =>
+          prev.map((item, idx) => (idx === i ? { ...item, status: 'running' } : item))
+        );
+
+        const batchStartMs = Date.now();
+        try {
+          const data = await fetchApiJson('/api/v1/soal/generate', {
+            method: 'POST',
+            body: JSON.stringify({
+              ...formData,
+              selectedTypes: batch.selectedTypes,
+              autoGenerateImages: i === 0 ? autoGenerateImages : false,
+              imageStyle,
+            }),
+          });
+
+          const elapsedMs = Date.now() - batchStartMs;
+          if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
+            const batchIsFallback = Boolean(data.isFallback);
+            if (batchIsFallback) {
+              anyFallback = true;
+              if (data.fallbackReason) fallbackReasons.push(data.fallbackReason);
+            }
+            if (data.source) {
+              sourcesUsed.add(data.source);
+              setActiveModelName(data.source);
+            }
+
+            // Renumber progressively
+            const renumberedBatch = data.questions.map((q: QuestionItem, idx: number) => ({
+              ...q,
+              id: `q-${Date.now()}-${accumulatedQuestions.length + idx + 1}`,
+              number: accumulatedQuestions.length + idx + 1,
+            }));
+
+            accumulatedQuestions.push(...renumberedBatch);
+            setQuestions([...accumulatedQuestions]);
+
+            setBatchProgressList((prev) =>
+              prev.map((item, idx) =>
+                idx === i
+                  ? {
+                      ...item,
+                      status: batchIsFallback ? 'fallback' : 'success',
+                      source: data.source || 'AI Gateway',
+                      fallbackReason: data.fallbackReason,
+                      durationMs: elapsedMs,
+                    }
+                  : item
+              )
+            );
+          } else {
+            anyFallback = true;
+            const reason = data.error || 'Respons batch kosong';
+            fallbackReasons.push(reason);
+            setBatchProgressList((prev) =>
+              prev.map((item, idx) =>
+                idx === i
+                  ? {
+                      ...item,
+                      status: 'fallback',
+                      source: 'Template Darurat',
+                      fallbackReason: reason,
+                      durationMs: elapsedMs,
+                    }
+                  : item
+              )
+            );
+          }
+        } catch (batchErr: any) {
+          const elapsedMs = Date.now() - batchStartMs;
+          anyFallback = true;
+          const reason = batchErr?.message || 'Timeout / gangguan jaringan pada batch ini';
+          fallbackReasons.push(reason);
+          setBatchProgressList((prev) =>
+            prev.map((item, idx) =>
+              idx === i
+                ? {
+                    ...item,
+                    status: 'fallback',
+                    source: 'Gangguan Koneksi',
+                    fallbackReason: reason,
+                    durationMs: elapsedMs,
+                  }
+                : item
+            )
+          );
+        }
+      }
+
+      if (accumulatedQuestions.length > 0) {
+        const finalQuestions = accumulatedQuestions.map((q, idx) => ({
+          ...q,
+          number: idx + 1,
+        }));
+        setQuestions(finalQuestions);
+        const formatted = formatExamToCbtText(formData, finalQuestions, {
+          equationAsImage: equationAsImageInText,
+          imageFormat,
+        });
         setCbtText(formatted);
-        const isEmergency = Boolean(data.isFallback);
-        setIsFallbackMode(isEmergency);
-        setFallbackReason(data.fallbackReason || '');
-        setPackageSource(data.source || '');
+        setIsFallbackMode(anyFallback);
+        const combinedReason = Array.from(new Set(fallbackReasons)).join('; ');
+        setFallbackReason(combinedReason);
+        const finalSource = Array.from(sourcesUsed).join(' + ') || '9router AI';
+        setPackageSource(finalSource);
 
         const updatedPackage: ExamPackage = {
           ...currentPackage,
           id: `exam-${Date.now()}`,
           title: `Paket Soal ${formData.jenisUjian} ${formData.mapel} — Kelas ${formData.kelas}`,
           config: formData,
-          questions: data.questions,
+          questions: finalQuestions,
           createdAt: new Date().toISOString(),
           createdBy: currentUser.name,
           nip: currentUser.nip,
-          source: data.source,
-          isFallback: isEmergency,
-          fallbackReason: data.fallbackReason,
+          source: finalSource,
+          isFallback: anyFallback,
+          fallbackReason: combinedReason,
         };
         onSavePackage(updatedPackage);
-        if (isEmergency) {
-          setStatusMessage(`⚠️ Perhatian: AI gagal (${data.fallbackReason || 'Koneksi Gateway'}), beralih ke Bank Template Darurat.`);
+
+        if (anyFallback) {
+          setStatusMessage(
+            `Perhatian: Sebagian/seluruh batch memakai Bank Template Darurat (${combinedReason || 'Koneksi Gateway'}).`
+          );
         } else {
-          setStatusMessage(`✨ Berhasil menghasilkan ${data.questions.length} butir soal (${data.source || 'AI'})`);
+          setStatusMessage(
+            `Berhasil menyusun ${finalQuestions.length} butir soal melalui ${batches.length} batch (${finalSource}).`
+          );
         }
+
+        // Transition to Step 3 (Review & Ekspor) after brief completion view
+        setTimeout(() => {
+          setWizardStep(3);
+        }, 550);
       } else {
         setIsFallbackMode(true);
-        setFallbackReason(data.error || 'Sesi koneksi proxy sedang disegarkan. Silakan klik Generate sekali lagi.');
-        setStatusMessage(`⚠️ ${data.error || 'Koneksi sedang disegarkan, silakan coba lagi.'}`);
+        setFallbackReason(fallbackReasons.join('; ') || 'Gagal menyusun soal.');
+        setStatusMessage('Gagal menyusun soal. Silakan periksa koneksi AI di Beranda atau Panel Admin.');
       }
-    } catch (err: any) {
-      setIsFallbackMode(true);
-      setFallbackReason(err?.message || 'Koneksi ke server sedang disegarkan.');
-      setStatusMessage(`Catatan: Terjadi kendala jaringan (${err?.message || 'Error'}).`);
     } finally {
-      clearInterval(intervalId);
       setIsGenerating(false);
       setGenerationStep('');
     }
   };
 
-  // Copy CBT text to clipboard
   const handleCopyCbtText = () => {
     navigator.clipboard.writeText(cbtText);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2500);
   };
 
-  // Download CBT .txt file for direct import to CBT
   const handleDownloadTxt = () => {
     const normKelas = normalizeKelas(formData.kelas);
     const cleanMapel = formData.mapel.trim().replace(/\s+/g, '_');
@@ -650,13 +918,11 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // Load CBT example
   const handleLoadExample = () => {
     setCbtText(CBT_FORMAT_EXAMPLE);
     setStatusMessage('Format contoh soal CBT standar berhasil dimuat ke teks box.');
   };
 
-  // Sync / Reset to formatted from questions
   const handleSyncFromConfig = () => {
     const formatted = formatExamToCbtText(formData, questions, {
       equationAsImage: equationAsImageInText,
@@ -666,7 +932,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     setStatusMessage('Teks box berhasil disinkronkan kembali dari paket soal.');
   };
 
-  // Salin format kaya untuk CKEditor di CBT (rumus matematika otomatis menjadi tag <img> dan baris tetap rapi)
   const handleCopyForCkEditor = async () => {
     const rawText = cbtText && cbtText.trim()
       ? cbtText
@@ -681,7 +946,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     }
   };
 
-  // Download berkas HTML siap buka di browser atau impor ke CKEditor CBT
   const handleDownloadCkHtml = () => {
     const normKelas = normalizeKelas(formData.kelas);
     const cleanMapel = formData.mapel.trim().replace(/\s+/g, '_');
@@ -701,7 +965,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // Toggle apakah rumus di dalam teks box CBT diubah menjadi tag <img>
   const handleToggleEquationInText = (enabled: boolean) => {
     setEquationAsImageInText(enabled);
     const updated = formatExamToCbtText(formData, questions, {
@@ -711,14 +974,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     setCbtText(updated);
   };
 
-  // Copy raw exam text with exact RIGHT: format
-  const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(cbtText);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2500);
-  };
-
-  // Download DOCX
   const handleDownloadDocx = async () => {
     const pkg: ExamPackage = {
       ...currentPackage,
@@ -730,18 +985,15 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     await exportExamToDocx(pkg);
   };
 
-  // Print Dialog
   const handlePrint = () => {
     window.print();
   };
 
-  // Filtered Questions list
   const filteredQuestions = questions.filter((q) => {
     if (activeFilterType === 'all') return true;
     return q.type === activeFilterType;
   });
 
-  // Save edited question
   const handleSaveEditQuestion = () => {
     if (!editingQuestion) return;
     const updated = questions.map((q) => (q.id === editingQuestion.id ? editingQuestion : q));
@@ -750,792 +1002,800 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     setEditingQuestion(null);
   };
 
+  const totalConfiguredQuestions = Object.values(formData.selectedTypes).reduce((a, b) => a + b, 0);
+  const completedBatchesCount = batchProgressList.filter(
+    (b) => b.status === 'success' || b.status === 'fallback'
+  ).length;
+  const batchProgressPercent =
+    batchProgressList.length > 0
+      ? Math.round((completedBatchesCount / batchProgressList.length) * 100)
+      : 0;
+
   return (
-    <div className="space-y-6">
-      {/* Top Header - Dignified Institutional Style */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border-2 border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-800 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <BookOpen className="w-6 h-6" />
-          </div>
+    <div className="space-y-4">
+      {/* ========================================================
+          BOOTSTRAP HEADER & NAV-TABS (3 Langkah)
+      ======================================================== */}
+      <div className="bg-white rounded-md border border-slate-300 overflow-hidden no-print">
+        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="font-heading text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                Penyusunan Naskah Asesmen Madrasah
-              </h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-900 uppercase">
-                6 Tipe Soal
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              MA NU 01 Banyuputih Batang · Dilengkapi Generator Diagram Gambar AI & Ekspor Word .docx / CBT
+            <h1 className="font-heading text-base font-bold text-slate-900">
+              Penyusunan Soal Asesmen Madrasah
+            </h1>
+            <p className="text-xs text-slate-600 mt-0.5">
+              {formData.jenisUjian} · {formData.mapel || 'Belum pilih mapel'} · Kelas {formData.kelas} · Semester {formData.semester} ({formData.tahunPelajaran})
             </p>
+          </div>
+          <div className="text-xs text-slate-600 font-medium">
+            Rencana: <strong className="text-slate-900">{totalConfiguredQuestions} butir</strong> · Tersusun: <strong className="text-[#045f3b]">{questions.length} soal</strong>
           </div>
         </div>
 
-        <div className="flex items-center flex-wrap gap-2.5 shrink-0">
-          {/* Quick Action: Tambah Butir Soal Baru */}
-          <button
-            type="button"
-            onClick={() => setIsAddingNewQuestion(true)}
-            className="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs"
-            title="Tambah butir soal baru dan buat diagram gambar langsung"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>+ Tambah Soal & Gambar AI</span>
-          </button>
-
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-            <div className="text-right">
-              <span className="text-xs font-bold text-slate-800 block">
-                {formData.mapel || 'Pilih Mapel'} · Kelas {formData.kelas}
-              </span>
-              <span className="text-[10px] text-slate-500 block font-mono">
-                {formData.jenisUjian}
-              </span>
-            </div>
-            <div className="px-2.5 py-1 rounded-lg bg-emerald-800 text-white text-xs font-black tabular-nums">
-              {questions.length} Soal
-            </div>
-          </div>
+        {/* Bootstrap .nav-tabs */}
+        <div className="px-4 pt-2 bg-slate-100 border-b border-slate-300 flex items-center gap-1 overflow-x-auto">
+          {[
+            {
+              step: 1 as const,
+              label: `1. Konfigurasi Soal (${totalConfiguredQuestions})`,
+            },
+            {
+              step: 2 as const,
+              label: isGenerating
+                ? `2. Proses Generate (Batch ${currentBatchIdx}/${batchProgressList.length})`
+                : `2. Proses Generate (${completedBatchesCount}/${batchProgressList.length || Math.ceil(totalConfiguredQuestions / 7)} Batch)`,
+            },
+            {
+              step: 3 as const,
+              label: `3. Hasil & Ekspor (${questions.length} Soal)`,
+            },
+          ].map((tab) => {
+            const active = wizardStep === tab.step;
+            return (
+              <button
+                key={tab.step}
+                type="button"
+                onClick={() => setWizardStep(tab.step)}
+                className={`px-4 py-2 text-xs font-semibold rounded-t-md border transition cursor-pointer whitespace-nowrap ${
+                  active
+                    ? 'bg-white border-slate-300 border-b-white text-[#045f3b] -mb-px font-bold'
+                    : 'bg-slate-200/70 border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Two-Panel Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT PANEL: Form Parameter */}
-        <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 space-y-6 no-print">
-          <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-            <h2 className="font-heading font-bold text-sm sm:text-base text-slate-900 flex items-center space-x-2">
-              <Sliders className="w-4 h-4 text-emerald-800" />
-              <span>Konfigurasi Asesmen</span>
-            </h2>
-            <span className="text-xs text-slate-500 font-medium">
-              MA NU 01 Banyuputih
-            </span>
-          </div>
-
-          {/* Form Fields */}
-          <div className="space-y-4 text-xs">
-            {/* Mata Pelajaran & Jenis Ujian */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="block font-semibold text-slate-700 text-xs">Mata Pelajaran</label>
-                <input
-                  type="text"
-                  value={formData.mapel}
-                  onChange={(e) => handleInputChange('mapel', e.target.value)}
-                  placeholder="Contoh: Fiqih, Biologi, Matematika"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-700/10 focus:border-emerald-700 transition bg-slate-50/50 hover:bg-slate-50"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block font-semibold text-slate-700 text-xs">Jenis Asesmen</label>
-                <select
-                  value={formData.jenisUjian}
-                  onChange={(e) => handleInputChange('jenisUjian', e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-700/10 focus:border-emerald-700 transition font-medium"
-                >
-                  <option value="ASTS">ASTS (Tengah Semester)</option>
-                  <option value="ASESGA">ASESGA (Akhir Semester)</option>
-                  <option value="ASAS">ASAS (Akhir Satuan Pendidikan)</option>
-                </select>
-              </div>
+      {/* ========================================================
+          LANGKAH 1: KONFIGURASI SOAL (Bootstrap Cards & Table)
+      ======================================================== */}
+      {wizardStep === 1 && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start no-print">
+          {/* Left Card: Identitas & CP */}
+          <div className="lg:col-span-6 bg-white rounded-md border border-slate-300 overflow-hidden">
+            <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-800">
+              Identitas Mata Pelajaran & Capaian Pembelajaran
             </div>
 
-            {/* Kelas & Semester & Tahun Pelajaran */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">Kelas</label>
-                <select
-                  value={formData.kelas}
-                  onChange={(e) => handleInputChange('kelas', e.target.value)}
-                  className="w-full px-2.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition"
-                >
-                  <option value="X">Kelas X</option>
-                  <option value="XI">Kelas XI</option>
-                  <option value="XII">Kelas XII</option>
-                </select>
+            <div className="p-4 space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Mata Pelajaran</label>
+                  <input
+                    type="text"
+                    value={formData.mapel}
+                    onChange={(e) => handleInputChange('mapel', e.target.value)}
+                    placeholder="Contoh: Fiqih, Biologi, Matematika"
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white focus:outline-none focus:border-[#045f3b] text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Jenis Asesmen</label>
+                  <select
+                    value={formData.jenisUjian}
+                    onChange={(e) => handleInputChange('jenisUjian', e.target.value)}
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white focus:outline-none focus:border-[#045f3b] text-slate-900"
+                  >
+                    <option value="ASTS">ASTS (Tengah Semester)</option>
+                    <option value="ASESGA">ASESGA (Akhir Semester)</option>
+                    <option value="ASAS">ASAS (Akhir Satuan Pendidikan)</option>
+                  </select>
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">Semester</label>
-                <select
-                  value={formData.semester}
-                  onChange={(e) => handleInputChange('semester', e.target.value)}
-                  className="w-full px-2.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition"
-                >
-                  <option value="1">1 (Gasal)</option>
-                  <option value="2">2 (Genap)</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">TA</label>
-                <input
-                  type="text"
-                  value={formData.tahunPelajaran}
-                  onChange={(e) => handleInputChange('tahunPelajaran', e.target.value)}
-                  className="w-full px-2.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 text-center font-semibold"
-                />
-              </div>
-            </div>
 
-            {/* Bahasa Pengantar & Alokasi Waktu */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center space-x-1">
-                  <Languages className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Bahasa Naskah</span>
-                </label>
-                <select
-                  value={formData.bahasa}
-                  onChange={(e) => handleInputChange('bahasa', e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition"
-                >
-                  <option value="indonesia">Bahasa Indonesia</option>
-                  <option value="arab">Bahasa Arab (RTL)</option>
-                  <option value="campuran">Campuran (Arab & Indo)</option>
-                </select>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Kelas</label>
+                  <select
+                    value={formData.kelas}
+                    onChange={(e) => handleInputChange('kelas', e.target.value)}
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                  >
+                    <option value="X">Kelas X</option>
+                    <option value="XI">Kelas XI</option>
+                    <option value="XII">Kelas XII</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Semester</label>
+                  <select
+                    value={formData.semester}
+                    onChange={(e) => handleInputChange('semester', e.target.value)}
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                  >
+                    <option value="1">1 (Gasal)</option>
+                    <option value="2">2 (Genap)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Tahun Pelajaran</label>
+                  <input
+                    type="text"
+                    value={formData.tahunPelajaran}
+                    onChange={(e) => handleInputChange('tahunPelajaran', e.target.value)}
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                  />
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">Waktu Ujian</label>
-                <div className="flex items-center space-x-1.5">
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Bahasa Pengantar</label>
+                  <select
+                    value={formData.bahasa}
+                    onChange={(e) => handleInputChange('bahasa', e.target.value)}
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900"
+                  >
+                    <option value="indonesia">Bahasa Indonesia</option>
+                    <option value="arab">Bahasa Arab (RTL Amiri)</option>
+                    <option value="campuran">Campuran (Arab & Indonesia)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Alokasi Waktu (Menit)</label>
                   <input
                     type="number"
                     min="30"
                     max="180"
                     value={formData.alokasiWaktuMenit}
                     onChange={(e) => handleInputChange('alokasiWaktuMenit', parseInt(e.target.value) || 90)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-center font-bold"
+                    className="w-full px-3 py-2 rounded border border-slate-300 bg-white text-slate-900 tabular-nums"
                   />
-                  <span className="text-slate-500 font-bold">Menit</span>
                 </div>
               </div>
-            </div>
 
-            {/* Capaian Pembelajaran / Target KD */}
-            <div className="space-y-1">
-              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                Capaian Pembelajaran (CP) / Materi Target
-              </label>
-              <textarea
-                rows={3}
-                value={formData.capaianPembelajaran}
-                onChange={(e) => handleInputChange('capaianPembelajaran', e.target.value)}
-                placeholder="Tuliskan capaian pembelajaran atau ruang lingkup materi yang diujikan..."
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition resize-none bg-slate-50/50"
-              />
-            </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Capaian Pembelajaran (CP) / Materi Spesifik yang Diujikan
+                </label>
+                <textarea
+                  rows={4}
+                  value={formData.capaianPembelajaran}
+                  onChange={(e) => handleInputChange('capaianPembelajaran', e.target.value)}
+                  placeholder="Tuliskan rincian materi, bab, atau indikator soal yang ingin diujikan..."
+                  className="w-full p-3 rounded border border-slate-300 bg-white focus:outline-none focus:border-[#045f3b] text-slate-900 leading-relaxed resize-y"
+                />
+              </div>
 
-            {/* Stimulus Gambar & Diagram AI Otomatis */}
-            <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-2.5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-2xs">
-                    <ImageIcon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <label className="font-bold text-slate-900 text-xs block">
-                      Stimulus Gambar & Diagram AI
-                    </label>
-                    <span className="text-[11px] text-slate-500 block">
-                      Otomatis render diagram untuk soal eksak & biologi
-                    </span>
-                  </div>
-                </div>
+              <label className="flex items-center gap-2.5 pt-1 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={autoGenerateImages}
                   onChange={(e) => setAutoGenerateImages(e.target.checked)}
-                  className="w-4 h-4 rounded text-emerald-800 focus:ring-emerald-700 cursor-pointer mt-1"
+                  className="w-4 h-4 rounded border-slate-300 text-[#045f3b] focus:ring-[#045f3b]"
                 />
-              </div>
+                <span className="text-slate-700 font-medium">
+                  Otomatis buat diagram/gambar pendukung saat generate (opsional)
+                </span>
+              </label>
+            </div>
+          </div>
 
-              {autoGenerateImages && (
-                <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between gap-2 text-[11px]">
-                  <span className="text-slate-600 font-medium">Gaya Diagram:</span>
-                  <select
-                    value={imageStyle}
-                    onChange={(e: any) => setImageStyle(e.target.value)}
-                    className="px-2 py-1 rounded-lg border border-amber-300 bg-white text-slate-800 font-semibold cursor-pointer"
-                  >
-                    <option value="diagram">Skematik Putih</option>
-                    <option value="vector">Vektor Edukasi</option>
-                    <option value="photo">Foto Realistis</option>
-                    <option value="sketch">Garis Hitam Putih</option>
-                  </select>
+          {/* Right Card: Tabel Komposisi Tipe Soal */}
+          <div className="lg:col-span-6 bg-white rounded-md border border-slate-300 overflow-hidden">
+            <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <span className="font-bold text-xs text-slate-800">
+                Komposisi Tipe Soal
+              </span>
+              <span className="text-xs font-bold text-[#045f3b]">
+                Total: {totalConfiguredQuestions} Butir
+              </span>
+            </div>
+
+            <div className="p-4 space-y-3.5 text-xs">
+              {/* Preset Buttons (Bootstrap btn-group style) */}
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="font-semibold text-slate-700">Preset Jumlah:</span>
+                <div className="inline-flex rounded border border-slate-300 overflow-hidden">
+                  {([15, 25, 40, 50] as const).map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => applyQuotaPreset(preset)}
+                      className={`px-3 py-1.5 text-xs font-semibold border-r last:border-r-0 border-slate-300 transition cursor-pointer ${
+                        totalConfiguredQuestions === preset
+                          ? 'bg-[#045f3b] text-white'
+                          : 'bg-white hover:bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {preset} Soal
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Konfigurasi 6 Tipe Soal (PRD Section 4.2.2) */}
-            <div className="pt-3.5 border-t border-slate-100 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <label className="block font-semibold text-slate-800 text-xs">
-                  Distribusi & Kuota Butir Soal (Maks 100)
-                </label>
-                <span className="text-xs text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded-md self-start sm:self-auto tabular-nums">
-                  Total {Object.values(formData.selectedTypes).reduce((a, b) => a + b, 0)} Soal
+              {/* Bootstrap Table for 6 Question Types */}
+              <div className="border border-slate-200 rounded overflow-hidden">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                      <th className="py-2 px-3">Jenis Soal</th>
+                      <th className="py-2 px-3 hidden sm:table-cell">Keterangan</th>
+                      <th className="py-2 px-3 text-right w-32">Jumlah</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {(Object.keys(QUESTION_TYPE_META) as QuestionTypeKey[]).map((typeKey) => {
+                      const meta = QUESTION_TYPE_META[typeKey];
+                      const qty = formData.selectedTypes[typeKey] || 0;
+                      return (
+                        <tr key={typeKey} className={qty > 0 ? 'bg-white' : 'bg-slate-50/50 text-slate-500'}>
+                          <td className="py-2 px-3 font-semibold text-slate-800">{meta.label}</td>
+                          <td className="py-2 px-3 text-slate-500 hidden sm:table-cell">{meta.sub}</td>
+                          <td className="py-1.5 px-3 text-right">
+                            <div className="inline-flex items-center border border-slate-300 rounded bg-white overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => handleTypeQuotaChange(typeKey, -1)}
+                                className="px-2 py-1 hover:bg-slate-100 text-slate-700 font-bold border-r border-slate-300 cursor-pointer"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={qty}
+                                onChange={(e) => handleDirectQuotaChange(typeKey, e.target.value)}
+                                className="w-10 text-center font-bold text-slate-900 text-xs tabular-nums focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleTypeQuotaChange(typeKey, 1)}
+                                className="px-2 py-1 hover:bg-slate-100 text-slate-700 font-bold border-l border-slate-300 cursor-pointer"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Simple Difficulty Summary */}
+              <div className="flex items-center justify-between px-3 py-2 rounded bg-slate-50 border border-slate-200 text-slate-700">
+                <span className="font-semibold">Proporsi Kesulitan:</span>
+                <span className="tabular-nums">
+                  Mudah {formData.difficultyProportion.mudah}% · Sedang {formData.difficultyProportion.sedang}% · Sulit {formData.difficultyProportion.sulit}%
                 </span>
               </div>
 
-              {/* Quick Presets */}
-              <div className="flex items-center gap-1.5 flex-wrap pb-1">
-                <span className="text-xs text-slate-500 font-medium mr-1">Preset:</span>
+              {/* Primary Action Buttons */}
+              <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                 <button
                   type="button"
-                  onClick={() => applyQuotaPreset(15)}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium text-xs transition cursor-pointer"
+                  disabled={isGenerating || totalConfiguredQuestions === 0}
+                  onClick={handleGenerate}
+                  className="flex-1 py-2.5 px-4 rounded bg-[#045f3b] hover:bg-[#03482d] text-white font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  15 Soal
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>
+                    Generate Soal Sekarang ({totalConfiguredQuestions} Butir / {Math.ceil(totalConfiguredQuestions / 7)} Batch)
+                  </span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => applyQuotaPreset(25)}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium text-xs transition cursor-pointer"
-                >
-                  25 Soal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyQuotaPreset(40)}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium text-xs transition cursor-pointer"
-                >
-                  40 Soal (CBT)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyQuotaPreset(50)}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium text-xs transition cursor-pointer"
-                >
-                  50 Soal
-                </button>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-2">
-                {[
-                  { key: 'single_choice' as const, label: 'PG Tunggal', sub: 'Pilihan Ganda A-E' },
-                  { key: 'multiple_choice' as const, label: 'PG Jamak', sub: 'Multi Jawaban Benar' },
-                  { key: 'short_answer' as const, label: 'Jawaban Singkat', sub: 'Isian Pendek' },
-                  { key: 'ordering' as const, label: 'Mengurutkan', sub: 'Urutan Kronologis' },
-                  { key: 'matching' as const, label: 'Menjodohkan', sub: 'Pasangan Pernyataan' },
-                  { key: 'essay' as const, label: 'Uraian / Essay', sub: 'Rubrik Penilaian' },
-                ].map((item) => (
-                  <div
-                    key={item.key}
-                    className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-slate-300 transition-all flex items-center justify-between gap-2"
+                {questions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(3)}
+                    className="py-2.5 px-3.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer"
                   >
-                    <div className="min-w-0">
-                      <div className="font-medium text-slate-900 text-xs truncate">{item.label}</div>
-                      <div className="text-[11px] text-slate-500 truncate">{item.sub}</div>
-                    </div>
-                    <div className="flex items-center space-x-1 bg-white p-0.5 rounded-lg border border-slate-200 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleTypeQuotaChange(item.key, -1)}
-                        className="w-6 h-6 rounded bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors"
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={formData.selectedTypes[item.key]}
-                        onChange={(e) => handleDirectQuotaChange(item.key, e.target.value)}
-                        className="w-8 text-center font-semibold text-slate-900 text-xs tabular-nums bg-transparent focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleTypeQuotaChange(item.key, 1)}
-                        className="w-6 h-6 rounded bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                    Lihat Hasil ({questions.length})
+                  </button>
+                )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Tingkat Kesulitan Proporsi */}
-            <div className="space-y-2 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200">
-              <div className="flex justify-between font-medium text-slate-800 text-xs">
-                <span>Distribusi Tingkat Kesulitan</span>
-                <span className="text-slate-600 font-mono text-xs tabular-nums">
-                  {formData.difficultyProportion.mudah}% · {formData.difficultyProportion.sedang}% · {formData.difficultyProportion.sulit}%
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-slate-200 flex overflow-hidden">
-                <div style={{ width: `${formData.difficultyProportion.mudah}%` }} className="bg-emerald-600 transition-all duration-300" title="Mudah" />
-                <div style={{ width: `${formData.difficultyProportion.sedang}%` }} className="bg-sky-600 transition-all duration-300" title="Sedang" />
-                <div style={{ width: `${formData.difficultyProportion.sulit}%` }} className="bg-amber-600 transition-all duration-300" title="Sulit" />
-              </div>
-              <div className="flex justify-between text-[11px] text-slate-500 pt-0.5">
-                <span>Mudah ({formData.difficultyProportion.mudah}%)</span>
-                <span>Sedang ({formData.difficultyProportion.sedang}%)</span>
-                <span>Sulit ({formData.difficultyProportion.sulit}%)</span>
-              </div>
+      {/* ========================================================
+          LANGKAH 2: PROSES GENERATE PER BATCH (Bootstrap Progress & Table)
+      ======================================================== */}
+      {wizardStep === 2 && (
+        <div className="bg-white rounded-md border border-slate-300 overflow-hidden no-print">
+          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-bold text-sm text-slate-900">
+                {isGenerating
+                  ? `Menyusun Soal: Batch ${currentBatchIdx} dari ${batchProgressList.length}...`
+                  : `Proses Penyusunan Selesai (${questions.length} Soal)`}
+              </h2>
+              <p className="text-xs text-slate-600 mt-0.5">
+                {generationStep || `Engine: ${activeModelName} · Eksekusi bertahap maksimal 7 soal per batch`}
+              </p>
             </div>
 
-            {/* Generate Action Button */}
-            <button
-              type="button"
-              disabled={isGenerating}
-              onClick={handleGenerate}
-              className="w-full mt-2 py-3 px-4 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer shadow-xs"
-            >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                  <span>Sedang Menyusun Butir Soal Asesmen...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-emerald-200" />
-                  <span>Generate Paket Soal Asesmen</span>
-                </>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-slate-700 tabular-nums">
+                Progres: {completedBatchesCount}/{batchProgressList.length} Batch ({batchProgressPercent}%)
+              </span>
+              {!isGenerating && questions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(3)}
+                  className="px-3.5 py-1.5 rounded bg-[#045f3b] hover:bg-[#03482d] text-white text-xs font-semibold transition cursor-pointer"
+                >
+                  Lihat Hasil Soal →
+                </button>
               )}
-            </button>
+            </div>
+          </div>
 
-            {/* Live Generation Progress Indicator */}
-            {isGenerating && (
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 flex items-center space-x-2.5">
-                <div className="w-2 h-2 rounded-full bg-emerald-600 animate-ping shrink-0" />
-                <span className="font-medium">{generationStep}</span>
+          <div className="p-4 space-y-4">
+            {/* Standard Bootstrap Progress Bar */}
+            <div className="w-full h-2.5 rounded bg-slate-200 overflow-hidden">
+              <div
+                className="h-full bg-[#045f3b] transition-all duration-300"
+                style={{ width: `${Math.max(4, batchProgressPercent)}%` }}
+              />
+            </div>
+
+            {batchProgressList.length === 0 ? (
+              <div className="p-6 text-center bg-slate-50 rounded border border-slate-200 space-y-2">
+                <p className="text-xs text-slate-600">Belum ada proses generate yang berjalan.</p>
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  className="px-3.5 py-2 rounded bg-[#045f3b] text-white text-xs font-semibold cursor-pointer"
+                >
+                  Mulai Generate Soal
+                </button>
               </div>
-            )}
-
-            {statusMessage && !isGenerating && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span className="font-medium">{statusMessage}</span>
+            ) : (
+              <div className="border border-slate-200 rounded overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                      <th className="py-2 px-3">Batch</th>
+                      <th className="py-2 px-3">Rentang Nomor</th>
+                      <th className="py-2 px-3">Komposisi</th>
+                      <th className="py-2 px-3">Sumber / Durasi</th>
+                      <th className="py-2 px-3 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {batchProgressList.map((batch) => (
+                      <tr
+                        key={batch.batchIndex}
+                        className={batch.status === 'running' ? 'bg-emerald-50/50' : 'bg-white'}
+                      >
+                        <td className="py-2.5 px-3 font-bold text-slate-900">
+                          Batch #{batch.batchIndex}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-700 tabular-nums">
+                          Soal {batch.startNum} s.d. {batch.endNum} ({batch.count} butir)
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600">{batch.typesSummary}</td>
+                        <td className="py-2.5 px-3 text-slate-600 font-mono text-[11px]">
+                          {batch.source ? (
+                            <>
+                              {batch.source}
+                              {batch.durationMs ? ` (${(batch.durationMs / 1000).toFixed(1)}s)` : ''}
+                            </>
+                          ) : (
+                            '-'
+                          )}
+                          {batch.fallbackReason && (
+                            <div className="text-amber-800 font-sans mt-0.5">
+                              Info: {batch.fallbackReason}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-semibold">
+                          {batch.status === 'running' && (
+                            <span className="text-[#045f3b]">Sedang memproses...</span>
+                          )}
+                          {batch.status === 'success' && (
+                            <span className="text-emerald-700">Selesai (AI)</span>
+                          )}
+                          {batch.status === 'fallback' && (
+                            <span className="text-amber-700">Template Cadangan</span>
+                          )}
+                          {batch.status === 'pending' && (
+                            <span className="text-slate-400">Menunggu</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         </div>
+      )}
 
-        {/* ========================================================
-            RIGHT PANEL: Interactive CBT Text Box & Paper Preview
-        ======================================================== */}
-        <div className="lg:col-span-7 space-y-4">
-          {/* Amber Warning Banner if AI Failed & Emergency Template Was Used */}
-          {isFallbackMode && (
-            <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-400 text-amber-950 space-y-2 shadow-xs no-print animate-in fade-in duration-200">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-amber-400 text-amber-950 shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-amber-950" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-sm font-bold text-amber-950">
-                      Mode Darurat: Bank Soal Template Digunakan (Bukan Hasil AI)
-                    </h4>
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 border border-amber-300">
-                      Emergency Fallback
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-900 leading-relaxed">
-                    AI Gateway tidak dapat merespons permintaan pembuatan soal
-                    {fallbackReason ? <span className="font-semibold"> ({fallbackReason})</span> : ''}.
-                    Soal di bawah ini dimuat dari <strong>Bank Soal Template Darurat</strong> agar naskah tetap tersedia, namun <strong>belum disesuaikan secara dinamis dengan Capaian Pembelajaran (CP)</strong> yang Anda ketik.
-                  </p>
-                  <div className="pt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-amber-800">
-                    <span className="font-semibold">Solusi Admin/Guru:</span>
-                    <span>Pastikan API Key remote 9router (<code className="px-1 py-0.5 bg-amber-100 rounded text-amber-900 font-mono text-[10px]">OPENAI_API_KEY</code>) atau <code className="px-1 py-0.5 bg-amber-100 rounded text-amber-900 font-mono text-[10px]">GEMINI_API_KEY</code> terpasang valid di konfigurasi server (Portainer/Docker).</span>
-                  </div>
-                </div>
+      {/* ========================================================
+          LANGKAH 3: HASIL & EKSPOR (Bootstrap Alerts, Toolbar & Clean Cards)
+      ======================================================== */}
+      {wizardStep === 3 && (
+        <div className="space-y-4">
+          {/* Simple Bootstrap Alert Box for AI vs Emergency Template */}
+          {isFallbackMode ? (
+            <div className="px-4 py-3 rounded-md bg-amber-50 border border-amber-300 text-amber-900 flex flex-wrap items-center justify-between gap-3 text-xs no-print">
+              <div>
+                <strong>Perhatian (Mode Template Cadangan):</strong> Gateway AI belum merespons
+                {fallbackReason ? ` (${fallbackReason})` : ''}. Soal di bawah menggunakan bank template darurat.
               </div>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                className="px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs cursor-pointer shrink-0"
+              >
+                Coba Generate Ulang AI
+              </button>
             </div>
-          )}
-
-          {/* Genuine AI Success Badge */}
-          {!isFallbackMode && questions.length > 0 && (
-            <div className="px-4 py-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between text-xs font-medium shadow-2xs no-print">
-              <div className="flex items-center space-x-2">
-                <Sparkles className="w-4 h-4 text-emerald-700 shrink-0" />
+          ) : (
+            questions.length > 0 && (
+              <div className="px-4 py-2.5 rounded-md bg-emerald-50 border border-emerald-300 text-emerald-900 flex flex-wrap items-center justify-between gap-2 text-xs no-print">
                 <span>
-                  <strong>Soal Asli AI ({packageSource || '9router / Gemini AI'})</strong> — Disesuaikan secara dinamis dengan Capaian Pembelajaran & materi target.
+                  <strong>Status Naskah:</strong> Berhasil disusun oleh AI ({packageSource || '9router / komoboku'}) — {questions.length} butir soal sesuai CP.
                 </span>
               </div>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase">
-                AI Verified
-              </span>
-            </div>
+            )
           )}
 
-          {/* Top Switcher & Action Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-2xl no-print">
-            {/* View Mode Toggle: Text Box CBT vs Pratinjau Kertas */}
-            <div className="flex items-center space-x-1 p-1 bg-slate-100 rounded-xl">
+          {/* Clean Bootstrap Toolbar */}
+          <div className="bg-white p-3 rounded-md border border-slate-300 flex flex-wrap items-center justify-between gap-3 no-print">
+            {/* View Mode Button Group */}
+            <div className="inline-flex rounded border border-slate-300 overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                className={`px-3 py-1.5 font-semibold border-r border-slate-300 cursor-pointer ${
+                  viewMode === 'cards'
+                    ? 'bg-[#045f3b] text-white'
+                    : 'bg-white hover:bg-slate-100 text-slate-700'
+                }`}
+              >
+                Daftar Soal ({questions.length})
+              </button>
               <button
                 type="button"
                 onClick={() => setViewMode('textbox')}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                className={`px-3 py-1.5 font-semibold border-r border-slate-300 cursor-pointer ${
                   viewMode === 'textbox'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#045f3b] text-white'
+                    : 'bg-white hover:bg-slate-100 text-slate-700'
                 }`}
               >
-                <FileText className="w-3.5 h-3.5 text-emerald-800" />
-                <span>Naskah CBT IDE</span>
+                Teks CBT
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('paper')}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                className={`px-3 py-1.5 font-semibold cursor-pointer ${
                   viewMode === 'paper'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#045f3b] text-white'
+                    : 'bg-white hover:bg-slate-100 text-slate-700'
                 }`}
               >
-                <Printer className="w-3.5 h-3.5 text-slate-500" />
-                <span>Pratinjau Kertas Cetak</span>
+                Lembar Cetak (Kop)
               </button>
             </div>
 
-            {/* Contextual Actions based on Active Tab */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {viewMode === 'textbox' ? (
-                <>
-                  {/* Sisipkan Gambar AI ke CBT */}
-                  <button
-                    type="button"
-                    onClick={() => setIsCbtImageModalOpen(true)}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-bold transition cursor-pointer"
-                    title="Generate gambar AI dan sisipkan tag [IMG] langsung ke naskah CBT"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                    <span>+ Sisipkan Gambar AI ([IMG])</span>
-                  </button>
+            {/* Filter Select + Show Answer Key Toggle + Export Buttons */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <select
+                value={activeFilterType}
+                onChange={(e) => setActiveFilterType(e.target.value as 'all' | QuestionTypeKey)}
+                className="px-2.5 py-1.5 rounded border border-slate-300 bg-white text-slate-700 font-medium"
+              >
+                <option value="all">Semua Tipe Soal ({questions.length})</option>
+                {(Object.keys(QUESTION_TYPE_META) as QuestionTypeKey[]).map((tKey) => {
+                  const count = questions.filter((q) => q.type === tKey).length;
+                  if (count === 0) return null;
+                  return (
+                    <option key={tKey} value={tKey}>
+                      {QUESTION_TYPE_META[tKey].label} ({count})
+                    </option>
+                  );
+                })}
+              </select>
 
-                  {/* Salin CKEditor */}
-                  <button
-                    type="button"
-                    onClick={handleCopyForCkEditor}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-medium transition cursor-pointer"
-                    title="Salin rich text siap tempel di CKEditor CBT (Rumus otomatis jadi gambar)"
-                  >
-                    {copyCkSuccess ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-200" />
-                        <span>Tersalin! Siap Tempel</span>
-                      </>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-3.5 h-3.5 text-emerald-200" />
-                        <span>Salin Format CKEditor</span>
-                      </>
-                    )}
-                  </button>
+              <button
+                type="button"
+                onClick={() => setShowAnswerKeys(!showAnswerKeys)}
+                className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer"
+              >
+                {showAnswerKeys ? 'Sembunyikan Kunci' : 'Tampilkan Kunci'}
+              </button>
 
-                  {/* Salin Teks CBT */}
-                  <button
-                    type="button"
-                    onClick={handleCopyCbtText}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-medium transition cursor-pointer"
-                    title="Salin naskah teks box standar CBT ke clipboard"
-                  >
-                    {copySuccess ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-700" />
-                        <span>Tersalin!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Salin Teks CBT</span>
-                      </>
-                    )}
-                  </button>
+              <button
+                type="button"
+                onClick={() => setIsAddingNewQuestion(true)}
+                className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-semibold cursor-pointer"
+              >
+                + Tambah Soal
+              </button>
 
-                  {/* Download .txt */}
-                  <button
-                    type="button"
-                    onClick={handleDownloadTxt}
-                    className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
-                    title="Unduh berkas .txt standar CBT"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-400" />
-                    <span>.txt</span>
-                  </button>
+              <button
+                type="button"
+                onClick={handleCopyCbtText}
+                className="px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-semibold cursor-pointer"
+              >
+                {copySuccess ? 'Tersalin!' : 'Salin CBT'}
+              </button>
 
-                  {/* Download HTML */}
-                  <button
-                    type="button"
-                    onClick={handleDownloadCkHtml}
-                    className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
-                    title="Unduh berkas HTML siap impor CKEditor CBT"
-                  >
-                    <Code className="w-3.5 h-3.5 text-emerald-800" />
-                    <span>HTML</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  {/* Tambah Soal Manual & Gambar AI */}
-                  <button
-                    type="button"
-                    onClick={() => setIsAddingNewQuestion(true)}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold transition cursor-pointer shadow-xs"
-                    title="Tambah butir soal baru dan buat gambar diagram AI langsung"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>+ Tambah Soal & Gambar AI</span>
-                  </button>
+              <button
+                type="button"
+                onClick={handleDownloadDocx}
+                className="px-3 py-1.5 rounded bg-[#045f3b] hover:bg-[#03482d] text-white font-semibold cursor-pointer"
+              >
+                Unduh Word (.docx)
+              </button>
 
-                  {/* Download Word */}
-                  <button
-                    type="button"
-                    onClick={handleDownloadDocx}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-800 transition cursor-pointer"
-                    title="Unduh berkas Word (.docx) naskah cetak"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Unduh Word (.docx)</span>
-                  </button>
-
-                  {/* Cetak PDF */}
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition cursor-pointer"
-                    title="Cetak langsung atau simpan sebagai PDF"
-                  >
-                    <Printer className="w-3.5 h-3.5 text-slate-300" />
-                    <span>Cetak PDF</span>
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-900 text-white font-semibold cursor-pointer"
+              >
+                Cetak PDF
+              </button>
             </div>
           </div>
 
-          {/* VIEW MODE 1: TEKS BOX FORMAT CBT (SEDERHANA & UTAMA) */}
-          {viewMode === 'textbox' ? (
-            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-0">
-              {/* Header Info Bar */}
-              <div className="p-3.5 sm:p-4 bg-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center space-x-2 text-xs font-semibold text-slate-800">
-                  <span>{formData.jenisUjian}</span>
-                  <span className="text-slate-300">·</span>
-                  <span>{formData.mapel || 'Mata Pelajaran'}</span>
-                  <span className="text-slate-300">·</span>
-                  <span>Kelas {formData.kelas}</span>
+          {/* ========================================================
+              SUB-MODE A: DAFTAR SOAL (Bootstrap Card per Question, Zero Badges)
+          ======================================================== */}
+          {viewMode === 'cards' && (
+            <div className="space-y-3 no-print">
+              {filteredQuestions.map((q) => {
+                const meta = QUESTION_TYPE_META[q.type as QuestionTypeKey] || QUESTION_TYPE_META.single_choice;
+                return (
+                  <div
+                    key={q.id}
+                    className="bg-white rounded-md border border-slate-300 overflow-hidden"
+                  >
+                    {/* Bootstrap .card-header */}
+                    <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="text-slate-700">
+                        <strong className="text-slate-900">Soal No. {q.number}</strong>
+                        <span className="mx-1.5 text-slate-400">·</span>
+                        <span>{meta.label}</span>
+                        <span className="mx-1.5 text-slate-400">·</span>
+                        <span className="text-slate-500">Tingkat: {q.difficulty || 'Sedang'}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={generatingImageQId === q.id}
+                          onClick={() => handleQuickGenerateQuestionImage(q, q.imagePrompt)}
+                          className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-medium cursor-pointer disabled:opacity-50"
+                        >
+                          {generatingImageQId === q.id
+                            ? 'Membuat Gambar...'
+                            : q.imageUrl
+                            ? 'Ubah Gambar'
+                            : '+ Gambar AI'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenImageModal(q)}
+                          className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-medium cursor-pointer"
+                        >
+                          Studio Gambar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingQuestion(q)}
+                          className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-[11px] font-semibold cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bootstrap .card-body */}
+                    <div className="p-4 space-y-3">
+                      <div className="text-sm text-slate-900 leading-relaxed max-w-3xl">
+                        <MathText text={q.text} isArabic={q.isArabic} />
+                      </div>
+
+                      {q.imageUrl && (
+                        <div className="my-2">
+                          <div className="inline-block rounded border border-slate-200 bg-slate-50 p-2">
+                            <img
+                              src={q.imageUrl}
+                              alt={`Diagram Soal ${q.number}`}
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.src = getFallbackDiagramSvg(formData.mapel, q.text);
+                              }}
+                              className="max-h-60 max-w-full sm:max-w-lg object-contain bg-white"
+                              loading="lazy"
+                            />
+                            <div className="mt-1.5 flex items-center justify-end gap-2 text-[11px]">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveQuestionImage(q.id)}
+                                className="text-rose-700 hover:underline font-medium cursor-pointer"
+                              >
+                                Hapus Gambar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Options for PG Tunggal / PG Jamak */}
+                      {(q.type === 'single_choice' || q.type === 'multiple_choice') && q.options && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 max-w-3xl">
+                          {q.options.map((opt) => {
+                            const isCorrectOpt =
+                              showAnswerKeys &&
+                              q.rawRightAnswer
+                                ?.replace(/RIGHT:/i, '')
+                                .split(',')
+                                .map((s) => s.trim().toUpperCase())
+                                .includes(opt.key.toUpperCase());
+                            return (
+                              <div
+                                key={opt.key}
+                                className={`flex items-start gap-2 px-3 py-2 rounded border text-xs leading-relaxed ${
+                                  isCorrectOpt
+                                    ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-semibold'
+                                    : 'bg-slate-50/60 border-slate-200 text-slate-800'
+                                }`}
+                              >
+                                <span className="font-bold text-slate-900 shrink-0">{opt.key}.</span>
+                                <div className="flex-1">
+                                  <MathText text={opt.text} isArabic={opt.isRtl || q.isArabic} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Ordering Items */}
+                      {q.type === 'ordering' && q.orderingItems && (
+                        <div className="space-y-1 max-w-2xl pt-1 text-xs">
+                          {q.orderingItems.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-50 border border-slate-200"
+                            >
+                              <span className="font-bold text-slate-700">{item.id}.</span>
+                              <span className="text-slate-800">{item.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Matching Items */}
+                      {q.type === 'matching' && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl text-xs pt-1">
+                          <div className="p-3 rounded bg-slate-50 border border-slate-200 space-y-1">
+                            <div className="font-bold text-slate-700">Premis (Kiri):</div>
+                            {q.matchingPremises?.map((premise) => (
+                              <div key={premise.id} className="flex items-start gap-1.5">
+                                <span className="font-bold">{premise.id}.</span>
+                                <span>{premise.text}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="p-3 rounded bg-slate-50 border border-slate-200 space-y-1">
+                            <div className="font-bold text-slate-700">Pasangan Respons (Kanan):</div>
+                            {q.matchingResponses?.map((resp) => (
+                              <div key={resp.key} className="flex items-start gap-1.5">
+                                <span className="font-bold">{resp.key}.</span>
+                                <span>{resp.text}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Answer Key & Explanation */}
+                      {showAnswerKeys && (
+                        <div className="px-3 py-2 rounded bg-slate-50 border border-slate-200 text-xs text-slate-700 max-w-3xl space-y-1">
+                          <div>
+                            <strong>Kunci Jawaban:</strong>{' '}
+                            <code className="font-mono text-[#045f3b] font-bold">
+                              {q.rawRightAnswer || '(Uraian)'}
+                            </code>
+                          </div>
+                          {q.explanation && (
+                            <div className="text-slate-600">
+                              <strong>Pembahasan:</strong> {q.explanation}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ========================================================
+              SUB-MODE B: NASKAH TEKS BOX CBT
+          ======================================================== */}
+          {viewMode === 'textbox' && (
+            <div className="bg-white rounded-md border border-slate-300 overflow-hidden no-print">
+              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="font-bold text-slate-800">
+                  Editor Naskah Teks CBT ({formData.jenisUjian} · {formData.mapel})
                 </div>
 
-                <div className="flex items-center space-x-2 text-xs">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={handleLoadExample}
-                    className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 font-semibold transition cursor-pointer touch-manipulation"
-                    title="Muat format contoh persis seperti ketentuan guru"
+                    onClick={() => setCbtSubMode(cbtSubMode === 'standard' ? 'ckeditor_html' : 'standard')}
+                    className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium cursor-pointer"
                   >
-                    Contoh Format
+                    {cbtSubMode === 'standard' ? 'Mode CKEditor (Gambar)' : 'Mode Teks Standar (.txt)'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyForCkEditor}
+                    className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium cursor-pointer"
+                  >
+                    {copyCkSuccess ? 'CKEditor Tersalin!' : 'Salin CKEditor'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadTxt}
+                    className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium cursor-pointer"
+                  >
+                    Unduh .txt
                   </button>
                   <button
                     type="button"
                     onClick={handleSyncFromConfig}
-                    className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold transition flex items-center space-x-1.5 cursor-pointer touch-manipulation"
-                    title="Format ulang teks dari parameter soal saat ini"
+                    className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium cursor-pointer"
                   >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Sync Ulang</span>
+                    Sync Ulang
                   </button>
                 </div>
-              </div>
-
-              {/* Sub-mode selector: Teks Biasa CBT vs Format CKEditor HTML */}
-              <div className="px-3.5 sm:px-4 py-3 bg-slate-50/50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-                <div className="flex items-center space-x-1 bg-white p-1 rounded-xl border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setCbtSubMode('standard')}
-                    className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer touch-manipulation ${
-                      cbtSubMode === 'standard'
-                        ? 'bg-emerald-800 text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    Format Teks Standar (.txt)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCbtSubMode('ckeditor_html')}
-                    className={`px-3 py-1.5 rounded-lg font-semibold transition flex items-center space-x-1.5 cursor-pointer touch-manipulation ${
-                      cbtSubMode === 'ckeditor_html'
-                        ? 'bg-emerald-700 text-white shadow-3xs'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Mode CKEditor (Auto-Gambar)</span>
-                  </button>
-                </div>
-
-                {/* Equation Image Format Selector */}
-                <div className="flex items-center space-x-2 text-slate-600 text-xs">
-                  <span className="text-slate-500 font-medium">Render Rumus:</span>
-                  <select
-                    value={imageFormat}
-                    onChange={(e) => setImageFormat(e.target.value as 'png' | 'svg')}
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 cursor-pointer"
-                  >
-                    <option value="png">PNG (Tajam)</option>
-                    <option value="svg">SVG (Vektor)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Banner Panduan Solusi CKEditor Tanpa Ribet */}
-              <div className="mx-4 mt-3.5 p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-900 space-y-1.5">
-                <div className="font-bold flex items-center space-x-1.5 text-emerald-950">
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
-                  <span>Solusi Praktis Guru Matematika/Eksak untuk CKEditor CBT:</span>
-                </div>
-                <p className="text-[11.5px] leading-relaxed text-emerald-800">
-                  Kini tidak perlu lagi ribet mengubah file Word ke HTML hanya untuk copy rumus! Cukup klik{' '}
-                  <strong className="underline decoration-emerald-600 font-bold">"Salin Siap CKEditor (Auto-Gambar)"</strong>, lalu langsung paste di CKEditor CBT Anda dengan <kbd className="px-1.5 py-0.5 rounded bg-emerald-200/80 font-mono text-[10px] font-bold">Ctrl + V</kbd>. Semua equation matematika otomatis disematkan berupa gambar tajam.
-                </p>
               </div>
 
               {cbtSubMode === 'standard' ? (
-                /* Sub-Mode 1: Teks Box Standar CBT */
-                <div className="p-4 sm:p-5 space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <label htmlFor="cbt-textarea" className="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
-                      <span>Naskah Soal Teks Box (Bisa Diedit Langsung):</span>
-                    </label>
-
-                    {/* Toggle Equation as Image in Text */}
-                    <label className="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={equationAsImageInText}
-                        onChange={(e) => handleToggleEquationInText(e.target.checked)}
-                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
-                      />
-                      <span className="text-[11px] font-bold text-emerald-900">
-                        Ubah rumus KaTeX menjadi tag <code className="font-mono text-emerald-700 bg-emerald-100 px-1 rounded">&lt;img&gt;</code> gambar di teks box
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* FUTURISTIC CODE IDE THEME EDITOR CANVAS */}
-                  <div className="relative rounded-2xl border border-slate-800 bg-slate-950 shadow-lg overflow-hidden flex flex-col">
-                    {/* IDE Header */}
-                    <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800 text-[11px] font-mono text-slate-400 select-none">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex space-x-1.5 shrink-0">
-                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                        </div>
-                        <span className="border-l border-slate-800 h-3 mx-1"></span>
-                        <span className="text-emerald-400 font-bold flex items-center space-x-1">
-                          <span>NASKAH_SOAL_CBT.txt</span>
-                        </span>
-                      </div>
-                      <span className="text-slate-500">UTF-8 • CBT Engine v1.0</span>
-                    </div>
-
-                    {/* Textarea Area */}
-                    <div className="flex min-h-[440px]">
-                      {/* Fake Line Numbers */}
-                      <div className="hidden sm:flex flex-col text-right px-3 py-4 bg-slate-900/40 text-slate-600 font-mono text-[11px] select-none border-r border-slate-900/60 leading-[20px] shrink-0">
-                        {Array.from({ length: Math.max(22, cbtText.split('\n').length) }).map((_, i) => (
-                          <span key={i} className="block h-[20px]">{i + 1}</span>
-                        ))}
-                      </div>
-
-                      <textarea
-                        id="cbt-textarea"
-                        rows={19}
-                        value={cbtText}
-                        onChange={(e) => setCbtText(e.target.value)}
-                        placeholder="Naskah soal CBT akan muncul di sini..."
-                        className="w-full font-mono text-xs sm:text-sm leading-[20px] p-4 bg-slate-950 text-emerald-400 focus:text-emerald-300 focus:outline-none resize-y selection:bg-slate-800 selection:text-white outline-none"
-                        spellCheck={false}
-                      />
-                    </div>
-
-                    {/* IDE Status Bar */}
-                    <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-t border-slate-800 text-[10px] font-mono text-slate-400 select-none">
-                      <div className="flex items-center space-x-3.5">
-                        <span className="flex items-center space-x-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                          <span className="text-emerald-400 font-bold">CBT COMPILE OK</span>
-                        </span>
-                        <span>•</span>
-                        <span>Lines: {cbtText.split('\n').length}</span>
-                        <span>•</span>
-                        <span>Characters: {cbtText.length}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500">TAB SIZE: 4</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                    <p className="text-[11px] text-slate-500 italic">
-                      Tips: Guru dapat langsung mengedit atau menambahkan soal di dalam kotak teks di atas, lalu klik <strong>Salin Teks Box</strong> atau <strong>Download .txt</strong> untuk diimpor ke CBT.
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={handleCopyCbtText}
-                        className="text-xs font-bold text-blue-700 hover:underline cursor-pointer"
-                      >
-                        Salin Teks CBT →
-                      </button>
-                    </div>
-                  </div>
+                <div className="p-4 space-y-2">
+                  <textarea
+                    id="cbt-textarea"
+                    rows={18}
+                    value={cbtText}
+                    onChange={(e) => setCbtText(e.target.value)}
+                    placeholder="Naskah soal CBT akan muncul di sini..."
+                    className="w-full font-mono text-xs leading-relaxed p-3 rounded border border-slate-300 bg-slate-950 text-emerald-400 focus:outline-none resize-y"
+                    spellCheck={false}
+                  />
                 </div>
               ) : (
-                /* Sub-Mode 2: CKEditor HTML Preview & Direct Copy */
-                <div className="p-4 sm:p-5 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
-                        <ImageIcon className="w-4 h-4 text-emerald-600" />
-                        <span>Pratinjau Naskah CKEditor (Semua Rumus Sudah Menjadi Gambar):</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Di bawah ini adalah tampilan visual soal dengan rumus yang dirender sebagai gambar CodeCogs.
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={handleCopyForCkEditor}
-                        className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition shadow-xs cursor-pointer"
-                      >
-                        {copyCkSuccess ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-200" />
-                            <span>Tersalin! Paste di CKEditor CBT</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5 text-emerald-200" />
-                            <span>Salin ke Clipboard (Rich HTML)</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleDownloadCkHtml}
-                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
-                      >
-                        <Download className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Download .html</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Rendered HTML Container */}
-                  <div className="p-5 rounded-xl border border-slate-200 bg-white shadow-2xs max-h-[480px] overflow-y-auto text-sm text-slate-900 leading-relaxed">
+                <div className="p-4">
+                  <div className="p-4 rounded border border-slate-200 bg-white max-h-[480px] overflow-y-auto text-sm text-slate-900 leading-relaxed">
                     <div
-                      className="font-mono text-xs sm:text-sm space-y-0.5 select-text"
+                      className="font-mono text-xs space-y-0.5 select-text"
                       dangerouslySetInnerHTML={{
                         __html: formatCbtTextAsCkEditorHtml(
                           cbtText && cbtText.trim()
@@ -1548,400 +1808,150 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
                   </div>
                 </div>
               )}
-
-              {/* Format Reference Guide */}
-              <div className="p-4 bg-slate-50/80 border-t border-slate-200 text-xs text-slate-600 space-y-2">
-                <div className="font-bold text-slate-800 flex items-center space-x-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-emerald-800" />
-                  <span>Keterangan Standar Format Soal CBT:</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1 text-[11px]">
-                  <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1 shadow-2xs">
-                    <div className="font-bold text-emerald-900">1. PG Jawaban Tunggal</div>
-                    <p className="text-slate-500 font-mono text-[10px] leading-snug">
-                      Q:1)Jeruk adalah...<br/>
-                      A:)Buah<br/>
-                      B:)Hewan<br/>
-                      RIGHT:A
-                    </p>
-                  </div>
-
-                  <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1 shadow-2xs">
-                    <div className="font-bold text-emerald-900">2. PG Jamak</div>
-                    <p className="text-slate-500 font-mono text-[10px] leading-snug">
-                      Q:2)Angka 10 dari...<br/>
-                      A:)5+5<br/>
-                      B:)6+4<br/>
-                      RIGHT:A,B
-                    </p>
-                  </div>
-
-                  <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1 shadow-2xs">
-                    <div className="font-bold text-emerald-900">3. Jawaban Singkat</div>
-                    <p className="text-slate-500 font-mono text-[10px] leading-snug">
-                      Q:3)Nama Ibukota...<br/>
-                      A:)JAKARTA<br/>
-                      RIGHT:A
-                    </p>
-                  </div>
-
-                  <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1 shadow-2xs">
-                    <div className="font-bold text-emerald-900">4. Mengurutkan Jawaban</div>
-                    <p className="text-slate-500 font-mono text-[10px] leading-snug">
-                      Q:4)Urutkan dari atas...<br/>
-                      A:)Kepala<br/>
-                      B:)Pundak<br/>
-                      RIGHT:2,1
-                    </p>
-                  </div>
-
-                  <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1 shadow-2xs">
-                    <div className="font-bold text-emerald-900">5. Menjodohkan</div>
-                    <p className="text-slate-500 font-mono text-[10px] leading-snug">
-                      Q:5)Jodohkan simbol...<br/>
-                      1.&nbsp;&nbsp;Bintang<br/>
-                      A:)Ketuhanan YME<br/>
-                      RIGHT:1-A
-                    </p>
-                  </div>
-
-                  <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1 shadow-2xs">
-                    <div className="font-bold text-emerald-900">6. Uraian Panjang</div>
-                    <p className="text-slate-500 font-mono text-[10px] leading-snug">
-                      Q:6)Jelaskan proses hujan...<br/>
-                      <span className="text-slate-400 italic">(Opsi &amp; RIGHT tidak perlu)</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
-          ) : (
-            /* VIEW MODE 2: PRATINJAU KERTAS CETAK (OPSIONAL) */
-            <>
-              {/* Preview Controls Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-xs no-print">
-                {/* Filter Tabs by Question Type */}
-                <div className="flex flex-wrap gap-1">
-                  {[
-                    { key: 'all', label: `Semua (${questions.length})` },
-                    { key: 'single_choice', label: 'PG' },
-                    { key: 'multiple_choice', label: 'PG Jamak' },
-                    { key: 'short_answer', label: 'Singkat' },
-                    { key: 'ordering', label: 'Urutkan' },
-                    { key: 'matching', label: 'Jodohkan' },
-                    { key: 'essay', label: 'Essay' },
-                  ].map((t) => (
-                    <button
-                      key={t.key}
-                      onClick={() => setActiveFilterType(t.key)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
-                        activeFilterType === t.key
-                          ? 'bg-emerald-800 text-white'
-                          : 'text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
+          )}
 
-                {/* Toggle Answer Key */}
-                <button
-                  onClick={() => setShowAnswerKeys(!showAnswerKeys)}
-                  className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100"
-                >
-                  {showAnswerKeys ? (
-                    <>
-                      <EyeOff className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Sembunyikan Kunci</span>
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Tampilkan Kunci (Guru)</span>
-                    </>
-                  )}
-                </button>
+          {/* ========================================================
+              SUB-MODE C & PRINT SHEET: LEMBAR CETAK RESMI (KOP MADRASAH)
+              (Kop & @media print TIDAK DISENTUH)
+          ======================================================== */}
+          <div className={viewMode === 'paper' ? 'block' : 'hidden print:block'}>
+            <div className="bg-white p-6 sm:p-8 rounded-md border border-slate-300 space-y-6">
+              <KopMadrasah
+                identity={madrasahIdentity}
+                rightTitle={`NASKAH SOAL ${formData.jenisUjian}`}
+                rightSubtitle={`TA: ${formData.tahunPelajaran} | KELAS ${formData.kelas}`}
+                ta={formData.tahunPelajaran}
+              />
+
+              <div className="text-center">
+                <h3 className="font-heading font-bold text-base text-slate-900 uppercase">
+                  Naskah Soal {formData.jenisUjian === 'ASTS' ? 'Asesmen Sumatif Tengah Semester (ASTS)' : formData.jenisUjian === 'ASESGA' ? 'Asesmen Sumatif Akhir Semester (ASESGA)' : 'Asesmen Sumatif Akhir Sekolah (ASAS)'}
+                </h3>
+                <p className="text-xs text-slate-600 font-medium">
+                  Tahun Pelajaran {formData.tahunPelajaran}
+                </p>
               </div>
 
-              {/* Document Header Representation (Visible also on Print) */}
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-                {/* Kop Resmi Madrasah MA NU 01 Banyuputih */}
-                <KopMadrasah
-                  identity={madrasahIdentity}
-                  rightTitle={`NASKAH SOAL ${formData.jenisUjian}`}
-                  rightSubtitle={`TA: ${formData.tahunPelajaran} | KELAS ${formData.kelas}`}
-                  ta={formData.tahunPelajaran}
-                />
-
-                {/* Assessment Meta Banner */}
-                <div className="text-center">
-                  <h3 className="font-heading font-bold text-base text-slate-900 uppercase">
-                    Naskah Soal {formData.jenisUjian === 'ASTS' ? 'Asesmen Sumatif Tengah Semester (ASTS)' : formData.jenisUjian === 'ASESGA' ? 'Asesmen Sumatif Akhir Semester (ASESGA)' : 'Asesmen Sumatif Akhir Sekolah (ASAS)'}
-                  </h3>
-                  <p className="text-xs text-slate-600 font-medium">
-                    Tahun Pelajaran {formData.tahunPelajaran}
-                  </p>
+              <div className="grid grid-cols-2 text-xs text-slate-700 bg-slate-50/70 p-3 rounded border border-slate-200">
+                <div>
+                  <div><span className="font-semibold">Mata Pelajaran:</span> {formData.mapel}</div>
+                  <div><span className="font-semibold">Kelas / Semester:</span> {formData.kelas} / Semester {formData.semester}</div>
                 </div>
-
-                {/* Meta Table */}
-                <div className="grid grid-cols-2 text-xs text-slate-700 bg-slate-50/70 p-3 rounded-xl border border-slate-200">
-                  <div>
-                    <div><span className="font-semibold">Mata Pelajaran:</span> {formData.mapel}</div>
-                    <div><span className="font-semibold">Kelas / Semester:</span> {formData.kelas} / Semester {formData.semester}</div>
-                  </div>
-                  <div className="text-right">
-                    <div><span className="font-semibold">Alokasi Waktu:</span> {formData.alokasiWaktuMenit} Menit</div>
-                    <div><span className="font-semibold">Guru Pengampu:</span> {currentUser.name}</div>
-                  </div>
+                <div className="text-right">
+                  <div><span className="font-semibold">Alokasi Waktu:</span> {formData.alokasiWaktuMenit} Menit</div>
+                  <div><span className="font-semibold">Guru Pengampu:</span> {currentUser.name}</div>
                 </div>
+              </div>
 
-                {/* Questions List */}
-                <div className="space-y-6 divide-y divide-slate-100">
-                  {filteredQuestions.map((q) => (
-                    <div key={q.id} className="pt-4 first:pt-0 space-y-3 group">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-2.5">
-                          <span className="w-6 h-6 rounded-lg bg-emerald-800 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 tabular-nums">
-                            {q.number}
-                          </span>
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-slate-900 leading-relaxed">
-                              <MathText text={q.text} isArabic={q.isArabic} />
-                            </div>
-
-                            {/* Question Image if present */}
-                            {q.imageUrl && (
-                              <div className="my-3">
-                                <div className="inline-block relative rounded-2xl overflow-hidden border-2 border-emerald-800/30 bg-emerald-950/5 shadow-sm group/img p-1 bg-white">
-                                  <img
-                                    src={q.imageUrl}
-                                    alt={`Diagram Soal ${q.number}`}
-                                    referrerPolicy="no-referrer"
-                                    onError={(e) => {
-                                      e.currentTarget.src = getFallbackDiagramSvg(formData.mapel, q.text);
-                                    }}
-                                    className="max-h-60 max-w-full sm:max-w-lg object-contain rounded-xl border border-slate-200 bg-white"
-                                    loading="lazy"
-                                  />
-                                  <div className="absolute top-2.5 right-2.5 flex items-center space-x-1.5 opacity-90 group-hover/img:opacity-100 transition no-print bg-slate-900/80 p-1 rounded-xl backdrop-blur-xs">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleOpenImageModal(q)}
-                                      className="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-[10px] font-bold flex items-center space-x-1 cursor-pointer"
-                                      title="Ubah / Ganti Gambar"
-                                    >
-                                      <Sparkles className="w-3 h-3 text-amber-300" />
-                                      <span>Ganti Diagram</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveQuestionImage(q.id)}
-                                      className="p-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-700 text-white text-[10px] cursor-pointer"
-                                      title="Hapus Gambar"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Stimulus & 1-Click Diagram AI Generator Bar (Always available if question has no image) */}
-                            {!q.imageUrl && (
-                              <div className="my-2.5 p-3 rounded-2xl bg-[#093d25]/5 border border-emerald-800/20 flex flex-wrap items-center justify-between gap-2.5 no-print">
-                                <div className="flex items-center space-x-2 text-emerald-950 text-xs">
-                                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-                                  <span className="text-[11px] leading-tight">
-                                    {q.imagePrompt ? (
-                                      <>
-                                        <strong className="text-emerald-900 font-bold">Rekomendasi Diagram:</strong>{' '}
-                                        <span className="text-slate-700">{q.imagePrompt}</span>
-                                      </>
-                                    ) : (
-                                      <span className="text-slate-600">
-                                        Stimulus diagram visual untuk soal ini belum ditambahkan.
-                                      </span>
-                                    )}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-2 shrink-0">
-                                  <button
-                                    type="button"
-                                    disabled={generatingImageQId === q.id}
-                                    onClick={() => handleQuickGenerateQuestionImage(q, q.imagePrompt)}
-                                    className="px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                                  >
-                                    {generatingImageQId === q.id ? (
-                                      <>
-                                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-300" />
-                                        <span>Merender...</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                                        <span>✨ 1-Klik Generate Diagram AI</span>
-                                      </>
-                                    )}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenImageModal(q)}
-                                    className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
-                                    title="Pilih style atau upload file sendiri"
-                                  >
-                                    Studio Gambar
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+              <div className="space-y-6 divide-y divide-slate-100">
+                {filteredQuestions.map((q) => (
+                  <div key={q.id} className="pt-4 first:pt-0 space-y-3">
+                    <div className="flex items-start space-x-2.5">
+                      <span className="w-6 h-6 rounded bg-[#045f3b] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 tabular-nums">
+                        {q.number}
+                      </span>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-slate-900 leading-relaxed">
+                          <MathText text={q.text} isArabic={q.isArabic} />
                         </div>
 
-                        <div className="flex items-center space-x-1.5 no-print">
-                          <span className="text-[10px] px-2 py-0.5 rounded font-mono uppercase bg-slate-100 text-slate-600">
-                            {q.type.replace('_', ' ')}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenImageModal(q)}
-                            className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer ${
-                              q.imageUrl
-                                ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300'
-                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300'
-                            }`}
-                            title={q.imageUrl ? 'Kelola gambar soal' : 'Generate gambar/diagram AI untuk soal ini'}
-                          >
-                            <ImageIcon className="w-3 h-3 text-emerald-700" />
-                            <span>{q.imageUrl ? 'Diagram ✓' : '+ Gambar AI'}</span>
-                          </button>
-                          <button
-                            onClick={() => setEditingQuestion(q)}
-                            className="p-1 rounded text-slate-400 hover:text-emerald-800 hover:bg-slate-100 cursor-pointer"
-                            title="Edit butir soal ini"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
+                        {q.imageUrl && (
+                          <div className="my-3">
+                            <img
+                              src={q.imageUrl}
+                              alt={`Diagram Soal ${q.number}`}
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.src = getFallbackDiagramSvg(formData.mapel, q.text);
+                              }}
+                              className="max-h-60 max-w-full sm:max-w-lg object-contain rounded border border-slate-200 bg-white p-1"
+                              loading="lazy"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {(q.type === 'single_choice' || q.type === 'multiple_choice') && q.options && (
+                      <div className="pl-9 space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {q.options.map((opt) => (
+                            <div
+                              key={opt.key}
+                              className="flex items-start space-x-2 text-xs text-slate-800 p-2 rounded bg-slate-50/60 border border-slate-200/60"
+                            >
+                              <span className="font-bold text-[#045f3b]">{opt.key}.</span>
+                              <div className="flex-1">
+                                <MathText text={opt.text} isArabic={opt.isRtl || q.isArabic} />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
+                    )}
 
-                      {/* Options */}
-                      {(q.type === 'single_choice' || q.type === 'multiple_choice') && q.options && (
-                        <div className="pl-9 space-y-2">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {q.options.map((opt) => (
-                              <div
-                                key={opt.key}
-                                className="flex items-start space-x-2 text-xs text-slate-800 p-2 rounded-lg bg-slate-50/60 border border-slate-200/60"
-                              >
-                                <span className="font-bold text-emerald-900">{opt.key}.</span>
-                                <div className="flex-1">
-                                  <MathText text={opt.text} isArabic={opt.isRtl || q.isArabic} />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                    {q.type === 'short_answer' && (
+                      <div className="pl-9 text-xs">
+                        <div className="h-8 border-b border-dashed border-slate-400 flex items-center text-slate-400">
+                          <span>Tuliskan jawaban Anda di sini: ....................................................</span>
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      {/* Short Answer */}
-                      {q.type === 'short_answer' && (
-                        <div className="pl-9 text-xs">
-                          <div className="h-8 border-b border-dashed border-slate-400 flex items-center text-slate-400">
-                            <span>Tuliskan jawaban Anda di sini: ....................................................</span>
+                    {q.type === 'ordering' && q.orderingItems && (
+                      <div className="pl-9 space-y-1.5 text-xs">
+                        {q.orderingItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center space-x-2 p-2 rounded bg-slate-50 border border-slate-200"
+                          >
+                            <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded font-bold text-slate-700">
+                              {item.id}
+                            </span>
+                            <span className="text-slate-800">{item.text}</span>
                           </div>
-                        </div>
-                      )}
+                        ))}
+                      </div>
+                    )}
 
-                      {/* Ordering */}
-                      {q.type === 'ordering' && q.orderingItems && (
-                        <div className="pl-9 space-y-2 text-xs">
-                          <div className="space-y-1.5">
-                            {q.orderingItems.map((item) => (
-                              <div
-                                key={item.id}
-                                className="flex items-center space-x-2 p-2 rounded-lg bg-slate-50 border border-slate-200"
-                              >
-                                <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded font-bold text-slate-700">
-                                  {item.id}
-                                </span>
-                                <span className="text-slate-800">{item.text}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="text-[11px] text-emerald-800 bg-emerald-50/80 border border-emerald-200/70 rounded-md px-2.5 py-1">
-                            ✓ Urutan tahapan tersusun runtut dan teratur (1, 2, 3, dst) tidak diacak. Sistem CBT Madrasah yang akan mengacak urutan item di layar siswa secara otomatis.
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Matching */}
-                      {q.type === 'matching' && (
-                        <div className="pl-9 space-y-2">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
-                              <div className="font-semibold text-slate-700">Kolom Premis (Kiri):</div>
-                              {q.matchingPremises?.map((premise) => (
-                                <div key={premise.id} className="flex items-start space-x-2">
-                                  <span className="font-bold text-emerald-900">{premise.id}.</span>
-                                  <span>{premise.text}</span>
-                                </div>
-                              ))}
+                    {q.type === 'matching' && (
+                      <div className="pl-9 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="p-3 rounded bg-slate-50 border border-slate-200 space-y-1.5">
+                          <div className="font-semibold text-slate-700">Kolom Premis (Kiri):</div>
+                          {q.matchingPremises?.map((premise) => (
+                            <div key={premise.id} className="flex items-start space-x-2">
+                              <span className="font-bold text-[#045f3b]">{premise.id}.</span>
+                              <span>{premise.text}</span>
                             </div>
-                            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
-                              <div className="font-semibold text-slate-700">Kolom Pasangan / Respons (Kanan):</div>
-                              {q.matchingResponses?.map((resp) => (
-                                <div key={resp.key} className="flex items-start space-x-2">
-                                  <span className="font-bold text-[#c8853a]">{resp.key}.</span>
-                                  <span>{resp.text}</span>
-                                </div>
-                              ))}
+                          ))}
+                        </div>
+                        <div className="p-3 rounded bg-slate-50 border border-slate-200 space-y-1.5">
+                          <div className="font-semibold text-slate-700">Kolom Pasangan (Kanan):</div>
+                          {q.matchingResponses?.map((resp) => (
+                            <div key={resp.key} className="flex items-start space-x-2">
+                              <span className="font-bold text-amber-700">{resp.key}.</span>
+                              <span>{resp.text}</span>
                             </div>
-                          </div>
-                          <div className="text-[11px] text-emerald-800 bg-emerald-50/80 border border-emerald-200/70 rounded-md px-2.5 py-1">
-                            ✓ Pasangan sejajar 1-ke-1 (1→A, 2→B, dst) tidak diacak. Sistem CBT Madrasah yang akan mengacaknya secara otomatis saat ujian.
-                          </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      {/* Essay */}
-                      {q.type === 'essay' && (
-                        <div className="pl-9 text-xs">
-                          <div className="h-16 border border-slate-200 rounded-lg p-2 text-slate-400 bg-slate-50/40">
-                            Ruang jawaban uraian siswa...
-                          </div>
+                    {q.type === 'essay' && (
+                      <div className="pl-9 text-xs">
+                        <div className="h-16 border border-slate-200 rounded p-2 text-slate-400 bg-slate-50/40">
+                          Ruang jawaban uraian siswa...
                         </div>
-                      )}
-
-                      {/* Answer Key */}
-                      {showAnswerKeys && (
-                        <div className="pl-9 pt-2">
-                          <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-xs space-y-1">
-                            <div className="flex items-center justify-between font-semibold text-emerald-900">
-                              <span className="flex items-center space-x-1.5">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Kunci Jawaban Guru:</span>
-                              </span>
-                              <span className="font-mono bg-emerald-200/70 px-2 py-0.5 rounded text-emerald-900">
-                                {q.rawRightAnswer || '(Tidak memerlukan kunci)'}
-                              </span>
-                            </div>
-                            {q.explanation && (
-                              <p className="text-slate-600 text-[11px] pt-1">
-                                <span className="font-medium text-slate-800">Pembahasan:</span> {q.explanation}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Edit Question Modal */}
       {editingQuestion && (

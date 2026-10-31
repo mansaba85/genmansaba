@@ -1408,284 +1408,407 @@ app.post('/api/v1/admin/generate-document', async (req: Request, res: Response) 
       kepalaMadrasah,
       nipKepala,
       nilaiKBC,
+      insersiKBC,
       modelPembelajaran,
       capaianPembelajaranTeks,
+      tujuanPembelajaranTeks,
+      lintasDisiplinIlmu,
       instruksiKhusus,
       karakteristikPesertaDidik,
       dimensiProfilLulusan,
       jumlahPertemuan,
       jamPerPertemuan,
       jenisAsesmen,
+      agendaMadrasah,
+      intervalKKTP,
+      respondenSurvei,
+      skalaSurvei,
+      aspekUmpanBalik,
     } = req.body;
 
-    let structureGuide = '';
-      if (docType === 'rpp') {
-        const dimensiList = Array.isArray(dimensiProfilLulusan) && dimensiProfilLulusan.length > 0
-          ? dimensiProfilLulusan.join(', ')
-          : 'Beriman, Bertakwa kepada Tuhan YME, Berakhlak Mulia, Bernalar Kritis, Mandiri, Bergotong Royong, Berkeadaban (Ta\'addub)';
-        const asesmenList = Array.isArray(jenisAsesmen) && jenisAsesmen.length > 0
-          ? jenisAsesmen.join(', ')
-          : 'Asesmen Diagnostik (Awal), Asesmen Formatif (Proses KBM & LKPD), Asesmen Sumatif (Akhir TP)';
+    const selectedKBCList: string[] =
+      Array.isArray(nilaiKBC) && nilaiKBC.length > 0
+        ? nilaiKBC
+        : [
+            'Cinta kepada Allah dan Rasul-Nya',
+            'Cinta kepada Ilmu Pengetahuan',
+            'Cinta kepada Diri dan Sesama',
+          ];
 
-        structureGuide = `
-Khusus untuk DOKUMEN RENCANA PELAKSANAAN PEMBELAJARAN (RPP) KURIKULUM MERDEKA:
+    const insersiKBCMap: Record<string, string> =
+      insersiKBC && typeof insersiKBC === 'object' ? insersiKBC : {};
+
+    const kbcInsersiPromptBlock = selectedKBCList
+      .map((pilar, idx) => {
+        const detail =
+          insersiKBCMap[pilar] ||
+          `Integrasi nilai ${pilar} ke dalam materi ${topikMateri || mapel} melalui keteladanan, pembiasaan adab, dan refleksi kontekstual.`;
+        return `${idx + 1}. **${pilar}**: ${detail}`;
+      })
+      .join('\n');
+
+    const dimensiList =
+      Array.isArray(dimensiProfilLulusan) && dimensiProfilLulusan.length > 0
+        ? dimensiProfilLulusan.join(', ')
+        : 'Keimanan & Ketakwaan terhadap Tuhan YME serta Akhlak Mulia, Kewargaan (Moderasi Beragama), Penalaran Kritis, Kreativitas, Kolaborasi, Kemandirian, Kesehatan, Komunikasi (Berkeadaban/Ta\'addub)';
+
+    const asesmenList =
+      Array.isArray(jenisAsesmen) && jenisAsesmen.length > 0
+        ? jenisAsesmen.join(', ')
+        : 'Asesmen Diagnostik (Awal), Asesmen Sikap & Karakter KBC (Jurnal Anekdotal), Asesmen Formatif (Proses KBM & LKPD), Asesmen Sumatif (Akhir TP)';
+
+    let structureGuide = '';
+    if (docType === 'rpp') {
+      structureGuide = `
+Khusus untuk DOKUMEN RENCANA PELAKSANAAN PEMBELAJARAN (RPP) KURIKULUM MERDEKA & KBC (KMA 1503/2025 & KEPDIRJEN PENDIS 6077/2025):
 KOMPONEN DAN DATA MASUKAN GURU:
-- Kelas & Fase : Kelas ${kelas} (Fase ${fase}) [Catatan: Fase terisi otomatis berdasarkan kelas]
+- Kelas & Fase : Kelas ${kelas} (Fase ${fase})
 - Semester : Semester ${semester}
 - Mata Pelajaran : ${mapel}
-- Capaian Pembelajaran (CP) yang menjadi acuan:
+- Capaian Pembelajaran (CP) Acuan:
 """
 ${capaianPembelajaranTeks || 'Siswa mampu menganalisis konsep inti ' + mapel + ', menerapkan pemecahan masalah kontekstual, dan mengamalkan nilai akhlak mulia serta adab thalabul ilmi.'}
 """
+${tujuanPembelajaranTeks ? `- Tujuan Pembelajaran (TP) Spesifik dari Guru:\n"${tujuanPembelajaranTeks}"` : ''}
 - Topik / Materi Pembelajaran : ${topikMateri}
 - Karakteristik Peserta Didik : ${karakteristikPesertaDidik || 'Kemampuan awal beragam (heterogen), preferensi gaya belajar bervariasi (visual, auditori, kinestetik), berkarakter santun dan antusias'}
-- Dimensi Profil Lulusan (Profil Pelajar Pancasila & Rahmatan lil Alamin / KBC) : ${dimensiList}
-- Jumlah Pertemuan : ${jumlahPertemuan || '2 Pertemuan'}
-- Jumlah Jam per Pertemuan : ${jamPerPertemuan || '2 JP (2 x 45 menit)'} (Total JP: ${alokasiWaktu || '4 JP'})
-- Model Pembelajaran : ${modelPembelajaran || 'Problem Based Learning (PBL) & Understanding by Design (UbD)'}
+- 8 Dimensi Profil Lulusan (Pembelajaran Mendalam & KBC) : ${dimensiList}
+- Target Panca Cinta & Materi Insersi KBC :
+${kbcInsersiPromptBlock}
+- Jumlah Pertemuan : ${jumlahPertemuan || '2 Pertemuan'} @ ${jamPerPertemuan || '2 JP (2 x 45 menit)'} (Total JP: ${alokasiWaktu || '4 JP'})
+- Model Pembelajaran : ${modelPembelajaran || 'Problem Based Learning (PBL) & Pembelajaran Mendalam'}
 - Jenis Asesmen : ${asesmenList}
 
 SUSUN DOKUMEN RPP LENGKAP SECARA RINCI DALAM FORMAT MARKDOWN RESMI BERIKUT:
-# RENCANA PELAKSANAAN PEMBELAJARAN (RPP) KURIKULUM MERDEKA
+# RENCANA PELAKSANAAN PEMBELAJARAN (RPP) KURIKULUM MERDEKA & KBC
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
-*Berpedoman pada Panduan Pembelajaran dan Asesmen BSKAP Kemendikbudristek & Kemenag RI*
+*Berpedoman pada KMA 1503/2025, Kepdirjen Pendis 6077/2025 (Kurikulum Berbasis Cinta), dan Panduan Pembelajaran Mendalam*
 
 ---
 
 ### I. ANALISIS KESIAPAN & KARAKTERISTIK PESERTA DIDIK
-1. **Profil Kesiapan Belajar & Gaya Belajar:**
-   Uraikan analisis mendalam tentang: ${karakteristikPesertaDidik || 'Gaya belajar visual, auditori, kinestetik, dan kesiapan pemahaman awal santri'}
-2. **Strategi Pembelajaran Berdiferensiasi:**
-   - *Diferensiasi Konten:* Penyediaan variasi bahan ajar (modul ringkas, bahan tayang visual, studi kasus kontekstual).
-   - *Diferensiasi Proses:* Pendampingan bertingkat (scaffolding) dan pembentukan kelompok heterogen.
-   - *Diferensiasi Produk:* Fleksibilitas penyajian hasil kerja (laporan tertulis, infografis/peta konsep, atau presentasi).
+1. **Profil Kesiapan Belajar & Gaya Belajar:** Uraikan analisis mendalam tentang ${karakteristikPesertaDidik || 'gaya belajar visual, auditori, kinestetik, dan kesiapan awal santri'}.
+2. **Strategi Pembelajaran Berdiferensiasi (Konten, Proses, Produk):** Uraikan langkah konkret diferensiasi yang ramah anak.
 
 ---
 
-### II. CAPAIAN PEMBELAJARAN & TUJUAN PEMBELAJARAN
-1. **Capaian Pembelajaran (CP) Elemen Terkait:**
-   Uraikan capaian pembelajaran dan elemen CP yang dibidik.
-2. **Tujuan Pembelajaran (TP):**
-   Rumuskan 2-4 Tujuan Pembelajaran yang operasional (KKO Bloom/Marzano).
-3. **Indikator Ketercapaian Tujuan Pembelajaran (IKTP):**
-   Rincian bukti ketercapaian kompetensi peserta didik.
-4. **Pemahaman Bermakna (Deep Learning):**
-   - *Mindful Learning:* Kesadaran batin memaknai ilmu sebagai sarana mendekatkan diri kepada Allah SWT.
-   - *Meaningful Learning:* Manfaat konkret materi ${topikMateri} dalam kehidupan nyata peserta didik.
-   - *Joyful Learning:* Suasana belajar ramah, apresiatif, menyenangkan, dan memicu rasa ingin tahu.
-5. **Pertanyaan Pemantik (Essential Questions):**
-   Rumuskan 2-3 pertanyaan pemantik pemantik nalar kritis.
-6. **Dimensi Profil Lulusan & KBC:**
-   ${dimensiList} serta integrasi nilai Kurikulum Berbasis Cinta (Kasih Sayang/Rahmah, Adab Terhadap Guru & Lingkungan).
+### II. CAPAIAN PEMBELAJARAN, TUJUAN PEMBELAJARAN & TABEL MATERI INSERSI KBC
+1. **Capaian Pembelajaran (CP) Elemen Terkait**
+2. **Tujuan Pembelajaran (TP) & Indikator Ketercapaian (IKTP)**
+3. **Pemahaman Bermakna (Deep Learning: Mindful, Meaningful, Joyful Learning) & Pertanyaan Pemantik**
+4. **8 Dimensi Profil Lulusan yang Dikembangkan:** ${dimensiList}
+5. **Tabel Materi Insersi Kurikulum Berbasis Cinta (KBC - Panca Cinta Kemenag RI):**
+   Wajib sajikan tabel Markdown berikut berdasarkan input insersi guru:
+   | No | Pilar Panca Cinta (KBC) | Materi Insersi & Konteks Integrasi pada Topik ${topikMateri} | Dalil / Nilai Aswaja & Pembiasaan Adab |
+   |:---:|:---|:---|:---|
 
 ---
 
-### III. LANGKAH-LANGKAH KEGIATAN PEMBELAJARAN (RINCIAN PER PERTEMUAN)
-Sajikan langkah-langkah kegiatan secara mendetail untuk setiap pertemuan (${jumlahPertemuan || '2 Pertemuan'}).
-
+### III. LANGKAH-LANGKAH KEGIATAN PEMBELAJARAN (${jumlahPertemuan || '2 Pertemuan'})
 Untuk setiap pertemuan, buat tabel rincian kegiatan:
-| Tahapan Kegiatan | Deskripsi Aktivitas Guru & Peserta Didik (Sintaks ${modelPembelajaran || 'PBL'}) | Alokasi Waktu |
+| Tahapan Kegiatan | Deskripsi Aktivitas Guru & Peserta Didik (Sintaks ${modelPembelajaran || 'PBL'} & Insersi KBC) | Alokasi Waktu |
 |:---|:---|:---:|
-- **1. Kegiatan Pendahuluan (10-15 Menit):**
-  - Pembukaan santun (salam, tadarus Al-Qur'an/doa, pembiasaan asmaul husna, cek kehadiran dengan sapaan kasih sayang).
-  - Apersepsi & Kesiapan (mengaitkan materi sebelumnya, asesmen diagnostik singkat).
-  - Motivasi & Pertanyaan Pemantik kontekstual.
-  - Penyampaian tujuan dan skenario pembelajaran.
-- **2. Kegiatan Inti (60-70 Menit):**
-  - Langkah-langkah runtut sesuai sintaks ${modelPembelajaran || 'Problem Based Learning'}.
-  - Penerapan diferensiasi proses/konten berbasis karakteristik peserta didik.
-  - Diskusi kelompok, kolaborasi, eksplorasi sumber belajar, presentasi karya, dan penanaman adab thalabul ilmi.
-- **3. Kegiatan Penutup (10-15 Menit):**
-  - Refleksi terbimbing bersama peserta didik (apa yang dipahami, apa yang perlu ditingkatkan).
-  - Simpulan materi pokok secara komprehensif.
-  - Tindak lanjut penugasan mandiri / info pertemuan selanjutnya.
-  - Doa penutup majelis (Kaffaratul Majlis) & salam penuh keramahan.
+(Memuat Kegiatan Pendahuluan [Welcoming with Love, Doa, Mindful Check-in], Kegiatan Inti [Sintaks Model, Diferensiasi, Kolaborasi Empatik], dan Kegiatan Penutup [Refleksi Panca Cinta & Doa]).
 
 ---
 
-### IV. RANCANGAN ASESMEN PEMBELAJARAN
-Sajikan instrumen asesmen sesuai yang dipilih guru: ${asesmenList}
-1. **Asesmen Diagnostik (Awal Pembelajaran):** Kuesioner/tanya jawab pemantik kesiapan kognitif dan non-kognitif.
-2. **Asesmen Formatif (Proses Pembelajaran):** Lembar observasi keaktifan diskusi, LKPD, rubrik penilaian adab santri KBC.
-3. **Asesmen Sumatif (Akhir TP):** Tes tertulis/penugasan proyek beserta kunci jawaban atau kriteria penilaian.
-4. **Tabel Rubrik Interval Ketercapaian (KKTP):**
-   | Interval Skor | Kategori | Deskripsi Ketercapaian | Tindak Lanjut |
+### IV. RANCANGAN ASESMEN PEMBELAJARAN (KOGNITIF & SIKAP/KARAKTER KBC)
+Sajikan instrumen asesmen lengkap sesuai pilihan guru (${asesmenList}):
+1. **Asesmen Diagnostik (Awal Pembelajaran)**
+2. **Asesmen Sikap / Karakter KBC (Format Jurnal Anekdotal & Rubrik Observasi Adab Panca Cinta):**
+   | No | Pilar Panca Cinta / Dimensi Sikap | Indikator Perilaku Teramati | Catatan Jurnal Anekdotal / Tindak Lanjut Pembinaan |
+3. **Asesmen Formatif (Proses & LKPD) & Asesmen Sumatif (Akhir TP)**
+4. **Tabel Rubrik Interval Ketercapaian (KKTP)**
 `;
-      } else if (docType === 'presensi_kbm') {
-        structureGuide = `
-Khusus untuk PRESENSI HARIAN SISWA KBM, ikuti struktur resmi MA NU 01 Banyuputih:
-# PRESENSI HARIAN SISWA KBM
-**MA NU 01 BANYUPUTIH**  
-*Jl. Lapangan 9A Banyuputih, Kab. Batang | NPSN: 20364930 | TA: ${tahunPelajaran}*
+    } else if (docType === 'modul_ajar') {
+      structureGuide = `
+Khusus untuk MODUL AJAR KURIKULUM BERBASIS CINTA (KBC) & PEMBELAJARAN MENDALAM (KMA 1503/2025 & KEPDIRJEN PENDIS 6077/2025):
+DATA MASUKAN GURU:
+- Kelas & Fase : Kelas ${kelas} (Fase ${fase}) | Semester ${semester}
+- Mata Pelajaran : ${mapel} | Topik : ${topikMateri}
+- Alokasi Waktu : ${alokasiWaktu || '4 JP'} (${jumlahPertemuan || '2 Pertemuan'} @ ${jamPerPertemuan || '2 JP'})
+- Teks Capaian Pembelajaran (CP) Resmi dari Guru:
+"""
+${capaianPembelajaranTeks || 'Pada akhir Fase ' + fase + ', peserta didik mampu menganalisis dan menerapkan konsep ' + mapel + ' secara kontekstual berlandaskan akhlakul karimah.'}
+"""
+${tujuanPembelajaranTeks ? `- Tujuan Pembelajaran (TP) dari Guru:\n"${tujuanPembelajaranTeks}"` : ''}
+- Lintas Disiplin Ilmu : ${lintasDisiplinIlmu || 'Bahasa, Sains/Ekologi, Sosial-Kemasyarakatan, dan Keislaman Aswaja'}
+- Karakteristik Peserta Didik : ${karakteristikPesertaDidik || 'Heterogen, aktif, gaya belajar visual-auditori-kinestetik'}
+- 8 Dimensi Profil Lulusan : ${dimensiList}
+- Target Panca Cinta & Materi Insersi KBC :
+${kbcInsersiPromptBlock}
+- Model Pembelajaran : ${modelPembelajaran || 'Problem Based Learning (PBL) & Deep Learning'}
+- Rencana Asesmen : ${asesmenList}
 
-Memuat secara lengkap:
-1. INFORMASI KEGIATAN BELAJAR MENGAJAR (KBM): Hari & Tanggal, Mapel, Kelas/Fase, Jam Pelajaran, Materi Pokok, Guru Pengampu.
-2. TABEL DAFTAR PRESENSI PESERTA DIDIK (No, NISN, Nama Siswa, L/P, Status Kehadiran Hadir/Sakit/Izin/Alpa, Catatan Karakter & Keaktifan KBC).
-3. REKAPITULASI KEHADIRAN KBM (Total Siswa, Hadir, Sakit, Izin, Alpa beserta persentasenya).
-4. JURNAL REFLEKSI GURU (DEEP LEARNING & KBC): Pencapaian Pembelajaran, Karakter Kasih Sayang & Adab, Tindak Lanjut.
+SUSUN OUTPUT LENGKAP DALAM FORMAT MARKDOWN RESMI BERIKUT:
+# MODUL AJAR KURIKULUM BERBASIS CINTA (KBC) & DEEP LEARNING
+## MATA PELAJARAN ${mapel.toUpperCase()} — KELAS ${kelas} (FASE ${fase})
+## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
+*Rujukan: KMA 1503/2025 & Kepdirjen Pendis 6077/2025 tentang Implementasi Kurikulum Berbasis Cinta di Madrasah*
+
+---
+
+## A. IDENTIFIKASI KESIAPAN PESERTA DIDIK & KARAKTERISTIK MATERI
+1. **Identifikasi Kesiapan & Karakteristik Peserta Didik:** (${karakteristikPesertaDidik})
+2. **Karakteristik Materi Pelajaran (${topikMateri}):** Pengetahuan Faktual, Konseptual, Prosedural, dan Metakognitif.
+3. **8 Dimensi Profil Lulusan Pembelajaran Mendalam:** ${dimensiList}
+
+---
+
+## B. DESAIN PEMBELAJARAN & TABEL MATERI INSERSI KBC
+### 1. Capaian Pembelajaran (CP) & Tabel Elemen CP
+Uraikan CP berdasarkan teks CP guru dan sajikan tabel elemen CP.
+### 2. Lintas Disiplin Ilmu
+Uraikan keterkaitan topik dengan: ${lintasDisiplinIlmu || 'lintas disiplin ilmu terkait'}.
+### 3. Tujuan Pembelajaran (TP) & Indikator (IKTP) per Pertemuan
+### 4. Tabel Materi Insersi Kurikulum Berbasis Cinta (KBC - Panca Cinta Kemenag RI)
+Wajib sajikan tabel Markdown:
+| No | Pilar Panca Cinta (KBC) | Materi Insersi & Integrasi Konsep pada ${topikMateri} | Dalil Al-Qur'an/Hadis / Nilai Aswaja | Indikator Sikap Santri |
+|:---:|:---|:---|:---|:---|
+### 5. Kerangka Pembelajaran Mendalam (Mindful, Meaningful, Joyful Learning)
+
+---
+
+## C. LANGKAH-LANGKAH PEMBELAJARAN BERDIFERENSIASI (${jumlahPertemuan || '2 Pertemuan'})
+Sajikan tabel rincian kegiatan Pendahuluan, Inti (Sintaks ${modelPembelajaran}), dan Penutup untuk setiap pertemuan.
+
+---
+
+## D. ASESMEN PEMBELAJARAN KOMPREHENSIF (${asesmenList})
+1. **Asesmen Diagnostik (Awal)**
+2. **Asesmen Sikap & Karakter KBC (Jurnal Anekdotal & Rubrik Panca Cinta)**
+3. **Asesmen Formatif (LKPD & Diskusi) & Asesmen Sumatif (Akhir Modul)**
 `;
-      } else if (docType === 'cp') {
-        structureGuide = `
-Khusus untuk DOKUMEN ANALISIS CAPAIAN PEMBELAJARAN (CP) ELEMEN KURIKULUM MERDEKA:
-TEKS CAPAIAN PEMBELAJARAN (CP) LENGKAP YANG DITEMPEL GURU (SELURUH ELEMEN):
+    } else if (docType === 'cp') {
+      structureGuide = `
+Khusus untuk DOKUMEN ANALISIS CAPAIAN PEMBELAJARAN (CP) ELEMEN & INSERSI KBC:
+TEKS CAPAIAN PEMBELAJARAN (CP) LENGKAP YANG DITEMPEL GURU:
 """
 ${capaianPembelajaranTeks || 'Standar CP Kurikulum Merdeka Fase ' + fase + ' Mata Pelajaran ' + mapel}
 """
-
-TUGAS UTAMA ANDA SEBAGAI HERMES AI ENGINE:
-1. Analisis seluruh teks Capaian Pembelajaran (CP) dan rincian per elemen secara saksama.
-2. Sajikan rincian elemen, kalimat Capaian Pembelajaran Elemen, Kompetensi Utama, dan Ruang Lingkup Materi Esensial secara mendalam.
-3. Hubungkan secara filosofis dengan nilai-nilai Kurikulum Berbasis Cinta (KBC: Lima Pilar Panca Cinta Kemenag RI: Cinta kepada Allah & Rasul-Nya, Cinta kepada Ilmu Pengetahuan, Cinta kepada Diri & Sesama, Cinta kepada Lingkungan, Cinta kepada Tanah Air).
+${instruksiKhusus ? `\nINSTRUKSI KHUSUS DARI GURU (WAJIB DITERAPKAN DALAM ANALISIS CP INI):\n"${instruksiKhusus}"\n` : ''}
+TARGET PANCA CINTA & MATERI INSERSI KBC:
+${kbcInsersiPromptBlock}
 
 SUSUN OUTPUT LENGKAP DALAM FORMAT MARKDOWN BERIKUT:
-# ANALISIS CAPAIAN PEMBELAJARAN (CP) ELEMEN
+# ANALISIS CAPAIAN PEMBELAJARAN (CP) & MATERI INSERSI KBC
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
-*Rujukan: Panduan Pembelajaran & Asesmen BSKAP Kemendikbudristek & Kemenag RI*
+*Rujukan: KMA 1503/2025 & Kepdirjen Pendis 6077/2025 (Kurikulum Berbasis Cinta)*
 
 ### A. DESKRIPSI CAPAIAN PEMBELAJARAN (CP) FASE ${fase}
-Sajikan analisis deskriptif tentang Capaian Pembelajaran (CP) Fase ${fase} Mata Pelajaran ${mapel}.
+Sajikan analisis deskriptif CP Fase ${fase} Mata Pelajaran ${mapel}${instruksiKhusus ? ` sesuai fokus instruksi guru (${instruksiKhusus})` : ''}.
 
 ### B. TABEL RINCIAN ELEMEN CAPAIAN PEMBELAJARAN (CP)
-Sajikan tabel Markdown komprehensif:
 | No | Elemen CP | Kalimat Capaian Pembelajaran Elemen | Kompetensi Utama | Ruang Lingkup Materi Esensial |
 
-### C. INTEGRASI NILAI KHAS MADRASAH & KURIKULUM BERBASIS CINTA (KBC)
-Uraikan bagaimana setiap elemen CP selaras dengan nilai-nilai moderasi beragama (Tawassuth, Tasamuh, Tawazun) dan pengembangan karakter berbasis kasih sayang.
+### C. TABEL PEMETAAN MATERI INSERSI KURIKULUM BERBASIS CINTA (PANCA CINTA) & MODERASI BERAGAMA
+| No | Pilar Panca Cinta (KBC) | Kaitan Filosofis dengan Elemen CP ${mapel} | Materi Insersi & Nilai Aswaja (Tawassuth, Tasamuh, Tawazun) |
 `;
-      } else if (docType === 'atp') {
-        structureGuide = `
-Khusus untuk DOKUMEN ALUR TUJUAN PEMBELAJARAN (ATP) KURIKULUM MERDEKA:
+    } else if (docType === 'atp') {
+      structureGuide = `
+Khusus untuk DOKUMEN ALUR TUJUAN PEMBELAJARAN (ATP) & INSERSI KBC:
 TEKS CAPAIAN PEMBELAJARAN (CP) SEBAGAI RUJUKAN:
 """
 ${capaianPembelajaranTeks || 'Standar CP Kurikulum Merdeka Fase ' + fase + ' Mata Pelajaran ' + mapel}
 """
-
 ALOKASI JAM PELAJARAN: ${alokasiWaktu || '72 JP (2 JP x 36 Minggu)'}
 ${instruksiKhusus ? `INSTRUKSI KHUSUS DARI GURU:\n"${instruksiKhusus}"\n` : ''}
-
-TUGAS UTAMA ANDA SEBAGAI HERMES AI ENGINE:
-1. Turunkan teks Capaian Pembelajaran (CP) di atas menjadi Tujuan Pembelajaran (TP) yang jelas, terukur, dan operasional (menggunakan Kata Kerja Operasional Bloom/Marzano).
-2. Susun Alur Tujuan Pembelajaran (ATP) yang logis, sistematis (misal: dari konkret ke abstrak, mudah ke kompleks), lengkap dengan alokasi Jam Pelajaran (JP), Indikator Ketercapaian (IKTP), rencana asesmen formatif/sumatif, serta integrasi Dimensi Profil Lulusan / P5RA dan nilai KBC (Kurikulum Berbasis Cinta: Panca Cinta Kemenag RI).
+TARGET PANCA CINTA & MATERI INSERSI KBC:
+${kbcInsersiPromptBlock}
 
 SUSUN OUTPUT LENGKAP DALAM FORMAT MARKDOWN BERIKUT:
-# ALUR TUJUAN PEMBELAJARAN (ATP) KURIKULUM MERDEKA
+# ALUR TUJUAN PEMBELAJARAN (ATP) & INSERSI PANCA CINTA (KBC)
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
-*Rujukan: Panduan Pembelajaran & Asesmen Kemendikdasmen & Kemenag RI*
+*Rujukan: KMA 1503/2025 & Kepdirjen Pendis 6077/2025*
 
 ### A. TABEL ALUR TUJUAN PEMBELAJARAN (ATP) LENGKAP
-Sajikan alur logis terstruktur dengan tabel Markdown:
-| Alur | Kode TP | Rumusan Tujuan Pembelajaran (TP) | Alokasi Waktu (JP) | Indikator Ketercapaian (IKTP) | Rencana Asesmen (Formatif & Sumatif) | Dimensi Profil Lulusan / P5RA & Nilai KBC |
+| Alur | Kode TP | Rumusan Tujuan Pembelajaran (TP) | Alokasi Waktu (JP) | Indikator Ketercapaian (IKTP) | Rencana Asesmen | 8 Dimensi Profil Lulusan & Materi Insersi Panca Cinta (KBC) |
 (Pastikan akumulasi JP per alur sesuai dengan total ${alokasiWaktu || '72 JP'}).
 
-### B. RASIONAL PENYUSUNAN ALUR TUJUAN PEMBELAJARAN
-Jelaskan alasan pengurutan materi (prosedural, konkret ke abstrak, dsb.), diferensiasi belajar, dan integrasi pembelajaran bermakna (Deep Learning: Mindful, Meaningful, Joyful).
+### B. RASIONAL PENYUSUNAN ALUR & INTEGRASI DEEP LEARNING (MINDFUL, MEANINGFUL, JOYFUL)
 `;
-      } else if (docType === 'modul_ajar') {
-        structureGuide = `
-Khusus untuk MODUL AJAR, Anda WAJIB mengikuti format resmi MA NU 01 Banyuputih Batang:
-# MODUL AJAR ${mapel.toUpperCase()}
-## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
+    } else if (docType === 'prota' || docType === 'prota_prosem') {
+      structureGuide = `
+Khusus untuk PROGRAM TAHUNAN (PROTA) KURIKULUM MERDEKA & KBC:
+TEKS CAPAIAN PEMBELAJARAN (CP) ACUAN DARI GURU:
+"""
+${capaianPembelajaranTeks || 'Standar CP Fase ' + fase + ' Mata Pelajaran ' + mapel}
+"""
+${instruksiKhusus ? `CATATAN / INSTRUKSI KHUSUS GURU:\n"${instruksiKhusus}"\n` : ''}
+TARGET PANCA CINTA & MATERI INSERSI KBC:
+${kbcInsersiPromptBlock}
 
----
+SUSUN OUTPUT LENGKAP DALAM FORMAT MARKDOWN RESMI BERIKUT:
+# PROGRAM TAHUNAN (PROTA) KURIKULUM MERDEKA & KBC
+**MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}**
 
-## A. IDENTIFIKASI KESIAPAN PESERTA DIDIK (Pengetahuan Awal, Minat melalui media/game interaktif, Latar Belakang, Kebutuhan Belajar diferensiasi visual/auditori/kinestetik/analitis)
-## B. KARAKTERISTIK MATERI PELAJARAN (Jenis Pengetahuan: Faktual, Konseptual, Prosedural, Metakognitif; Relevansi Kehidupan Nyata; Tingkat Kesulitan; Struktur Materi; Integrasi Nilai dan Karakter)
-## C. DIMENSI PROFIL LULUSAN PEMBELAJARAN (Keimanan dan Ketakwaan, Penalaran Kritis, Kreativitas, Kolaborasi, Komunikasi)
-## DESAIN PEMBELAJARAN
-### A. CAPAIAN PEMBELAJARAN (Deskripsi & Tabel Elemen Capaian Pembelajaran)
-### B. LINTAS DISIPLIN ILMU
-### C. TUJUAN PEMBELAJARAN (Dirinci per pertemuan: Pertemuan 1, Pertemuan 2, Pertemuan 3)
-### D. TOPIK PEMBELAJARAN KONTEKSTUAL
-### E. KERANGKA PEMBELAJARAN (Praktik Pedagogik, Kemitraan Pembelajaran, Lingkungan Belajar Deep Learning: Mindful Learning, Meaningful Learning, Joyful Learning, Pemanfaatan Digital)
-### F. LANGKAH-LANGKAH PEMBELAJARAN BERDIFERENSI (Tabel Kegiatan dan Alokasi Waktu per Pertemuan yang memuat: 1. Kegiatan Pendahuluan [Orientasi, Apersepsi, Motivasi], 2. Kegiatan Inti [Eksplorasi - Diferensiasi Konten, Identifikasi & Klasifikasi - Diferensiasi Proses & Produk, Diskusi & Konfirmasi - Merefleksi], 3. Kegiatan Penutup)
-### G. ASESMEN PEMBELAJARAN (1. Asesmen Awal [Tes Lisan, Kuesioner, Observasi], 2. Asesmen Proses [Observasi Kinerja Game, Penilaian Produk, Jurnal Refleksi], 3. Asesmen Akhir)
-`;
-      } else if (docType === 'prota' || docType === 'prota_prosem') {
-        structureGuide = `
-Khusus untuk PROGRAM TAHUNAN (PROTA) KURIKULUM MERDEKA, Anda WAJIB mengikuti format resmi MA NU 01 Banyuputih Batang sesuai standar panduan:
-
-# PROGRAM TAHUNAN KURIKULUM MERDEKA
-**MA NU 01 BANYUPUTIH**  
-*Jl. Lapangan 9A Banyuputih, Kab. Batang | NPSN: 20364930 | TA: ${tahunPelajaran}*
-
----
-
-### A. CAPAIAN PEMBELAJARAN FASE ${fase}
-Tuliskan rumusan Capaian Pembelajaran Fase ${fase} secara utuh untuk mata pelajaran ${mapel}.
-
----
-
-### B. ELEMEN CAPAIAN PEMBELAJARAN
-Sajikan tabel 2 kolom elemen dan capaian pembelajaran mata pelajaran ${mapel}:
+### A. CAPAIAN PEMBELAJARAN FASE ${fase} & TABEL ELEMEN CP
 | ELEMEN | CAPAIAN PEMBELAJARAN |
 |---|---|
-(Sajikan semua elemen mapel ini beserta deskripsi capaian pembelajarannya secara lengkap).
 
----
-
-### C. DISTRIBUSI ALOKASI WAKTU PROGRAM TAHUNAN
-
-#### SEMESTER I (GANJIL)
-- **Mata Pelajaran :** ${mapel}
-- **Satuan Pendidikan :** MA NU 01 Banyuputih
-- **Tahun Pelajaran :** ${tahunPelajaran}
-- **Fase & Kelas / Semester :** Fase ${fase}, Kelas ${kelas} / I (Ganjil)
-
-Sajikan tabel distribusi Semester I dengan kolom persis:
-| Unit | Materi Pokok | Sub Materi | Alur Tujuan Pembelajaran | Alokasi Waktu |
+### B. DISTRIBUSI ALOKASI WAKTU & PEMETAAN TEMA PANCA CINTA (KBC) TAHUNAN
+#### 1. SEMESTER I (GASAL)
+| Unit | Materi Pokok & Sub Materi (Sesuai CP) | Alur Tujuan Pembelajaran (ATP) | Tema Panca Cinta & Materi Insersi KBC | Alokasi Waktu (JP) |
 |:---:|:---|:---|:---|:---:|
-(Bagi materi semester I ke dalam unit-unit pembelajaran, nomor sub materi 1, 2, 3, nomor Alur Tujuan Pembelajaran 1, 2, dan cantumkan alokasi waktu JP per unit).
-| **JUMLAH** | | | | **... JP** |
+| **JUMLAH SEMESTER I** | | | | **... JP** |
 
----
-
-#### SEMESTER II (GENAP)
-- **Mata Pelajaran :** ${mapel}
-- **Satuan Pendidikan :** MA NU 01 Banyuputih
-- **Tahun Pelajaran :** ${tahunPelajaran}
-- **Fase & Kelas / Semester :** Fase ${fase}, Kelas ${kelas} / II (Genap)
-
-Sajikan tabel distribusi Semester II dengan kolom persis:
-| Unit | Materi Pokok | Sub Materi | Alur Tujuan Pembelajaran | Alokasi Waktu |
+#### 2. SEMESTER II (GENAP)
+| Unit | Materi Pokok & Sub Materi (Sesuai CP) | Alur Tujuan Pembelajaran (ATP) | Tema Panca Cinta & Materi Insersi KBC | Alokasi Waktu (JP) |
 |:---:|:---|:---|:---|:---:|
-(Bagi materi semester II ke dalam unit-unit pembelajaran lanjutan, sub materi, alur tujuan pembelajaran, dan alokasi JP per unit).
-| **JUMLAH** | | | | **... JP** |
+| **JUMLAH SEMESTER II** | | | | **... JP** |
 
----
-
-### REKAPITULASI TOTAL ALOKASI WAKTU TAHUNAN
-- **Total Alokasi Semester I (Ganjil) :** ... JP
-- **Total Alokasi Semester II (Genap) :** ... JP
-- **TOTAL KESELURUHAN 1 TAHUN PELAJARAN :** ... JP (${alokasiWaktu || '36 - 72 JP'})
+### C. REKAPITULASI TOTAL ALOKASI WAKTU TAHUNAN (${alokasiWaktu || '72 JP'})
 `;
-      } else if (docType === 'prosem') {
-        structureGuide = `
-Khusus untuk PROGRAM SEMESTER (PROSEM) KURIKULUM MERDEKA, Anda WAJIB mengikuti format resmi MA NU 01 Banyuputih Batang:
-Sajikan dokumen dengan struktur:
-# PROGRAM SEMESTER (PROSEM) KURIKULUM MERDEKA
+    } else if (docType === 'prosem') {
+      structureGuide = `
+Khusus untuk PROGRAM SEMESTER (PROSEM) KURIKULUM MERDEKA & KBC:
+TEKS CAPAIAN PEMBELAJARAN (CP) ACUAN DARI GURU:
+"""
+${capaianPembelajaranTeks || 'Standar CP Fase ' + fase + ' Mata Pelajaran ' + mapel}
+"""
+AGENDA & KALENDER NON-EFEKTIF MADRASAH DARI GURU:
+"${agendaMadrasah || 'Minggu 1 Juli: MATSAMA; Minggu 3 Sept: ASTS; Minggu 1-2 Des: ASESGA/ASAS; Minggu 3-4 Des: Pengolahan Rapor & Libur Semester'}"
+${instruksiKhusus ? `INSTRUKSI KHUSUS GURU: "${instruksiKhusus}"` : ''}
+TARGET PANCA CINTA & MATERI INSERSI KBC:
+${kbcInsersiPromptBlock}
+
+SUSUN DOKUMEN DENGAN STRUKTUR:
+# PROGRAM SEMESTER (PROSEM) KURIKULUM MERDEKA & KBC
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
 
-### MATRIKS DISTRIBUSI ALOKASI WAKTU SEMESTER ${semester === '2' ? 'GENAP' : 'GASAL'}
-Sajikan tabel Markdown komprehensif dengan kolom:
-| No | BAB / Materi Pokok | Tujuan Pembelajaran (TP) | Alokasi JP | ${semester === '2' ? 'Jan (1-5) | Feb (1-4) | Mar (1-5) | Apr (1-5) | Mei (1-5) | Jun (1-5)' : 'Jul (1-4) | Agu (1-5) | Sep (1-5) | Okt (1-5) | Nov (1-5) | Des (1-5)'} |
-- Distribusikan alokasi jam tatap muka mingguan (misal 2 JP per minggu).
-- Tandai agenda non-efektif (Libur Awal/Akhir Semester, ASTS, Asesmen Sumatif Akhir Semester, Pengolahan Nilai & Rapor).
+### A. MATRIKS DISTRIBUSI ALOKASI WAKTU SEMESTER ${semester === '2' ? 'GENAP' : 'GASAL'}
+| No | BAB / Materi Pokok (Sesuai CP) | Tujuan Pembelajaran (TP) & Tema Insersi KBC | Alokasi JP | ${semester === '2' ? 'Jan | Feb | Mar | Apr | Mei | Jun' : 'Jul | Agu | Sep | Okt | Nov | Des'} |
+- Distribusikan alokasi jam tatap muka mingguan sesuai total ${alokasiWaktu || '36 JP'}.
+- Wajib masukkan baris/penanda agenda non-efektif sesuai input kalender guru: ${agendaMadrasah}.
 - Buat baris TOTAL di akhir tabel.
-`;
-      }
 
-      const prompt = `Anda adalah Hermes Agent AI Spesialis Kurikulum Merdeka untuk MA NU 01 Banyuputih Batang.
+### B. KETERANGAN AGENDA MADRASAH & INSERSI KBC PER UNIT
+`;
+    } else if (docType === 'kktp') {
+      structureGuide = `
+Khusus untuk DOKUMEN KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP) INTERVAL & KARAKTER KBC:
+DATA MASUKAN GURU:
+- Topik / Lingkup Materi : ${topikMateri}
+- Daftar Tujuan Pembelajaran (TP) / Indikator yang Dinilai :
+"""
+${tujuanPembelajaranTeks || `1. Menganalisis konsep dasar ${topikMateri}\n2. Menerapkan pemecahan masalah kontekstual ${topikMateri}\n3. Mengamalkan adab dan nilai Panca Cinta KBC dalam pembelajaran`}
+"""
+- Rentang Interval Ketuntasan yang Ditetapkan Guru :
+"${intervalKKTP || '0-60% (Perlu Bimbingan), 61-74% (Cukup), 75-87% (Baik/Tuntas), 88-100% (Sangat Baik/Mahir)'}"
+- Target Panca Cinta & Materi Insersi KBC :
+${kbcInsersiPromptBlock}
+
+SUSUN OUTPUT LENGKAP DALAM FORMAT MARKDOWN RESMI BERIKUT:
+# KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP)
+## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
+*Berpedoman pada Panduan Pembelajaran dan Asesmen & KMA 1503/2025 (Kurikulum Berbasis Cinta)*
+
+### A. TABEL RUBRIK INTERVAL KRITERIA KETERCAPAIAN (KOGNITIF & KETERAMPILAN)
+Gunakan persis rentang interval yang ditetapkan guru (${intervalKKTP}):
+| No | Tujuan Pembelajaran (TP) | Indikator Ketercapaian (IKTP) | Rubrik Interval 1 (Perlu Bimbingan) | Rubrik Interval 2 (Cukup / Layak) | Rubrik Interval 3 (Baik / Cakap - Tuntas) | Rubrik Interval 4 (Sangat Baik / Mahir) |
+|:---:|:---|:---|:---|:---|:---|:---|
+
+### B. RUBRIK KETERCAPAIAN SIKAP & INSERSI PANCA CINTA (KBC)
+| No | Pilar Panca Cinta (KBC) | Materi Insersi pada Topik ${topikMateri} | Indikator Sikap Mulai Terlihat | Indikator Sikap Membudaya (Teladan / Qudwah) |
+|:---:|:---|:---|:---|:---|
+
+### C. PEDOMAN TINDAK LANJUT (REMEDIAL & PENGAYAAN BERBASIS KASIH SAYANG)
+`;
+    } else if (docType === 'lkpd') {
+      structureGuide = `
+Khusus untuk LEMBAR KERJA PESERTA DIDIK (LKPD) BERBASIS KBC & DEEP LEARNING:
+DATA MASUKAN GURU:
+- Mata Pelajaran : ${mapel} | Kelas ${kelas} (Fase ${fase}) | Semester ${semester}
+- Topik Materi : ${topikMateri}
+- Alokasi Waktu : ${alokasiWaktu || '2 JP (90 Menit)'}
+- Capaian Pembelajaran (CP) : ${capaianPembelajaranTeks || 'Sesuai CP Fase ' + fase}
+- Tujuan Pembelajaran (TP) : ${tujuanPembelajaranTeks || 'Menganalisis dan memecahkan masalah kontekstual ' + topikMateri}
+- Target Panca Cinta & Materi Insersi KBC :
+${kbcInsersiPromptBlock}
+
+SUSUN NASKAH LKPD SIAP CETAK DALAM FORMAT MARKDOWN BERIKUT:
+# LEMBAR KERJA PESERTA DIDIK (LKPD) BERBASIS KBC & DEEP LEARNING
+## MATA PELAJARAN ${mapel.toUpperCase()} — KELAS ${kelas} (FASE ${fase})
+*Topik: ${topikMateri}*
+
+### A. IDENTITAS KELOMPOK & PENGANTAR DOA (MINDFUL CHECK-IN)
+- Nama Kelompok / Anggota : ......................................................
+- Doa Thalabul Ilmi & Niat Belajar Ikhlas (Panca Cinta KBC)
+
+### B. TUJUAN PEMBELAJARAN & MATERI INSERSI KBC
+Sajikan tujuan kegiatan dan tabel ringkas nilai Panca Cinta yang diamalkan selama mengerjakan LKPD.
+
+### C. STIMULUS KONTEKSTUAL / WACANA KASUS (MEANINGFUL LEARNING)
+Sajikan wacana studi kasus nyata yang menarik dan relevan dengan ${topikMateri}.
+
+### D. AKTIVITAS KOLABORATIF & PERTANYAAN EKSPLORASI (HOTS)
+Sajikan 4-5 tugas/pertanyaan analisis terstruktur beserta ruang jawaban bagi peserta didik.
+
+### E. REFLEKSI DIRI & AKSI NYATA PANCA CINTA (JOYFUL & REFLECTIVE)
+### F. RUBRIK PENILAIAN LKPD (KOGNITIF, KOLABORASI & ADAB KBC)
+`;
+    } else if (docType === 'presensi_kbm') {
+      structureGuide = `
+Khusus untuk JURNAL MENGAJAR & PRESENSI HARIAN SISWA KBM (BERBASIS KBC):
+DATA MASUKAN GURU:
+- Mata Pelajaran : ${mapel} | Kelas ${kelas} (Fase ${fase}) | Semester ${semester}
+- Topik Materi : ${topikMateri}
+- Catatan Jurnal / Kejadian Anekdotal dari Guru : "${instruksiKhusus || 'KBM berlangsung kondusif, santun, dan kolaboratif'}"
+- Target Panca Cinta & Materi Insersi KBC :
+${kbcInsersiPromptBlock}
+
+SUSUN OUTPUT DALAM FORMAT MARKDOWN RESMI:
+# JURNAL MENGAJAR & PRESENSI HARIAN KBM (KBC)
+**MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}**
+
+### A. AGENDA & JURNAL PELAKSANAAN PEMBELAJARAN
+| Komponen | Keterangan Pelaksanaan KBM |
+|:---|:---|
+(Memuat Hari/Tanggal, Jam Ke-, Topik Materi, Model Pembelajaran, Ringkasan Materi Insersi KBC yang Disampaikan, danKetercapaian KBM).
+
+### B. TABEL DAFTAR PRESENSI & OBSERVASI ADAB PESERTA DIDIK
+| No | NISN | Nama Peserta Didik | L/P | Kehadiran (H/S/I/A) | Catatan Sikap / Jurnal Anekdotal Panca Cinta (KBC) |
+|:---:|:---:|:---|:---:|:---:|:---|
+
+### C. REKAPITULASI KEHADIRAN & REFLEKSI GURU (DEEP LEARNING & KBC)
+`;
+    } else if (docType === 'umpan_balik') {
+      structureGuide = `
+Khusus untuk INSTRUMEN REFLEKSI & UMPAN BALIK PEMBELAJARAN BERBASIS CINTA (KBC):
+DATA MASUKAN GURU:
+- Responden : ${respondenSurvei || 'Peserta Didik (Siswa)'}
+- Skala Penilaian : ${skalaSurvei || 'Skala Likert 1 - 4'}
+- Fokus Aspek Evaluasi : ${aspekUmpanBalik || 'Suasana kelas berbasis cinta, kejelasan materi Deep Learning, keteladanan adab guru, keadilan & empati'}
+- Target Panca Cinta & Materi Insersi KBC :
+${kbcInsersiPromptBlock}
+
+SUSUN OUTPUT LENGKAP DALAM FORMAT MARKDOWN RESMI BERIKUT:
+# INSTRUMEN REFLEKSI & UMPAN BALIK PEMBELAJARAN (KBC)
+## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
+*Responden: ${respondenSurvei || 'Peserta Didik'} | Skala: ${skalaSurvei || 'Likert 1-4'}*
+
+### A. PENGANTAR & PETUNJUK PENGISIAN
+### B. TABEL INSTRUMEN PENILAIAN SUASANA KELAS & PEMBELAJARAN MENDALAM (KBC)
+Susun minimal 10 butir pernyataan yang mencakup seluruh aspek (${aspekUmpanBalik}) dan kelima pilar Panca Cinta yang dipilih (${selectedKBCList.join(', ')}):
+| No | Dimensi KBC / Deep Learning | Pernyataan Refleksi & Umpan Balik | Pilihan Respons (${skalaSurvei || '1 / 2 / 3 / 4'}) |
+|:---:|:---|:---|:---:|
+
+### C. PERTANYAAN REFLEKTIF TERBUKA & RENCANA TINDAK LANJUT GURU
+`;
+    }
+
+    const prompt = `Anda adalah Hermes Agent AI Spesialis Kurikulum Merdeka & Kurikulum Berbasis Cinta (KBC - KMA 1503/2025 & Kepdirjen Pendis 6077/2025) untuk MA NU 01 Banyuputih Batang.
 Buatlah naskah dokumen administrasi resmi untuk:
-- Jenis Dokumen: ${docType} (Pilihan: rpp, cp_atp, prota, prosem, kktp, modul_ajar, umpan_balik)
+- Jenis Dokumen: ${docType}
 - Mata Pelajaran: ${mapel} | Fase ${fase} | Kelas ${kelas} | Semester ${semester} | TP ${tahunPelajaran}
 - Topik Materi Pokok: ${topikMateri}
 - Guru Pengampu: ${guruPengampu}
-- Pendekatan: Deep Learning (Mindful, Meaningful, Joyful Learning) dan Kurikulum Berbasis Cinta (KBC: Lima Pilar Panca Cinta Kemenag RI)
-- Nilai KBC yang ditargetkan: ${Array.isArray(nilaiKBC) ? nilaiKBC.join(', ') : 'Kasih sayang dan adab'}
+- Pendekatan: Pembelajaran Mendalam / Deep Learning (Mindful, Meaningful, Joyful Learning) dan Kurikulum Berbasis Cinta (KBC: Lima Pilar Panca Cinta Kemenag RI)
+- Nilai Panca Cinta KBC yang ditargetkan: ${selectedKBCList.join(', ')}
 - Model Pembelajaran: ${modelPembelajaran || 'Problem Based Learning & Cooperative Learning'}
 ${structureGuide}
 PENTING & WAJIB DIPATUHI:
-1. WAJIB menggunakan format teks MARKDOWN MURNI. DILARANG KERAS menyertakan tag HTML mentah seperti <div>, </div>, <br>, <br/>, <p>, <span>, <style>, atau atribut HTML lainnya. Gunakan sintaks Markdown standar (misal baris baru untuk jeda baris, format tabel markdown | ... | ... |, **teks tebal**, *teks miring*, dan heading #, ##, ###) agar dokumen bersih saat dicetak dan diekspor ke Word.
+1. WAJIB menggunakan format teks MARKDOWN MURNI. DILARANG KERAS menyertakan tag HTML mentah seperti <div>, </div>, <br>, <br/>, <p>, <span>, <style>, atau atribut HTML lainnya. Gunakan sintaks Markdown standar (baris baru untuk jeda baris, format tabel markdown | ... | ... |, **teks tebal**, *teks miring*, dan heading #, ##, ###) agar dokumen bersih saat dicetak dan diekspor ke Word.
 2. JANGAN menyertakan bagian atau bullet list 'IDENTITAS DOKUMEN / IDENTITAS MODUL / IDENTITAS MATA PELAJARAN' di awal dokumen markdown, karena sistem aplikasi otomatis menyematkan tabel Identitas Institusi resmi di bagian atas lembar cetak (di bawah Kop Surat). Dokumen harus langsung dimulai dari Judul (#), lalu masuk ke analisis/materi inti.
 3. JANGAN menambahkan teks atau tabel 'LEMBAR PENGESAHAN' atau blok tanda tangan di akhir dokumen markdown, karena sistem aplikasi otomatis menyematkan blok tanda tangan resmi institusi MA NU 01 Banyuputih di bagian bawah lembar cetak.`;
 
@@ -1704,7 +1827,7 @@ PENTING & WAJIB DIPATUHI:
       });
     }
 
-    // Fallback template for administration document
+    // Fallback template for administration document (preserves all KBC & custom fields!)
     const fallbackMarkdown = generateFallbackAdminDoc(
       docType,
       mapel,
@@ -1725,15 +1848,25 @@ PENTING & WAJIB DIPATUHI:
       jumlahPertemuan,
       jamPerPertemuan,
       modelPembelajaran,
-      jenisAsesmen
+      jenisAsesmen,
+      selectedKBCList,
+      insersiKBCMap,
+      tujuanPembelajaranTeks,
+      lintasDisiplinIlmu,
+      agendaMadrasah,
+      intervalKKTP,
+      respondenSurvei,
+      skalaSurvei,
+      aspekUmpanBalik
     );
 
     const cleanFallback = cleanMarkdownAdminOutput(fallbackMarkdown);
     return res.json({
       success: true,
       isFallback: true,
-      source: 'Hermes Emergency Template Engine (Bukan AI)',
-      fallbackReason: lastAiGatewayDiagnostic || 'AI Gateway 9router tidak dapat dihubungi atau API Key ditolak',
+      source: 'Hermes Emergency Template Engine (KBC Terintegrasi)',
+      fallbackReason:
+        lastAiGatewayDiagnostic || 'AI Gateway 9router tidak dapat dihubungi atau API Key ditolak',
       markdown: cleanFallback,
     });
   } catch (error: any) {
@@ -4983,7 +5116,7 @@ function generateFallbackExamQuestions(
   return questions;
 }
 
-// Fallback logic for Admin Documents
+// Fallback logic for Admin Documents (KMA 1503/2025 & Kepdirjen Pendis 6077/2025)
 function generateFallbackAdminDoc(
   docType: string,
   mapel: string,
@@ -5004,55 +5137,86 @@ function generateFallbackAdminDoc(
   jumlahPertemuan?: string,
   jamPerPertemuan?: string,
   modelPembelajaran?: string,
-  jenisAsesmen?: string[]
+  jenisAsesmen?: string[],
+  selectedKBCList?: string[],
+  insersiKBCMap?: Record<string, string>,
+  tujuanPembelajaranTeks?: string,
+  lintasDisiplinIlmu?: string,
+  agendaMadrasah?: string,
+  intervalKKTP?: string,
+  respondenSurvei?: string,
+  skalaSurvei?: string,
+  aspekUmpanBalik?: string
 ) {
+  const kbcPillars = Array.isArray(selectedKBCList) && selectedKBCList.length > 0
+    ? selectedKBCList
+    : ['Cinta Allah & Rasul-Nya', 'Cinta Ilmu', 'Cinta Diri & Sesama'];
+
+  const kbcInsersiRows = kbcPillars.map((pilar, idx) => {
+    const customInsersi = insersiKBCMap && insersiKBCMap[pilar] && insersiKBCMap[pilar].trim().length > 0
+      ? insersiKBCMap[pilar].trim()
+      : `Menginternalisasikan nilai ${pilar} melalui keteladanan adab, diskusi reflektif, dan aksi nyata pada topik ${topikMateri}.`;
+    return `| ${idx + 1} | **${pilar}** | ${customInsersi} | Terintegrasi pada kegiatan pendahuluan, diskusi kelompok, dan refleksi penutup |`;
+  }).join('\n');
+
+  const kbcInsersiTableMarkdown = `#### Tabel Materi Insersi Kurikulum Berbasis Cinta (KBC — Kepdirjen Pendis 6077/2025)
+| No | Pilar Panca Cinta KBC | Materi Insersi, Dalil & Konteks Pembiasaan | Strategi Implementasi KBM |
+|:---:|:---|:---|:---|
+${kbcInsersiRows}`;
+
+  const dimensi8Default = 'Keimanan dan Ketakwaan terhadap Tuhan YME, Kewargaan (Moderasi Beragama), Penalaran Kritis, Kreativitas, Kolaborasi, Kemandirian, Kesehatan, Komunikasi (Berkeadaban / Ta\'addub)';
+  const dimensiList = Array.isArray(dimensiProfilLulusan) && dimensiProfilLulusan.length > 0
+    ? dimensiProfilLulusan.join(', ')
+    : dimensi8Default;
+
   if (docType === 'rpp') {
     const jpPtm = jamPerPertemuan || '2 JP (2 x 45 menit)';
     const jmlPtm = jumlahPertemuan || '2 Pertemuan';
     const totalJp = alokasiWaktu || '4 JP';
     const model = modelPembelajaran || 'Problem Based Learning (PBL)';
-    const dimensiList = Array.isArray(dimensiProfilLulusan) && dimensiProfilLulusan.length > 0
-      ? dimensiProfilLulusan.join(', ')
-      : 'Beriman, Bertakwa kepada Tuhan YME & Berakhlak Mulia, Bernalar Kritis, Mandiri, Bergotong Royong, Berkeadaban (Ta\'addub)';
     const asesmenList = Array.isArray(jenisAsesmen) && jenisAsesmen.length > 0
       ? jenisAsesmen.join(', ')
-      : 'Asesmen Diagnostik (Awal), Asesmen Formatif (Proses & LKPD), Asesmen Sumatif (Akhir TP)';
+      : 'Asesmen Diagnostik (Awal), Asesmen Formatif (Proses & LKPD), Asesmen Sikap & Karakter KBC (Jurnal Anekdotal / Observasi Adab), Asesmen Sumatif (Akhir TP)';
     const karakteristik = karakteristikPesertaDidik || 'Kemampuan awal heterogen, kecenderungan gaya belajar visual dan kinestetik, santun dan aktif dalam berdiskusi kelompok.';
+    const customTPBlock = tujuanPembelajaranTeks && tujuanPembelajaranTeks.trim().length > 0
+      ? tujuanPembelajaranTeks.trim()
+      : `1. Peserta didik mampu menjelaskan konsep dasar dan urgensi materi **${topikMateri}** secara komprehensif melalui kajian literatur dan diskusi santun.\n2. Peserta didik mampu menganalisis permasalahan kontekstual terkait **${topikMateri}** dengan bernalar kritis dan teliti.\n3. Peserta didik mampu merumuskan solusi dan mempresentasikan karya/kesimpulan kelompok dengan adab komunikasi yang baik dan penuh percaya diri.`;
 
-    return `# RENCANA PELAKSANAAN PEMBELAJARAN (RPP) KURIKULUM MERDEKA
+    return `# RENCANA PELAKSANAAN PEMBELAJARAN (RPP) PENDEKATAN MENDALAM & KBC
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
-*Penyusunan Berdasarkan Panduan Pembelajaran dan Asesmen BSKAP Kemendikbudristek & KMA 347/450 Kemenag RI*
+*Penyusunan Berdasarkan KMA 1503/2025 & Kepdirjen Pendis 6077/2025 (Kurikulum Berbasis Cinta & Deep Learning)*
 
 ---
 
 ### I. ANALISIS KESIAPAN & KARAKTERISTIK PESERTA DIDIK
+- **Alokasi Waktu :** ${totalJp} (${jmlPtm} @ ${jpPtm})
 - **Karakteristik & Gaya Belajar :** ${karakteristik}
 - **Penerapan Diferensiasi Pembelajaran :**
   - **Diferensiasi Konten :** Guru menyajikan materi dalam format modul ajar teks ringkas, tayangan salindia/video infografis, dan studi kasus nyata di lingkungan sekitar.
-  - **Diferensiasi Proses :** Peserta didik dikelompokkan secara heterogen dengan scaffolding; siswa yang membutuhkan bimbingan lebih mendapatkan bimbingan terbimbing, sedangkan siswa dengan kesiapan mahir diarahkan menjadi tutor sebaya.
-  - **Diferensiasi Produk :** Peserta didik diberikan kebebasan memilih bentuk penyajian laporan hasil penugasan (peta konsep visual, resume tertulis terstruktur, atau presentasi lisan singkat).
+  - **Diferensiasi Proses :** Peserta didik dikelompokkan secara heterogen dengan scaffolding; siswa yang membutuhkan bimbingan lebih mendapatkan pendampingan intensif, sedangkan siswa mahir diarahkan menjadi tutor sebaya (*peer teaching* berbasis kasih sayang).
+  - **Diferensiasi Produk :** Peserta didik diberikan kebebasan memilih bentuk penyajian laporan hasil penugasan (peta konsep visual, resume tertulis terstruktur, atau presentasi lisan).
 
 ---
 
 ### II. KOMPONEN INTI PEMBELAJARAN
 #### 1. Capaian Pembelajaran (CP) Acuan
-${capaianPembelajaranTeks || `Pada akhir Fase ${fase}, peserta didik memiliki kemampuan menganalisis, mengonstruksi, dan menerapkan konsep materi ${mapel} dengan penalaran logis, mandiri, berkarakter santun, serta mengamalkan nilai-nilai Aswaja An-Nahdliyah.`}
+${capaianPembelajaranTeks || `Pada akhir Fase ${fase}, peserta didik memiliki kemampuan menganalisis, mengonstruksi, dan menerapkan konsep materi ${mapel} dengan penalaran logis, mandiri, berkarakter santun, serta mengamalkan nilai-nilai Panca Cinta KBC dan Aswaja An-Nahdliyah.`}
 
 #### 2. Tujuan Pembelajaran (TP)
-1. Peserta didik mampu menjelaskan konsep dasar dan urgensi materi **${topikMateri}** secara komprehensif melalui kajian literatur dan diskusi santun.
-2. Peserta didik mampu menganalisis permasalahan kontekstual terkait **${topikMateri}** dengan bernalar kritis dan teliti.
-3. Peserta didik mampu merumuskan solusi dan mempresentasikan karya/kesimpulan kelompok dengan adab komunikasi yang baik dan penuh percaya diri.
+${customTPBlock}
 
 #### 3. Indikator Ketercapaian Tujuan Pembelajaran (IKTP)
-- Menyebutkan dan mengklasifikasikan istilah dan prinsip pokok materi dengan benar (akurasi minimal 75%).
+- Menyebutkan dan mengklasifikasikan istilah serta prinsip pokok materi **${topikMateri}** dengan benar (akurasi minimal 75%).
 - Menemukan korelasi antara konsep teori dengan problematika kontekstual yang dihadapi.
-- Mengomunikasikan kesimpulan pemecahan masalah dengan bahasa yang santun, logis, dan argumentatif.
+- Mengomunikasikan kesimpulan pemecahan masalah dengan bahasa yang santun, logis, dan menghargai perbedaan pendapat (*tasamuh*).
 
-#### 4. Penguatan Deep Learning & Nilai Kurikulum Berbasis Cinta (KBC)
-- **Mindful Learning :** Mengajak peserta didik memfokuskan niat thalabul ilmi semata-mata mengharap ridha Allah SWT dan menghargai anugerah akal budi.
-- **Meaningful Learning :** Menghubungkan setiap konsep ke dalam implementasi kehidupan sehari-hari siswa di madrasah dan masyarakat.
-- **Joyful Learning :** Menciptakan suasana belajar yang hangat, ramah anak, dialogis, apresiatif, dan tanpa kecemasan.
-- **Dimensi Profil Lulusan :** ${dimensiList}.
+#### 4. Penguatan 8 Dimensi Profil Lulusan & Deep Learning
+- **8 Dimensi Profil Lulusan :** ${dimensiList}.
+- **Mindful Learning (Berkesadaran) :** Mengajak peserta didik memfokuskan niat *thalabul ilmi* semata-mata mengharap ridha Allah SWT dan menghargai anugerah akal budi.
+- **Meaningful Learning (Bermakna) :** Menghubungkan setiap konsep **${topikMateri}** ke dalam kemaslahatan kehidupan sehari-hari di madrasah dan masyarakat.
+- **Joyful Learning (Menggembirakan) :** Menciptakan suasana belajar yang hangat, ramah anak, dialogis, apresiatif, dan bebas perundungan.
+
+${kbcInsersiTableMarkdown}
 
 ---
 
@@ -5062,9 +5226,9 @@ ${capaianPembelajaranTeks || `Pada akhir Fase ${fase}, peserta didik memiliki ke
 
 | Tahap Kegiatan | Rincian Aktivitas Guru dan Peserta Didik | Alokasi Waktu |
 |:---|:---|:---:|
-| **Pendahuluan** | 1. Guru mengucapkan salam hangat penuh kasih sayang, membimbing doa pembuka, dan mengajak tadarus Al-Qur'an singkat.<br>2. Melakukan mindfulness breathing (30 detik) untuk memusatkan konsentrasi santri.<br>3. Mengecek kehadiran dan kesiapan belajar dengan menyapa keadaan peserta didik (Prinsip KBC: Welcoming with Love).<br>4. Apersepsi: Guru mengaitkan pengalaman nyata santri dengan materi **${topikMateri}**.<br>5. Menyampaikan Tujuan Pembelajaran dan alur KBM yang akan dilaksanakan. | 15 Menit |
-| **Kegiatan Inti**<br>*(Sintaks ${model})* | **Fase 1: Orientasi Siswa pada Masalah**<br>- Guru menyajikan stimulus berupa artikel kontekstual/video studi kasus mengenai tantangan nyata pada topik ${topikMateri}.<br>- Peserta didik mencermati tayangan dan mengajukan pertanyaan kritis.<br><br>**Fase 2: Mengorganisasi Peserta Didik untuk Belajar**<br>- Peserta didik dibagi ke dalam 4-5 kelompok kecil berdasarkan gaya belajar dan heterogenitas kemampuan.<br>- Guru membagikan LKPD (Lembar Kerja Peserta Didik) berbasis diferensiasi konten.<br><br>**Fase 3: Membimbing Penyelidikan Mandiri dan Kelompok**<br>- Peserta didik berkolaborasi mengumpulkan data, membaca literatur rujukan, dan berdiskusi dengan adab saling menghargai.<br>- Guru berkeliling memberikan scaffolding (bimbingan afektif dan kognitif) sesuai kesiapan masing-masing kelompok. | 60 Menit |
-| **Penutup** | 1. Peserta didik bersama guru menyimpulkan poin-poin utama materi yang telah dipelajari.<br>2. Guru dan siswa melakukan refleksi singkat: *"Hal baru apa yang paling berkesan dan bermanfaat dari pertemuan ini?"*<br>3. Guru memberikan apresiasi atas dedikasi dan adab santri selama pembelajaran.<br>4. Menyampaikan gambaran agenda pertemuan kedua.<br>5. Doa penutup majelis dan salam penutup. | 15 Menit |
+| **Pendahuluan** | 1. Guru mengucapkan salam hangat penuh kasih sayang, membimbing doa pembuka, dan mengajak tadarus Al-Qur'an singkat.<br>2. Melakukan *mindfulness check-in* (30 detik) untuk memusatkan konsentrasi santri.<br>3. Mengecek kehadiran dan menyapa keadaan peserta didik secara empatik (*Welcoming with Love*).<br>4. Apersepsi: Guru mengaitkan pengalaman nyata santri dengan materi **${topikMateri}** serta nilai **${kbcPillars.join(', ')}**.<br>5. Menyampaikan Tujuan Pembelajaran dan alur KBM yang akan dilaksanakan. | 15 Menit |
+| **Kegiatan Inti**<br>*(Sintaks ${model})* | **Fase 1: Orientasi Siswa pada Masalah (Mindful)**<br>- Guru menyajikan stimulus berupa artikel kontekstual/studi kasus mengenai tantangan nyata pada topik ${topikMateri}.<br>- Peserta didik mencermati tayangan dan mengajukan pertanyaan kritis.<br><br>**Fase 2: Mengorganisasi Peserta Didik untuk Belajar (Joyful)**<br>- Peserta didik dibagi ke dalam 4-5 kelompok kecil berdasarkan gaya belajar dan heterogenitas kemampuan.<br>- Guru membagikan LKPD berbasis diferensiasi konten dan nilai KBC.<br><br>**Fase 3: Membimbing Penyelidikan Mandiri dan Kelompok (Meaningful)**<br>- Peserta didik berkolaborasi mengumpulkan data, membaca literatur rujukan, dan berdiskusi dengan adab saling menghargai.<br>- Guru berkeliling memberikan *scaffolding* afektif dan kognitif serta mencatat jurnal anekdotal sikap santri. | 60 Menit |
+| **Penutup** | 1. Peserta didik bersama guru menyimpulkan poin-poin utama materi yang telah dipelajari.<br>2. Refleksi Panca Cinta: *"Nilai cinta dan kebaikan apa yang kalian rasakan dan pelajari hari ini?"*<br>3. Guru memberikan apresiasi atas dedikasi dan adab santri selama pembelajaran.<br>4. Menyampaikan agenda pertemuan berikutnya, doa kafaratul majelis, dan salam. | 15 Menit |
 
 ---
 
@@ -5072,9 +5236,9 @@ ${capaianPembelajaranTeks || `Pada akhir Fase ${fase}, peserta didik memiliki ke
 
 | Tahap Kegiatan | Rincian Aktivitas Guru dan Peserta Didik | Alokasi Waktu |
 |:---|:---|:---:|
-| **Pendahuluan** | 1. Membuka KBM dengan salam, doa bersama, dan pembacaan shalawat/asmaul husna.<br>2. Menanyakan tindak lanjut dan persiapan hasil kerja kelompok dari pertemuan sebelumnya.<br>3. Ice breaking edukatif ringan untuk membangkitkan suasana joyful learning. | 10 Menit |
-| **Kegiatan Inti**<br>*(Sintaks ${model})* | **Fase 4: Mengembangkan dan Menyajikan Hasil Karya**<br>- Setiap kelompok menyusun dan merapikan produk laporan/peta konsep hasil penyelidikan masalah ${topikMateri}.<br>- Kelompok mempresentasikan hasil diskusi secara bergiliran.<br>- Kelompok lain menyimak dengan adab santun dan memberikan tanggapan konstruktif.<br><br>**Fase 5: Menganalisis dan Mengevaluasi Proses Pemecahan Masalah**<br>- Guru memfasilitasi klarifikasi konseptual, memberi penguatan pada bagian yang esensial, dan meluruskan miskonsepsi.<br>- Peserta didik mengerjakan asesmen formatif akhir TP untuk mengukur pemahaman individu. | 65 Menit |
-| **Penutup** | 1. Refleksi bermakna mengenai aplikasi nilai adab dan kasih sayang dalam kehidupan nyata.<br>2. Guru memberikan umpan balik menyeluruh terhadap performa kelompok.<br>3. Menutup pembelajaran dengan doa bersama dan salam. | 15 Menit |
+| **Pendahuluan** | 1. Membuka KBM dengan salam, doa bersama, dan pembacaan shalawat.<br>2. Menanyakan tindak lanjut dan kesiapan hasil kerja kelompok dari pertemuan sebelumnya.<br>3. *Ice breaking* edukatif ringan untuk membangkitkan suasana *joyful learning*. | 10 Menit |
+| **Kegiatan Inti**<br>*(Sintaks ${model})* | **Fase 4: Mengembangkan dan Menyajikan Hasil Karya**<br>- Setiap kelompok menyusun produk laporan/peta konsep hasil penyelidikan masalah ${topikMateri}.<br>- Kelompok mempresentasikan hasil diskusi secara bergiliran.<br>- Kelompok lain menyimak dengan adab santun (*ta'addub*) dan memberikan tanggapan konstruktif.<br><br>**Fase 5: Menganalisis dan Mengevaluasi Proses Pemecahan Masalah**<br>- Guru memfasilitasi klarifikasi konseptual, memberi penguatan materi insersi KBC, dan meluruskan miskonsepsi.<br>- Peserta didik mengerjakan asesmen formatif akhir TP untuk mengukur pemahaman individu. | 65 Menit |
+| **Penutup** | 1. Refleksi bermakna mengenai komitmen pengamalan nilai **${kbcPillars[0]}** dalam kehidupan nyata.<br>2. Guru memberikan umpan balik menyeluruh terhadap performa kelompok.<br>3. Menutup pembelajaran dengan doa bersama dan salam. | 15 Menit |
 
 ---
 
@@ -5082,160 +5246,313 @@ ${capaianPembelajaranTeks || `Pada akhir Fase ${fase}, peserta didik memiliki ke
 - **Jenis Asesmen yang Diterapkan :** ${asesmenList}
 
 #### 1. Asesmen Diagnostik (Awal Pembelajaran)
-- **Teknik :** Tanya jawab interaktif lisan dan kuesioner singkat kesiapan belajar.
+- **Teknik :** Tanya jawab interaktif lisan dan pemetaan kesiapan belajar.
 - **Instrumen :** 3 butir pertanyaan pemantik terkait konsep prasyarat materi ${topikMateri}.
 
-#### 2. Asesmen Formatif (Selama Proses KBM)
-- **Teknik :** Observasi sikap/adab thalabul ilmi dan lembar unjuk kerja LKPD kelompok.
-- **Rubrik Penilaian Sikap & Adab KBC:**
-  | Dimensi Karakter | Indikator Teramati | Skor (1-4) |
-  |---|---|:---:|
-  | Kasih Sayang (Rahmah) | Membantu rekan kelompok yang kesulitan, tutur kata santun | 4 |
-  | Adab Menuntut Ilmu | Memperhatikan penjelasan, tidak menyela, menjaga sopan santun | 4 |
-  | Nalar Kritis & Tanggung Jawab | Mengemukakan argumen logis, menyelesaikan tugas tepat waktu | 4 |
+#### 2. Asesmen Sikap & Karakter KBC (Jurnal Anekdotal & Observasi Adab)
+| No | Pilar Panca Cinta & Karakter | Indikator Sikap Teramati | Kategori (MB / SB / BSH / SAB) |
+|:---:|:---|:---|:---:|
+| 1 | **${kbcPillars[0] || 'Cinta Allah & Rasul-Nya'}** | Memulai kegiatan dengan doa khusyuk, jujur, dan menjaga adab majelis ilmu | BSH / SAB |
+| 2 | **Cinta Ilmu & Nalar Kritis** | Antusias mencari kebenaran ilmiah (*tabayyun*) dan menyelesaikan tugas tepat waktu | BSH / SAB |
+| 3 | **Cinta Sesama (*Rahmah & Tasamuh*)** | Membantu rekan kelompok yang kesulitan dan bertutur kata santun tanpa merendahkan | BSH / SAB |
 
-#### 3. Asesmen Sumatif (Akhir TP)
-- **Teknik :** Tes tertulis uraian kontekstual / lembar penilaian produk karya.
-- **Kriteria Ketercapaian Tujuan Pembelajaran (KKTP):**
-  | Interval Nilai | Kategori Ketercapaian | Tindak Lanjut |
-  |:---:|:---:|:---|
-  | 0 - 65% | Perlu Bimbingan | Remedial pendampingan individual pada indikator yang belum tuntas |
-  | 66% - 75% | Cukup | Remedial mandiri melalui resume dan latihan terbimbing |
-  | 76% - 85% | Baik | Telah tuntas, melanjutkan materi pengayaan reguler |
-  | 86% - 100% | Sangat Baik | Pengayaan berupa studi kasus mandiri tingkat lanjut atau tutor sebaya |`;
+#### 3. Asesmen Formatif & Sumatif (Kognitif / Produk)
+| Interval Nilai | Kategori Ketercapaian | Tindak Lanjut Pendampingan Berbasis Kasih Sayang |
+|:---:|:---:|:---|
+| 0 - 65% | Perlu Bimbingan | Remedial pendampingan individual (*coaching* empatik) pada indikator yang belum tuntas |
+| 66% - 75% | Cukup | Remedial terbimbing melalui diskusi tutor sebaya (*peer support*) |
+| 76% - 85% | Baik (Tuntas) | Telah mencapai ketuntasan, melanjutkan ke materi berikutnya |
+| 86% - 100% | Sangat Baik (Mahir) | Pengayaan berupa eksplorasi studi kasus lanjutan dan peran tutor sebaya |`;
+  }
+
+  if (docType === 'modul_ajar') {
+    const model = modelPembelajaran || 'Problem Based Learning (PBL)';
+    const asesmenList = Array.isArray(jenisAsesmen) && jenisAsesmen.length > 0
+      ? jenisAsesmen.join(', ')
+      : 'Asesmen Diagnostik (Awal), Asesmen Formatif (Proses & LKPD), Asesmen Sikap & Karakter KBC (Jurnal Anekdotal / Observasi Adab), Asesmen Sumatif (Akhir TP)';
+    const karakteristik = karakteristikPesertaDidik || 'Peserta didik memiliki keragaman kesiapan belajar dan gaya belajar (visual, auditori, kinestetik) dengan latar belakang santri madrasah yang responsif terhadap pembelajaran kolaboratif.';
+    const lintasIlmu = lintasDisiplinIlmu && lintasDisiplinIlmu.trim().length > 0
+      ? lintasDisiplinIlmu.trim()
+      : 'Bahasa Indonesia (Literasi Teks), Teknologi Informasi (Literasi Digital), serta Akidah Akhlak / Aswaja (Etika & Moderasi Beragama).';
+    const customTPBlock = tujuanPembelajaranTeks && tujuanPembelajaranTeks.trim().length > 0
+      ? tujuanPembelajaranTeks.trim()
+      : `- **Pertemuan 1:** Peserta didik mampu mengidentifikasi dan menjelaskan konsep dasar **${topikMateri}** melalui eksplorasi studi kasus dan diskusi kelompok secara santun.\n- **Pertemuan 2:** Peserta didik mampu menganalisis permasalahan kontekstual **${topikMateri}** dan merumuskan solusi kolaboratif berlandaskan nilai **${kbcPillars.join(', ')}**.`;
+    const cpAcuan = capaianPembelajaranTeks && capaianPembelajaranTeks.trim().length > 10
+      ? capaianPembelajaranTeks.trim()
+      : `Pada akhir Fase ${fase}, peserta didik mampu menganalisis, menginternalisasi, dan menerapkan kompetensi ${topikMateri} pada mata pelajaran ${mapel} dalam memecahkan masalah kontekstual berlandaskan nilai keilmuan dan akhlakul karimah.`;
+
+    return `# MODUL AJAR KURIKULUM BERBASIS CINTA (KBC) & DEEP LEARNING
+## MATA PELAJARAN: ${mapel.toUpperCase()} — FASE ${fase} KELAS ${kelas}
+## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
+*Disusun Sesuai KMA 1503/2025 & Kepdirjen Pendis 6077/2025*
+
+---
+
+## A. IDENTIFIKASI KESIAPAN PESERTA DIDIK & MATERI
+- **Karakteristik Peserta Didik :** ${karakteristik}
+- **Alokasi Waktu :** ${alokasiWaktu || '4 JP (2 Pertemuan)'}
+- **Model Pembelajaran Utama :** ${model}
+- **Pendekatan Pembelajaran :** Deep Learning (*Mindful, Meaningful, Joyful Learning*) terintegrasi Panca Cinta KBC.
+
+${kbcInsersiTableMarkdown}
+
+---
+
+## B. 8 DIMENSI PROFIL LULUSAN (PEMBELAJARAN MENDALAM)
+Dimensi Profil Lulusan yang dikuatkan dalam Modul Ajar ini meliputi:
+**${dimensiList}**
+
+---
+
+## C. DESAIN PEMBELAJARAN
+
+### 1. Capaian Pembelajaran (CP) Acuan
+${cpAcuan}
+
+| Elemen CP | Deskripsi Capaian Pembelajaran & Kompetensi Target |
+|:---|:---|
+| **Pemahaman Konseptual** | Peserta didik memahami dan menganalisis hakikat **${topikMateri}** secara komprehensif dan berkesadaran (*mindful*). |
+| **Keterampilan Proses & Penalaran** | Peserta didik mengevaluasi masalah kontekstual dan merumuskan solusi berbasis dalil/fakta ilmiah (*meaningful*). |
+| **Internalisasi Karakter Panca Cinta (KBC)** | Peserta didik mewujudkan pemahaman melalui sikap kasih sayang, adab santun, dan karya bermanfaat (*joyful*) sesuai pilar **${kbcPillars.join(', ')}**. |
+
+### 2. Lintas Disiplin Ilmu
+${lintasIlmu}
+
+### 3. Tujuan Pembelajaran (TP)
+${customTPBlock}
+
+---
+
+## D. LANGKAH-LANGKAH PEMBELAJARAN BERDIFERENSIASI (DEEP LEARNING & KBC)
+
+| Tahapan Kegiatan | Deskripsi Aktivitas Pembelajaran (Mindful, Meaningful, Joyful) | Alokasi Waktu |
+|:---|:---|:---:|
+| **1. PENDAHULUAN**<br>*(Mindful & Welcoming with Love)* | - Guru membuka kelas dengan salam hangat, senyuman tulus, dan doa tholabul ilmi.<br>- Melaksanakan *mindfulness check-in* singkat untuk menata niat belajar karena Allah SWT.<br>- Apersepsi kontekstual mengaitkan fenomena nyata dengan **${topikMateri}** dan nilai **${kbcPillars[0]}**.<br>- Menyampaikan Tujuan Pembelajaran dan kesepakatan adab belajar bersama. | 15 Menit |
+| **2. KEGIATAN INTI**<br>*(Sintaks ${model})* | **A. Eksplorasi Berkesadaran (Diferensiasi Konten):**<br>- Guru menyajikan bahan bacaan, infografis, dan studi kasus nyata terkait **${topikMateri}**.<br>- Peserta didik mengamati dan mencatat pertanyaan pemantik secara kritis.<br><br>**B. Kolaborasi Bermakna (Diferensiasi Proses):**<br>- Peserta didik berdiskusi dalam kelompok heterogen menggunakan panduan LKPD KBC.<br>- Guru mendampingi kelompok yang memerlukan *scaffolding* dengan sabar dan penuh kasih sayang.<br><br>**C. Kreasi & Presentasi Menggembirakan (Diferensiasi Produk):**<br>- Kelompok menyajikan gagasan/solusi dalam bentuk peta konsep, ringkasan, atau demonstrasi.<br>- Apresiasi silang antarkelompok dengan bahasa yang santun (*ta'addub*). | 60 Menit |
+| **3. PENUTUP**<br>*(Refleksi Panca Cinta)* | - Peserta didik bersama guru menyimpulkan esensi keilmuan dan hikmah materi **${topikMateri}**.<br>- Refleksi afektif: *"Bagaimana materi hari ini menumbuhkan rasa cinta kita kepada Tuhan, ilmu, dan sesama?"*<br>- Penyampaian agenda berikutnya, doa kafaratul majelis, dan salam. | 15 Menit |
+
+---
+
+## E. ASESMEN PEMBELAJARAN KOMPREHENSIF
+- **Cakupan Asesmen :** ${asesmenList}
+1. **Asesmen Diagnostik (Awal):** Pemetaan kesiapan awal dan minat belajar siswa melalui pertanyaan pemantik.
+2. **Asesmen Formatif (Proses):** Penilaian kinerja diskusi kelompok dan ketuntasan LKPD.
+3. **Asesmen Sikap & Karakter KBC (Jurnal Anekdotal):** Observasi adab menuntut ilmu, empati terhadap teman, dan kejujuran akademik.
+4. **Asesmen Sumatif (Akhir Modul):** Evaluasi ketercapaian Tujuan Pembelajaran berbasis rubrik interval KKTP.`;
+  }
+
+  if (docType === 'lkpd') {
+    const cpAcuan = capaianPembelajaranTeks && capaianPembelajaranTeks.trim().length > 10
+      ? capaianPembelajaranTeks.trim()
+      : `Peserta didik mampu menganalisis konsep dan memecahkan persoalan kontekstual pada materi ${topikMateri} (${mapel}) secara kritis, kolaboratif, dan berakhlak mulia.`;
+    const customTP = tujuanPembelajaranTeks && tujuanPembelajaranTeks.trim().length > 0
+      ? tujuanPembelajaranTeks.trim()
+      : `Melalui diskusi kelompok berbasis kasih sayang dan nalar kritis, peserta didik mampu menganalisis permasalahan kontekstual **${topikMateri}** serta menyusun solusi aplikatif dengan tepat.`;
+
+    return `# LEMBAR KERJA PESERTA DIDIK (LKPD) BERBASIS KBC & DEEP LEARNING
+## MATA PELAJARAN: ${mapel.toUpperCase()} — KELAS ${kelas} (FASE ${fase})
+## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
+
+---
+
+### A. IDENTITAS KELOMPOK SANTRI
+- **Nama Kelompok :** ............................................................................
+- **Anggota Kelompok :**
+  1. ...................................................... (No. Absen: ......)
+  2. ...................................................... (No. Absen: ......)
+  3. ...................................................... (No. Absen: ......)
+  4. ...................................................... (No. Absen: ......)
+- **Topik / Materi Pokok :** **${topikMateri}**
+- **Alokasi Waktu Pengerjaan :** ${alokasiWaktu || '2 x 45 Menit'}
+
+---
+
+### B. LANDASAN CAPAIAN & TUJUAN PEMBELAJARAN
+- **Capaian Pembelajaran Acuan :** ${cpAcuan}
+- **Tujuan Pembelajaran (TP) :** ${customTP}
+- **Pilar Panca Cinta KBC yang Dikuatkan :** **${kbcPillars.join(', ')}**
+${instruksiKhusus ? `- **Instruksi Khusus Guru :** ${instruksiKhusus}` : ''}
+
+---
+
+### C. PETUNJUK BELAJar & ADAB THALABUL ILMI (MINDFULNESS KBC)
+1. Mulailah kegiatan kerja kelompok dengan membaca *Basmalah* dan menata niat menuntut ilmu karena Allah SWT.
+2. Bacalah wacana stimulus dengan saksama (*Mindful Reading*).
+3. Berdiskusilah dengan santun, hargai pendapat setiap rekan kelompok, dan saling membantulah dalam memahami materi (*Ta'awun & Rahmah*).
+
+${kbcInsersiTableMarkdown}
+
+---
+
+### D. WACANA STIMULUS KONTEKSTUAL (MEANINGFUL LEARNING)
+> **Studi Kasus Kontekstual: "${topikMateri} dalam Kehidupan Sehari-hari"**  
+> Dalam kehidupan masyarakat modern saat ini, pemahaman yang mendalam mengenai **${topikMateri}** menjadi sangat penting agar ilmu yang dipelajari di madrasah tidak berhenti sebagai teori hafalan semata, melainkan mampu menghadirkan solusi yang membawa kemaslahatan (*maslahah ammah*). Namun, masih sering dijumpai kurangnya kesadaran dalam menerapkan prinsip **${topikMateri}** secara bijaksana dan bertanggung jawab. Bagaimana kelompok kalian menganalisis fenomena tersebut dari sudut pandang keilmuan **${mapel}** dan nilai kasih sayang (**${kbcPillars[0]}**)?
+
+---
+
+### E. AKTIVITAS PENYELIDIKAN & DISKUSI KELOMPOK
+
+#### Aktivitas 1: Identifikasi Konsep Kunci (Mindful Exploration)
+Berdasarkan wacana dan buku sumber yang kalian pelajari, tuliskan 3 konsep penting dalam materi **${topikMateri}**:
+| No | Konsep / Istilah Kunci | Penjelasan Menurut Kelompok Kalian | Contoh Nyata di Lingkungan Sekitar |
+|:---:|:---|:---|:---|
+| 1 | ........................................... | ........................................................................ | ........................................................................ |
+| 2 | ........................................... | ........................................................................ | ........................................................................ |
+| 3 | ........................................... | ........................................................................ | ........................................................................ |
+
+#### Aktivitas 2: Analisis Masalah & Pemecahan Kasus (HOTS & Deep Learning)
+1. **Mengapa pemahaman yang keliru terhadap ${topikMateri} dapat menimbulkan masalah dalam praktik kehidupan?**  
+   *Jawaban Kelompok:*  
+   ..............................................................................................................................................................................  
+   ..............................................................................................................................................................................
+2. **Rumuskan solusi konkret dan inovatif yang dapat dilakukan oleh pelajar madrasah terkait ${topikMateri}!**  
+   *Jawaban Kelompok:*  
+   ..............................................................................................................................................................................  
+   ..............................................................................................................................................................................
+
+---
+
+### F. REFLEKSI DIRI & AKSI CINTA (PANCA CINTA KBC)
+| Pertanyaan Refleksi Batin | Jawaban / Komitmen Diri Santri |
+|:---|:---|
+| **1. Hikmah apa yang membuat kalian semakin bersyukur dan mencintai ilmu setelah mempelajari ${topikMateri}?** | .......................................................................................................... |
+| **2. Aksi nyata apa yang akan kalian terapkan minggu ini sebagai wujud nilai ${kbcPillars.join(' & ')}?** | .......................................................................................................... |
+
+---
+
+### G. RUBRIK PENILAIAN LKPD (DIISI OLEH GURU)
+| Aspek Penilaian | Bobot | Skor (0-100) | Catatan Apresiasi Guru |
+|:---|:---:|:---:|:---|
+| Ketepatan Konsep & Kedalaman Analisis | 40% | ........ | ................................................................................ |
+| Kreativitas Solusi & Kejelasan Argumen | 30% | ........ | ................................................................................ |
+| Kolaborasi, Adab Diskusi & Refleksi KBC | 30% | ........ | ................................................................................ |
+| **TOTAL NILAI KELOMPOK** | **100%** | **........** | |`;
   }
 
   if (docType === 'presensi_kbm') {
-    return `# PRESENSI HARIAN SISWA KBM
-**MA NU 01 BANYUPUTIH**  
-*Jl. Lapangan 9A Banyuputih, Kab. Batang | NPSN: 20364930 | TA: ${tahunPelajaran}*
+    return `# JURNAL MENGAJAR & PRESENSI HARIAN KBM (BERBASIS KBC)
+**MA NU 01 BANYUPUTIH BATANG**  
+*Jl. Lapangan 9A Banyuputih, Kab. Batang | NPSN: 20364930 | Tahun Pelajaran: ${tahunPelajaran}*
 
 ---
 
-### INFORMASI KEGIATAN BELAJAR MENGAJAR (KBM)
-- **Hari & Tanggal :** Senin, 21 September 2026
+### A. IDENTITAS & AGENDA JURNAL MENGAJAR HARIAN
 - **Mata Pelajaran :** ${mapel}
-- **Kelas / Fase :** ${kelas} / Fase ${fase}
-- **Semester :** Semester ${semester}
-- **Materi Pokok :** ${topikMateri}
+- **Kelas / Fase / Semester :** ${kelas} / Fase ${fase} / Semester ${semester}
+- **Materi Pokok / Topik :** ${topikMateri}
+- **Alokasi Waktu :** ${alokasiWaktu || '2 JP (2 x 45 Menit)'}
+- **Fokus Panca Cinta KBC :** ${kbcPillars.join(', ')}
 - **Guru Pengampu :** ${guruPengampu}
+${instruksiKhusus ? `- **Kondisi Khusus Kelas :** ${instruksiKhusus}` : ''}
+
+| Pertemuan Ke- | Hari / Tanggal | Jam Ke- | Ringkasan Materi & Aktivitas Deep Learning | Ketercapaian TP | Tindak Lanjut |
+|:---:|:---:|:---:|:---|:---:|:---|
+| 1 | .......................... | 1 - 2 | Eksplorasi konsep **${topikMateri}** dengan diskusi kelompok dan penguatan nilai **${kbcPillars[0]}** | Tuntas (85%) | Pendampingan 2 siswa yang izin |
 
 ---
 
-### DAFTAR PRESENSI PESERTA DIDIK KELAS ${kelas}
+### B. DAFTAR PRESENSI & OBSERVASI ADAB PESERTA DIDIK KELAS ${kelas}
 
-| No | NISN | Nama Peserta Didik | L/P | Status Kehadiran | Catatan Karakter & Keaktifan (KBC) |
+| No | NISN | Nama Peserta Didik | L/P | Status (H/S/I/A) | Catatan Jurnal Anekdotal Sikap & Karakter KBC |
 |:---:|:---:|:---|:---:|:---:|:---|
-| 1 | 0087421101 | Ahmad Fadlil Maulana | L | **Hadir** | Antusias dan aktif berdiskusi |
-| 2 | 0087421102 | Aisyah Nur Kamila | P | **Hadir** | Mampu menjawab pemantik lisan dengan santun |
-| 3 | 0087421103 | Bagas Dwi Prasetyo | L | **Hadir** | Kerja sama kelompok sangat baik |
-| 4 | 0087421104 | Dina Khoirunnisa | P | **Sakit** | Izin sakit surat dokter terlampir |
-| 5 | 0087421105 | Farhan Maulana Malik | L | **Hadir** | Memimpin doa pembuka dengan khusyuk |
-| 6 | 0087421106 | Fatimatuz Zahra | P | **Hadir** | Catatan LKPD rapi dan runtut |
-| 7 | 0087421107 | Ilham Syarif Hidayat | L | **Izin** | Dispensasi kegiatan olimpiade madrasah |
-| 8 | 0087421108 | Khusnul Khotimah | P | **Hadir** | Menunjukkan adab santun dan sopan |
-| 9 | 0087421109 | M. Rizqi Firmansyah | L | **Hadir** | Mengikuti mindful learning dengan tertib |
-| 10 | 0087421110 | Nabila Ayu Lestari | P | **Hadir** | Kreatif dalam menyusun simpulan materi |
+| 1 | 0087421101 | Ahmad Fadlil Maulana | L | **H** | Antusias berdiskusi dan membantu teman memahami materi (*Cinta Sesama*) |
+| 2 | 0087421102 | Aisyah Nur Kamila | P | **H** | Menjawab pertanyaan pemantik dengan santun dan argumentatif (*Cinta Ilmu*) |
+| 3 | 0087421103 | Bagas Dwi Prasetyo | L | **H** | Kerja sama kelompok sangat baik dan menjaga kebersihan meja kelas (*Cinta Lingkungan*) |
+| 4 | 0087421104 | Dina Khoirunnisa | P | **S** | Izin sakit (surat keterangan terlampir — didoakan kesembuhan bersama di kelas) |
+| 5 | 0087421105 | Farhan Maulana Malik | L | **H** | Memimpin doa pembuka KBM dengan khusyuk dan tertib (*Cinta Allah & Rasul-Nya*) |
+| 6 | 0087421106 | Fatimatuz Zahra | P | **H** | Catatan LKPD sangat rapi, runtut, dan mandiri |
+| 7 | 0087421107 | Ilham Syarif Hidayat | L | **I** | Dispensasi mengikuti pembinaan olimpiade madrasah |
+| 8 | 0087421108 | Khusnul Khotimah | P | **H** | Menunjukkan adab *ta'addub* dan menghargai pendapat kelompok lain |
+| 9 | 0087421109 | M. Rizqi Firmansyah | L | **H** | Mengikuti sesi *mindful learning* dengan fokus dan aktif bertanya |
+| 10 | 0087421110 | Nabila Ayu Lestari | P | **H** | Kreatif dalam menyusun kesimpulan peta konsep materi |
 
 ---
 
-### REKAPITULASI KEHADIRAN KBM
-- **Total Siswa :** 10 Siswa
-- **Hadir (H) :** 8 Siswa (80%)
-- **Sakit (S) :** 1 Siswa (10%)
-- **Izin (I) :** 1 Siswa (10%)
-- **Alpa (A) :** 0 Siswa (0%)
+### C. REKAPITULASI KEHADIRAN KBM
+- **Jumlah Peserta Didik :** 10 Siswa | **Hadir (H) :** 8 Siswa | **Sakit (S) :** 1 Siswa | **Izin (I) :** 1 Siswa | **Alpa (A) :** 0 Siswa
 
 ---
 
-### JURNAL REFLEKSI GURU (DEEP LEARNING & KBC)
-1. **Pencapaian Pembelajaran:** Peserta didik mampu memahami konsep esensial materi ${topikMateri} melalui pendekatan mindful dan joyful learning.
-2. **Karakter Kasih Sayang & Adab:** Interaksi antarpeserta didik berlangsung santun, saling menghargai pendapat, dan tidak ada diskriminasi.
-3. **Tindak Lanjut:** Melakukan penguatan bagi siswa yang memerlukan pendampingan khusus pada pertemuan berikutnya.`;
+### D. REFLEKSI GURU (DEEP LEARNING & KURIKULUM BERBASIS CINTA)
+1. **Keterlaksanaan Mindful, Meaningful & Joyful Learning:** Peserta didik memahami esensi **${topikMateri}** dengan suasana kelas yang kondusif, hangat, dan interaktif.
+2. **Evaluasi Insersi Panca Cinta KBC:** Nilai **${kbcPillars.join(', ')}** tampak nyata dalam adab bertanya, kejujuran mengerjakan tugas, serta doa bersama bagi rekan yang sedang sakit.
+3. **Rencana Tindak Lanjut:** Memberikan ringkasan materi mandiri kepada siswa yang berhalangan hadir agar tidak tertinggal pada pertemuan berikutnya.`;
   }
 
   if (docType === 'prota' || docType === 'prota_prosem') {
-    return `# PROGRAM TAHUNAN KURIKULUM MERDEKA
-**MA NU 01 BANYUPUTIH**  
-*Jl. Lapangan 9A Banyuputih, Kab. Batang | NPSN: 20364930 | TA: ${tahunPelajaran}*
+    const cpAcuan = capaianPembelajaranTeks && capaianPembelajaranTeks.trim().length > 10
+      ? capaianPembelajaranTeks.trim()
+      : `Pada akhir Fase ${fase}, peserta didik mampu menginterpretasi, mengaitkan, dan menerapkan pemahaman konsep dasar serta keterampilan aplikatif mata pelajaran ${mapel} untuk memecahkan persoalan kontekstual secara individu maupun kelompok berlandaskan nilai Panca Cinta KBC.`;
+
+    return `# PROGRAM TAHUNAN (PROTA) KURIKULUM MERDEKA & KBC
+**MA NU 01 BANYUPUTIH BATANG**  
+*Jl. Lapangan 9A Banyuputih, Kab. Batang | NPSN: 20364930 | Tahun Pelajaran: ${tahunPelajaran}*
 
 ---
 
-### A. CAPAIAN PEMBELAJARAN FASE ${fase}
-Pada akhir Fase ${fase}, peserta didik mampu menginterpretasi, mengaitkan, membandingkan pemahaman konsep dasar dan keterampilan aplikatif mata pelajaran ${mapel} sebagai pengetahuan dasar untuk memecahkan persoalan kontekstual secara individu ataupun kelompok sebagai wujud aktualisasi diri.
+### A. CAPAIAN PEMBELAJARAN (CP) ACUAN FASE ${fase}
+${cpAcuan}
+
+${kbcInsersiTableMarkdown}
 
 ---
 
-### B. ELEMEN CAPAIAN PEMBELAJARAN
-
-| ELEMEN | CAPAIAN PEMBELAJARAN |
-|---|---|
-| **Mengalami (Experiencing)** | Peserta didik menginterpretasi dan mengaitkan konsep utama pada materi ${mapel} dalam kehidupan sehari-hari. |
-| **Merefleksikan (Reflecting)** | Peserta didik membandingkan konsep dasar dengan mengapresiasi keragaman pandangan serta membuat ide-ide baru ke dalam karyanya. |
-| **Berpikir & Bekerja Kritis (Thinking and Working)** | Peserta didik merancang dan menunjukkan hasil analisis ${mapel} secara individu maupun berkelompok. |
-| **Menciptakan (Creating)** | Peserta didik merancang dan menghasilkan produk/karya aplikatif berdasarkan konsep materi yang dipelajari. |
-| **Berdampak (Impacting)** | Peserta didik mengaktualisasikan diri dan menginternalisasi nilai adab serta akhlak mulia dalam bermasyarakat. |
-
----
-
-### C. PROGRAM TAHUNAN TAHUN PELAJARAN ${tahunPelajaran}
-
-#### DISTRIBUSI SEMESTER I (GANJIL)
+### B. MATRIKS DISTRIBUSI PROGRAM TAHUNAN (${tahunPelajaran})
 - **Mata Pelajaran :** ${mapel}
-- **Satuan Pendidikan :** MA NU 01 Banyuputih
-- **Tahun Pelajaran :** ${tahunPelajaran}
-- **Fase & Kelas / Semester :** Fase ${fase}, Kelas ${kelas} / I (Ganjil)
+- **Fase / Kelas :** Fase ${fase} / Kelas ${kelas}
+- **Target Total Alokasi Waktu :** ${alokasiWaktu || '72 JP / Tahun'}
 
-| Unit | Materi Pokok | Sub Materi | Alur Tujuan Pembelajaran | Alokasi Waktu |
+#### 1. SEMESTER I (GANJIL)
+| Unit / Bab | Materi Pokok / Ruang Lingkup | Alur Tujuan Pembelajaran (ATP) | Fokus Panca Cinta KBC & Materi Insersi | Alokasi Waktu |
 |:---:|:---|:---|:---|:---:|
-| **Unit 1** | Landasan & Konsep Pokok ${mapel} | 1. Pengertian dan Ruang Lingkup<br>2. Nilai Dasar dan Karakteristik<br>3. Hubungan Konseptual & Konteks | 1. Peserta didik mampu menginterpretasi dan mengaitkan konsep pokok ${mapel} secara mendalam.<br>2. Peserta didik mampu menyajikan hasil telaah konsep secara sistematis. | **10 JP** |
-| **Unit 2** | Aplikasi & Eksplorasi Kontekstual | 1. Identifikasi Studi Kasus Nyata<br>2. Analisis Kritis Masalah Kontekstual<br>3. Perumusan Solusi & Ide Kreatif | 1. Peserta didik mampu membandingkan berbagai pendekatan pemecahan masalah serta membuat alternatif gagasan.<br>2. Peserta didik mampu mempresentasikan analisis kontekstual secara kolaboratif. | **9 JP** |
-| **JUMLAH** | | | | **19 JP** |
+| **Unit 1** | Landasan & Konsep Pokok ${mapel} (${topikMateri}) | 1.1 Mengidentifikasi dan menjelaskan konsep fundamental serta dalil/prinsip dasar ${mapel}.<br>1.2 Menyajikan hasil telaah konsep secara sistematis. | **${kbcPillars[0] || 'Cinta Allah & Rasul-Nya'}** & **Cinta Ilmu** | **18 JP** |
+| **Unit 2** | Analisis Kontekstual & Studi Kasus ${mapel} | 2.1 Menganalisis keterkaitan konsep dengan problematika kehidupan nyata.<br>2.2 Merumuskan solusi kolaboratif secara kritis dan santun. | **${kbcPillars[1] || 'Cinta Diri & Sesama'}** (*Tasamuh & Ta'awun*) | **18 JP** |
+| **SUBTOTAL SEMESTER I** | | | | **36 JP** |
+
+#### 2. SEMESTER II (GENAP)
+| Unit / Bab | Materi Pokok / Ruang Lingkup | Alur Tujuan Pembelajaran (ATP) | Fokus Panca Cinta KBC & Materi Insersi | Alokasi Waktu |
+|:---:|:---|:---|:---|:---:|
+| **Unit 3** | Pendalaman Prosedural & Aplikasi Praktis ${mapel} | 3.1 Menerapkan kaidah/prosedur analisis pada fenomena sosial dan lingkungan.<br>3.2 Mengevaluasi dampak penerapan konsep secara bertanggung jawab. | **${kbcPillars[2] || 'Cinta Lingkungan'}** | **18 JP** |
+| **Unit 4** | Proyek Kolaboratif & Karya Inovatif ${mapel} | 4.1 Merancang dan menghasilkan produk/karya pemecahan masalah berbasis tim.<br>4.2 Mempresentasikan dan merefleksikan nilai kemanfaatan karya bagi umat dan bangsa. | **Cinta Tanah Air** & **Cinta Ilmu** | **18 JP** |
+| **SUBTOTAL SEMESTER II** | | | | **36 JP** |
 
 ---
 
-#### DISTRIBUSI SEMESTER II (GENAP)
-- **Mata Pelajaran :** ${mapel}
-- **Satuan Pendidikan :** MA NU 01 Banyuputih
-- **Tahun Pelajaran :** ${tahunPelajaran}
-- **Fase & Kelas / Semester :** Fase ${fase}, Kelas ${kelas} / II (Genap)
-
-| Unit | Materi Pokok | Sub Materi | Alur Tujuan Pembelajaran | Alokasi Waktu |
-|:---:|:---|:---|:---|:---:|
-| **Unit 3** | Kolaborasi Proyek & Kreasi Aplikatif | 1. Menemukan Ide atau Gagasan Proyek<br>2. Perencanaan Proyek Individu & Kelompok<br>3. Eksplorasi & Pelaksanaan Proyek<br>4. Uji Coba & Penyempurnaan Karya<br>5. Evaluasi Kinerja dan Refleksi | 1. Peserta didik mampu merancang hasil karya/proyek aplikatif ${mapel} secara individu maupun kelompok.<br>2. Peserta didik mampu menampilkan dan mengevaluasi hasil proyek berbasis umpan balik rekan sejawat. | **17 JP** |
-| **JUMLAH** | | | | **17 JP** |
-
----
-
-### REKAPITULASI TOTAL ALOKASI WAKTU TAHUNAN
-- **Alokasi Semester I (Ganjil) :** 19 JP
-- **Alokasi Semester II (Genap) :** 17 JP
-- **TOTAL KESELURUHAN 1 TAHUN PELAJARAN :** 36 JP
-`;
+### C. REKAPITULASI ALOKASI WAKTU TAHUNAN
+- **Semester I (Ganjil) :** 36 JP
+- **Semester II (Genap) :** 36 JP
+- **Total Keseluruhan 1 Tahun Pelajaran :** **72 JP** *(Dapat disesuaikan dengan struktur kurikulum kelas ${kelas})*`;
   }
 
   if (docType === 'prosem') {
     const isSemester2 = semester === '2';
     const semName = isSemester2 ? 'II (Genap)' : 'I (Ganjil)';
-    return `<div style="background-color: #65a30d; color: white; padding: 10px 14px; text-align: center; border-radius: 4px; font-weight: bold; margin-bottom: 14px;">
-  <div style="font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase;">PROGRAM SEMESTER KURIKULUM MERDEKA</div>
-  <div style="font-size: 13px; text-transform: uppercase; margin-top: 2px;">${mapel.toUpperCase()} FASE ${fase} KELAS ${kelas}</div>
+    const agendaInfo = agendaMadrasah && agendaMadrasah.trim().length > 0
+      ? agendaMadrasah.trim()
+      : (isSemester2
+          ? 'Libur Awal Semester Genap (Januari M1-M2), ASTS Genap (Maret M3-M4), Libur Hari Raya Idul Fitri (April M1-M2), ASAT/ASESGEN (Juni M1-M2), Pembagian Rapor & Libur Akhir Tahun (Juni M3-M5).'
+          : 'MATSAMA & Kegiatan Awal Tahun (Juli M1-M2), ASTS Gasal (September M4-M5), Peringatan Hari Santri & Maulid Nabi (Oktober M4), ASAS/ASESGA (Desember M1-M2), Pengolahan Rapor & Libur Semester (Desember M3-M5).');
+
+    return `<div style="background-color: #045f3b; color: white; padding: 10px 14px; text-align: center; border-radius: 4px; font-weight: bold; margin-bottom: 14px;">
+  <div style="font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase;">PROGRAM SEMESTER (PROSEM) KURIKULUM MERDEKA &amp; KBC</div>
+  <div style="font-size: 13px; text-transform: uppercase; margin-top: 2px;">${mapel.toUpperCase()} — FASE ${fase} KELAS ${kelas} SEMESTER ${semName}</div>
 </div>
 
-<div style="font-size: 11px; margin-bottom: 14px; line-height: 1.6; font-weight: 500;">
-  <table style="border: none; border-collapse: collapse; width: 100%; max-width: 480px;">
-    <tr><td style="border:none; padding: 1px 0; width: 170px; font-weight: 600;">Mata Pelajaran</td><td style="border:none; padding: 1px 0;">: ${mapel}</td></tr>
-    <tr><td style="border:none; padding: 1px 0; font-weight: 600;">Satuan Pendidikan</td><td style="border:none; padding: 1px 0;">: MA NU 01 Banyuputih</td></tr>
-    <tr><td style="border:none; padding: 1px 0; font-weight: 600;">Tahun Pelajaran</td><td style="border:none; padding: 1px 0;">: ${tahunPelajaran}</td></tr>
-    <tr><td style="border:none; padding: 1px 0; font-weight: 600;">Fase &amp; Kelas/Semester</td><td style="border:none; padding: 1px 0;">: ${kelas} / ${semName}</td></tr>
+<div style="font-size: 11px; margin-bottom: 12px; line-height: 1.6; font-weight: 500;">
+  <table style="border: none; border-collapse: collapse; width: 100%;">
+    <tr><td style="border:none; padding: 1px 0; width: 190px; font-weight: 600;">Mata Pelajaran</td><td style="border:none; padding: 1px 0;">: ${mapel}</td></tr>
+    <tr><td style="border:none; padding: 1px 0; font-weight: 600;">Satuan Pendidikan</td><td style="border:none; padding: 1px 0;">: MA NU 01 Banyuputih Batang</td></tr>
+    <tr><td style="border:none; padding: 1px 0; font-weight: 600;">Tahun Pelajaran / Semester</td><td style="border:none; padding: 1px 0;">: ${tahunPelajaran} / Semester ${semName}</td></tr>
+    <tr><td style="border:none; padding: 1px 0; font-weight: 600;">Fokus Panca Cinta KBC</td><td style="border:none; padding: 1px 0;">: ${kbcPillars.join(', ')}</td></tr>
+    <tr><td style="border:none; padding: 1px 0; font-weight: 600;">Acuan Agenda Kalender Madrasah</td><td style="border:none; padding: 1px 0;">: ${agendaInfo}</td></tr>
   </table>
 </div>
 
 <table style="width: 100%; border-collapse: collapse; font-size: 9.5px; border: 1px solid #1e293b;">
   <thead>
     <tr style="background-color: #f8fafc;">
-      <th rowspan="2" style="border: 1px solid #1e293b; padding: 6px 4px; width: 110px; text-align: center; font-weight: bold;">BAB</th>
-      <th rowspan="2" style="border: 1px solid #1e293b; padding: 6px 6px; width: 230px; text-align: center; font-weight: bold;">Alur dan Tujuan Pembelajaran</th>
+      <th rowspan="2" style="border: 1px solid #1e293b; padding: 6px 4px; width: 110px; text-align: center; font-weight: bold;">BAB &amp; TEMA KBC</th>
+      <th rowspan="2" style="border: 1px solid #1e293b; padding: 6px 6px; width: 230px; text-align: center; font-weight: bold;">Alur dan Tujuan Pembelajaran (ATP)</th>
       <th rowspan="2" style="border: 1px solid #1e293b; padding: 6px 4px; width: 55px; text-align: center; font-weight: bold;">Alokasi Waktu</th>
       <th colspan="4" style="border: 1px solid #1e293b; padding: 4px; text-align: center; font-weight: bold;">${isSemester2 ? 'Januari' : 'Juli'}</th>
       <th colspan="5" style="border: 1px solid #1e293b; padding: 4px; text-align: center; font-weight: bold;">${isSemester2 ? 'Februari' : 'Agustus'}</th>
@@ -5279,20 +5596,20 @@ Pada akhir Fase ${fase}, peserta didik mampu menginterpretasi, mengaitkan, memba
   <tbody>
     <!-- BAB 1 -->
     <tr>
-      <td rowspan="2" style="border: 1px solid #1e293b; padding: 6px; font-weight: bold; vertical-align: top; background-color: #fafafa;">BAB 1 Pendalaman Konsep Pokok ${mapel}</td>
-      <td style="border: 1px solid #1e293b; padding: 6px; vertical-align: top;">1. Peserta didik mampu menginterpretasi dan mengaitkan konsep utama pada materi ${mapel} dalam kehidupan nyata.</td>
+      <td rowspan="2" style="border: 1px solid #1e293b; padding: 6px; font-weight: bold; vertical-align: top; background-color: #fafafa;">BAB 1: ${topikMateri}<br><span style="font-size:8px; color:#045f3b;">(${kbcPillars[0] || 'Cinta Ilmu'})</span></td>
+      <td style="border: 1px solid #1e293b; padding: 6px; vertical-align: top;">1. Peserta didik mampu menginterpretasi dan mengaitkan konsep utama pada materi ${topikMateri} (${mapel}) dalam kehidupan nyata.</td>
       <td style="border: 1px solid #1e293b; padding: 6px; text-align: center; vertical-align: middle; font-weight: bold;">4 JP</td>
       <td rowspan="6" style="background-color: #f59e0b; border: 1px solid #1e293b; text-align: center; vertical-align: middle; padding: 2px;">
         <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 8px; font-weight: 600; margin: auto;">${isSemester2 ? 'Libur Semester' : 'Libur Akhir Tahun'}</div>
       </td>
       <td rowspan="6" style="background-color: #f59e0b; border: 1px solid #1e293b; text-align: center; vertical-align: middle; padding: 2px;">
-        <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 8px; font-weight: 600; margin: auto;">${isSemester2 ? 'Libur Semester' : 'Libur Akhir Tahun'}</div>
+        <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 8px; font-weight: 600; margin: auto;">${isSemester2 ? 'Libur Semester' : 'MATSAMA'}</div>
       </td>
       <td rowspan="6" style="background-color: #f59e0b; border: 1px solid #1e293b; text-align: center; vertical-align: middle; padding: 2px;">
-        <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 8px; font-weight: 600; margin: auto;">${isSemester2 ? 'Awal KBM' : 'Kegiatan Peserta didik'}</div>
+        <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 8px; font-weight: 600; margin: auto;">${isSemester2 ? 'Awal KBM' : 'Awal KBM'}</div>
       </td>
       <td rowspan="6" style="background-color: #f59e0b; border: 1px solid #1e293b; text-align: center; vertical-align: middle; padding: 2px;">
-        <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 8px; font-weight: 600; margin: auto;">${isSemester2 ? 'Awal KBM' : 'Kegiatan Peserta didik'}</div>
+        <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 8px; font-weight: 600; margin: auto;">${isSemester2 ? 'Orientasi KBC' : 'Orientasi KBC'}</div>
       </td>
       <td style="border: 1px solid #1e293b; text-align: center; font-weight: bold;">2</td>
       <td style="border: 1px solid #1e293b; text-align: center; font-weight: bold;">2</td>
@@ -5325,7 +5642,7 @@ Pada akhir Fase ${fase}, peserta didik mampu menginterpretasi, mengaitkan, memba
         <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 7.5px; font-weight: 600; margin: auto;">${isSemester2 ? 'Asesmen Sumatif Akhir Tahun' : 'Asesmen Sumatif Akhir Semester'}</div>
       </td>
       <td rowspan="6" style="background-color: #f59e0b; border: 1px solid #1e293b; text-align: center; vertical-align: middle; padding: 2px;">
-        <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 7.5px; font-weight: 600; margin: auto;">Pengolahan Nilai & Raport</div>
+        <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 7.5px; font-weight: 600; margin: auto;">Pengolahan Nilai &amp; Raport</div>
       </td>
       <td rowspan="6" style="background-color: #f59e0b; border: 1px solid #1e293b; text-align: center; vertical-align: middle; padding: 2px;">
         <div style="writing-mode: vertical-lr; transform: rotate(180deg); white-space: nowrap; font-size: 7.5px; font-weight: 600; margin: auto;">${isSemester2 ? 'Libur Akhir TP' : 'Libur Akhir Semester Gasal'}</div>
@@ -5359,7 +5676,7 @@ Pada akhir Fase ${fase}, peserta didik mampu menginterpretasi, mengaitkan, memba
 
     <!-- BAB 2 -->
     <tr>
-      <td rowspan="2" style="border: 1px solid #1e293b; padding: 6px; font-weight: bold; vertical-align: top; background-color: #fafafa;">BAB 2 Aplikasi &amp; Eksplorasi Kontekstual</td>
+      <td rowspan="2" style="border: 1px solid #1e293b; padding: 6px; font-weight: bold; vertical-align: top; background-color: #fafafa;">BAB 2: Aplikasi Kontekstual<br><span style="font-size:8px; color:#045f3b;">(${kbcPillars[1] || 'Cinta Sesama'})</span></td>
       <td style="border: 1px solid #1e293b; padding: 6px; vertical-align: top;">&bull; Peserta didik mampu membandingkan metode analisis untuk menyelesaikan masalah kontekstual.</td>
       <td style="border: 1px solid #1e293b; padding: 6px; text-align: center; vertical-align: middle; font-weight: bold;">4 JP</td>
       <td style="border: 1px solid #1e293b; text-align: center;"></td>
@@ -5406,7 +5723,7 @@ Pada akhir Fase ${fase}, peserta didik mampu menginterpretasi, mengaitkan, memba
 
     <!-- BAB 3 -->
     <tr>
-      <td rowspan="2" style="border: 1px solid #1e293b; padding: 6px; font-weight: bold; vertical-align: top; background-color: #fafafa;">BAB 3 Proyek Kreasi &amp; Pemecahan Masalah</td>
+      <td rowspan="2" style="border: 1px solid #1e293b; padding: 6px; font-weight: bold; vertical-align: top; background-color: #fafafa;">BAB 3: Proyek Kreasi &amp; Aksi Cinta<br><span style="font-size:8px; color:#045f3b;">(${kbcPillars[2] || 'Cinta Lingkungan'})</span></td>
       <td style="border: 1px solid #1e293b; padding: 6px; vertical-align: top;">&bull; Peserta didik mampu merancang karya inovatif berbasis konsep ${mapel} secara kolaboratif.</td>
       <td style="border: 1px solid #1e293b; padding: 6px; text-align: center; vertical-align: middle; font-weight: bold;">10 JP</td>
       <td style="border: 1px solid #1e293b; text-align: center;"></td>
@@ -5453,7 +5770,7 @@ Pada akhir Fase ${fase}, peserta didik mampu menginterpretasi, mengaitkan, memba
 
     <!-- ROW TOTAL -->
     <tr style="background-color: #fef08a; font-weight: bold; border-top: 2px solid #1e293b;">
-      <td colspan="2" style="border: 1px solid #1e293b; padding: 6px; text-align: center; font-weight: bold;">TOTAL</td>
+      <td colspan="2" style="border: 1px solid #1e293b; padding: 6px; text-align: center; font-weight: bold;">TOTAL JAM PELAJARAN EFEKTIF SEMESTER</td>
       <td style="border: 1px solid #1e293b; padding: 6px; text-align: center; font-weight: bold;">36 JP</td>
       <td style="border: 1px solid #1e293b; text-align: center;">0</td>
       <td style="border: 1px solid #1e293b; text-align: center;">0</td>
@@ -5490,221 +5807,166 @@ Pada akhir Fase ${fase}, peserta didik mampu menginterpretasi, mengaitkan, memba
   }
 
   if (docType === 'kktp') {
-    return `# KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP)
+    const customTP = tujuanPembelajaranTeks && tujuanPembelajaranTeks.trim().length > 0
+      ? tujuanPembelajaranTeks.trim()
+      : `Menganalisis konsep utama **${topikMateri}** dan menerapkannya dalam pemecahan masalah kontekstual secara berkesadaran.`;
+    const customInterval = intervalKKTP && intervalKKTP.trim().length > 0
+      ? intervalKKTP.trim()
+      : '0 - 60% (Baru Berkembang / Perlu Bimbingan), 61 - 75% (Layak / Cukup), 76 - 85% (Cakap / Baik — Batas Ketuntasan), 86 - 100% (Mahir / Sangat Baik)';
+
+    return `# KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP) BERBASIS KBC
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
+*Disusun Sesuai Panduan Pembelajaran dan Asesmen & Kepdirjen Pendis 6077/2025*
 
 ---
 
-### TABEL RUBRIK INTERVAL KRITERIA KETERCAPAIAN
+### A. IDENTITAS & RENTANG INTERVAL KKTP
+- **Mata Pelajaran :** ${mapel}
+- **Fase / Kelas / Semester :** Fase ${fase} / Kelas ${kelas} / Semester ${semester}
+- **Topik / Materi Pokok :** ${topikMateri}
+- **Tujuan Pembelajaran (TP) yang Diukur :** ${customTP}
+- **Rentang Interval Nilai Acuan :** ${customInterval}
+- **Pilar Panca Cinta KBC Terintegrasi :** ${kbcPillars.join(', ')}
 
-| Tujuan Pembelajaran (TP) | Indikator Ketercapaian | Baru Berkembang (0-60%) | Layak (61-75%) | Cakap (76-85%) | Mahir (86-100%) |
-|---|---|---|---|---|---|
-| Menganalisis konsep utama ${topikMateri} | Menjelaskan definisi dan ruang lingkup secara sistematis | Belum mampu mendefinisikan dengan tepat | Menjelaskan definisi dengan bantuan bimbingan guru | Menjelaskan secara mandiri dan runtut | Mampu menjelaskan serta mengaitkan dengan contoh analogis |
-| Menginternalisasi Nilai KBC & Adab | Menunjukkan sikap saling menyayangi, toleran, dan santun saat berdiskusi | Pasif dan kurang memperhatikan adab rekan | Mulai menunjukkan sikap menghargai | Konsisten menunjukkan adab santun dan empati | Menjadi teladan (qudwah hasanah) dalam adab madrasah |
-| Memecahkan Persoalan Nyata | Mampu menyelesaikan studi kasus aplikatif ${mapel} | Belum menemukan solusi | Menemukan solusi sebagian | Solusi tepat dan logis | Solusi kreatif, inovatif, dan berwawasan kemaslahatan |
+---
 
-**Catatan Tindak Lanjut:**
-- 0 - 60%: Remedial di seluruh bagian materi dengan bimbingan tutor sebaya.
-- 61 - 75%: Remedial pada indikator yang belum tuntas.
-- 76 - 85%: Sudah mencapai ketuntasan, melanjutkan materi berikutnya.
-- 86 - 100%: Diberikan program pengayaan dan studi literatur Bahtsul Masail/Karya Ilmiah.`;
+### B. TABEL RUBRIK INTERVAL KRITERIA KETERCAPAIAN (KOGNITIF & KARAKTER KBC)
+
+| No | Aspek / Indikator Ketercapaian TP | Baru Berkembang (0-60%) | Layak (61-75%) | Cakap (76-85%) | Mahir (86-100%) |
+|:---:|:---|:---|:---|:---|:---|
+| 1 | **Pemahaman Konseptual:**<br>Menjelaskan definisi, ruang lingkup, dan kaidah dasar ${topikMateri} | Belum mampu mendefinisikan konsep dasar secara tepat | Menjelaskan konsep dasar dengan bantuan pertanyaan pancingan guru | Menjelaskan konsep secara mandiri, runtut, dan akurat | Mampu menjelaskan konsep serta mengaitkannya dengan dalil/analogi lintas konteks |
+| 2 | **Keterampilan Analisis & Pemecahan Masalah:**<br>Menyelesaikan studi kasus kontekstual pada materi ${topikMateri} | Belum mampu mengidentifikasi akar masalah pada kasus | Mengidentifikasi masalah namun solusi belum lengkap | Merumuskan solusi yang tepat, logis, dan sistematis | Merumuskan solusi kreatif, inovatif, dan berorientasi kemaslahatan umat |
+| 3 | **Internalisasi Karakter Panca Cinta (KBC):**<br>Menunjukkan sikap **${kbcPillars.join(', ')}** selama proses belajar | Pasif dan masih memerlukan teguran dalam menjaga adab belajar | Mulai menunjukkan sikap menghargai dan tertib dengan pengingat | Konsisten menunjukkan adab santun, jujur, dan empati kepada sesama | Menjadi teladan (*qudwah hasanah*) dalam adab keilmuan dan kasih sayang di kelas |
+
+---
+
+### C. PEDOMAN TINDAK LANJUT PENDAMPINGAN (REMEDIAL & PENGAYAAN HUMANIS)
+- **Interval 0 - 60% (Baru Berkembang):** Pendampingan *coaching* individual penuh kasih sayang tanpa pelabelan negatif, disertai penyederhanaan materi esensial.
+- **Interval 61 - 75% (Layak):** Pembelajaran remedial terbimbing pada indikator yang belum tuntas bersama tutor sebaya (*peer teaching*).
+- **Interval 76 - 85% (Cakap — Tuntas):** Telah mencapai kriteria ketuntasan minimal, melanjutkan ke Tujuan Pembelajaran berikutnya.
+- **Interval 86 - 100% (Mahir — Sangat Baik):** Diberikan pengayaan berupa eksplorasi literatur lanjutan (*Bahtsul Masail* / proyek mini) dan dilibatkan sebagai tutor sebaya.`;
   }
 
   if (docType === 'umpan_balik') {
-    return `# INSTRUMEN SURVEI UMPAN BALIK PEMBELAJARAN SISWA
+    const responden = respondenSurvei || 'Peserta Didik (Refleksi Pembelajaran Kelas)';
+    const skala = skalaSurvei || 'Skala Likert 1 - 4 (Sangat Kurang s.d. Sangat Baik)';
+    const aspekFokus = aspekUmpanBalik || 'Kejelasan penyampaian materi, suasana kelas yang ramah & menyenangkan (Joyful), keteladanan adab & kasih sayang guru (Panca Cinta KBC), serta keadilan asesmen.';
+
+    return `# INSTRUMEN SURVEI UMPAN BALIK & REFLEKSI PEMBELAJARAN (KBC)
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
 
-**Pengantar:**  
-Angket ini bertujuan untuk meningkatkan mutu pembelajaran ${mapel} bersama Guru Pengampu (${guruPengampu}). Isilah dengan jujur, obyektif, dan penuh kasih sayang. Identitas responden dijamin kerahasiaannya.
+**Identitas Instrumen:**
+- **Mata Pelajaran / Topik :** ${mapel} — ${topikMateri}
+- **Kelas / Fase / Semester :** Kelas ${kelas} (Fase ${fase}) / Semester ${semester}
+- **Guru Pengampu :** ${guruPengampu}
+- **Target Responden :** **${responden}**
+- **Model Skala Penilaian :** **${skala}**
+- **Fokus Evaluasi :** ${aspekFokus}
 
 ---
 
-### A. ASPEK PENILAIAN PEMBELAJARAN (Skala 1 - 4)
-*Keterangan: 1 = Sangat Kurang | 2 = Cukup | 3 = Baik | 4 = Sangat Memuaskan*
+### A. KUESIONER PENILAIAN PENGALAMAN BELAJAR (DEEP LEARNING & PANCA CINTA)
+*Petunjuk: Berilah tanda centang (✓) pada kolom skor yang paling sesuai dengan pengalaman nyata di kelas (1 = Kurang Sesuai, 2 = Cukup Sesuai, 3 = Sesuai / Baik, 4 = Sangat Sesuai / Sangat Memuaskan).*
 
-| No | Pernyataan Instrumen Umpan Balik | 1 | 2 | 3 | 4 |
-|---|---|---|---|---|---|
-| 1 | Guru menyampaikan materi dengan jelas, runtut, dan mudah dipahami. | [ ] | [ ] | [ ] | [ ] |
-| 2 | Guru selalu menyapa dengan senyuman dan menciptakan suasana kelas yang menyenangkan (Kurikulum Berbasis Cinta). | [ ] | [ ] | [ ] | [ ] |
-| 3 | Guru memberi kesempatan bertanya dan menghargai pendapat setiap siswa tanpa membeda-bedakan. | [ ] | [ ] | [ ] | [ ] |
-| 4 | Penggunaan media (LCD, modul, simulasi) membantu pemahaman saya secara mendalam (Deep Learning). | [ ] | [ ] | [ ] | [ ] |
-| 5 | Guru memberikan umpan balik dan dorongan semangat saat saya mengalami kesulitan belajar. | [ ] | [ ] | [ ] | [ ] |
-
----
-
-### B. PERTANYAAN TERBUKA & REFLEKSI SISWA
-1. **Hal apa yang paling kamu sukai dari cara mengajar guru pada materi ini?**  
-   ...........................................................................................................................................................
-2. **Saran atau masukan apa yang ingin kamu sampaikan agar kelas kita semakin asyik dan berkah?**  
-   ...........................................................................................................................................................`;
-  }
-
-  if (docType === 'modul_ajar') {
-    return `# MODUL AJAR ${mapel.toUpperCase()}
-## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
+| No | Dimensi KBC & Deep Learning | Pernyataan Instrumen Umpan Balik | 1 | 2 | 3 | 4 |
+|:---:|:---|:---|:---:|:---:|:---:|:---:|
+| 1 | **Mindful Learning (Berkesadaran)** | Guru membuka pembelajaran dengan doa khusyuk, menyapa dengan ramah, dan membantu siswa fokus menata niat belajar. | [ ] | [ ] | [ ] | [ ] |
+| 2 | **Meaningful Learning (Bermakna)** | Materi **${topikMateri}** dijelaskan secara runtut dan dikaitkan dengan manfaat nyata dalam kehidupan sehari-hari. | [ ] | [ ] | [ ] | [ ] |
+| 3 | **Joyful Learning (Menggembirakan)** | Suasana kelas terasa hangat, bebas dari rasa takut/perundungan, dan membuat siswa bersemangat mengikuti KBM. | [ ] | [ ] | [ ] | [ ] |
+| 4 | **Insersi Panca Cinta KBC** | Pembelajaran menumbuhkan nilai **${kbcPillars.join(', ')}** serta keteladanan adab santun (*ta'addub*). | [ ] | [ ] | [ ] | [ ] |
+| 5 | **Diferensiasi & Pendampingan** | Guru memberi kesempatan bertanya yang adil dan sabar membimbing siswa yang mengalami kesulitan memahami materi. | [ ] | [ ] | [ ] | [ ] |
+| 6 | **Keadilan & Transparansi Asesmen** | Penugasan dan penilaian disampaikan dengan kriteria yang jelas serta disertai umpan balik yang membangun semangat. | [ ] | [ ] | [ ] | [ ] |
 
 ---
 
-## A. IDENTIFIKASI KESIAPAN PESERTA DIDIK
-Sebelum memulai pembelajaran tentang ${topikMateri}, asesmen diagnostik akan dilakukan untuk mengidentifikasi kesiapan peserta didik, meliputi:
-- **Pengetahuan Awal:**
-  - Pengenalan terhadap konsep dasar ${topikMateri}.
-  - Pemahaman dasar tentang elemen dan istilah kunci dalam materi.
-  - Kemampuan menghubungkan materi dengan pengalaman belajar terdahulu.
-- **Minat:**
-  - Menggali antusiasme peserta didik melalui media visual, studi kasus kontekstual madrasah, dan game interaktif (Educaplay / Memory Challenge).
-  - Ketertarikan peserta didik dalam berdiskusi kelompok memecahkan teka-teki konsep.
-- **Latar Belakang:**
-  - Latar belakang pemahaman dan lingkungan keagamaan/budaya santri madrasah.
-  - Minat terhadap pemanfaatan teknologi digital dalam pembelajaran.
-- **Kebutuhan Belajar:**
-  - Peserta didik bergaya visual difasilitasi dengan infografis, salindia, dan bagan alur.
-  - Peserta didik bergaya auditori difasilitasi melalui pemaparan diskusi dan audio-visual.
-  - Peserta didik bergaya kinestetik/praktik difasilitasi dengan simulasi aktif dan kartu konsep.
+### B. PERTANYAAN REFLEKSI TERBUKA (${responden.toUpperCase()})
+1. **Bagian mana dari pembelajaran materi ${topikMateri} yang paling berkesan dan menyentuh hati/pikiran Anda?**  
+   ..............................................................................................................................................................................
+2. **Saran konstruktif apa yang ingin Anda sampaikan agar pembelajaran berikutnya semakin bermakna, menyenangkan, dan penuh berkah?**  
+   ..............................................................................................................................................................................
 
 ---
 
-## B. KARAKTERISTIK MATERI PELAJARAN
-Materi "${topikMateri}" memiliki karakteristik sebagai berikut:
-- **Jenis Pengetahuan yang Akan Dicapai:**
-  - **Faktual:** Mengenal fakta, istilah, dalil, dan data pendukung seputar ${topikMateri}.
-  - **Konseptual:** Memahami prinsip, teori, dan hubungan kausalitas antar konsep materi.
-  - **Prosedural:** Mampu menjalankan tahapan analisis, pemecahan masalah, atau kaidah pengamalan secara sistematis.
-  - **Metakognitif:** Merefleksikan manfaat ilmu bagi perbaikan diri, adab, dan kemaslahatan umat.
-- **Relevansi dengan Kehidupan Nyata Peserta Didik:**
-  - Materi ini sangat aplikatif dalam kehidupan beribadah, bermasyarakat, dan berakhlak mulia di madrasah.
-- **Integrasi Nilai dan Karakter (KBC & Aswaja):**
-  - **Apresiasi & Kasih Sayang:** Menghargai keragaman pemikiran dengan bingkai tasamuh.
-  - **Penalaran Kritis:** Membiasakan tabayyun dan berargumen logis.
-  - **Mindfulness & Adab:** Melatih keheningan batin, ketawadhu'an, dan fokus saat menuntut ilmu.
-
----
-
-## C. DIMENSI PROFIL LULUSAN PEMBELAJARAN
-- **Keimanan dan Ketakwaan terhadap Tuhan YME & Berakhlak Mulia:** Menjadikan ilmu sebagai sarana mendekatkan diri kepada Allah SWT.
-- **Penalaran Kritis:** Mampu membedakan argumen yang valid dan menganalisis persoalan secara mendalam.
-- **Kreativitas & Kolaborasi:** Mampu bekerja sama saling mengasihi dalam tim untuk menghasilkan karya solutif.
-- **Komunikasi:** Menyampaikan gagasan secara santun dan terstruktur.
-
----
-
-## DESAIN PEMBELAJARAN
-
-### A. CAPAIAN PEMBELAJARAN
-Pada akhir Fase ${fase}, peserta didik mampu menganalisis, menginternalisasi, dan menerapkan kompetensi ${topikMateri} dalam memecahkan masalah kontekstual berlandaskan nilai keilmuan dan akhlakul karimah.
-
-| Elemen | Capaian Pembelajaran |
-|---|---|
-| **Pemahaman Konseptual** | Peserta didik memahami dan menganalisis hakikat ${topikMateri} secara komprehensif. |
-| **Keterampilan Berpikir Kritis** | Peserta didik mengevaluasi masalah kontekstual dan merumuskan solusi berbasis dalil/fakta. |
-| **Aksi Nyata & Karakter (KBC)** | Peserta didik mewujudkan pemahaman melalui sikap peduli, adab santun, dan karya bermanfaat. |
-
----
-
-### B. LINTAS DISIPLIN ILMU
-- **Bahasa Indonesia & Arab:** Penguatan literasi teks dan pemaknaan istilah keilmuan.
-- **Teknologi Informasi (TIK):** Pemanfaatan platform kuis digital (Educaplay) dan riset materi online.
-- **Pendidikan Karakter & Aswaja:** Penguatan nilai tawasuth (moderat) dan tawazun (seimbang).
-
----
-
-### C. TUJUAN PEMBELAJARAN
-- **Pertemuan 1:** Peserta didik mampu mengidentifikasi dan menjelaskan konsep dasar ${topikMateri} melalui eksplorasi studi kasus dan diskusi kelompok.
-- **Pertemuan 2:** Peserta didik mampu menganalisis permasalahan kontekstual ${topikMateri} dan mempresentasikannya dengan penalaran logis.
-- **Pertemuan 3:** Peserta didik mampu mengaitkan nilai adab dan etika materi dalam bentuk refleksi karya nyata.
-
----
-
-### D. KERANGKA PEMBELAJARAN
-- **Model & Metode:** Problem Based Learning, Cooperative Learning, dan Gamifikasi Edukatif.
-- **Budaya Belajar (Deep Learning):**
-  - **Mindful Learning:** Melatih fokus mengamati fenomena secara hening dan mendalam.
-  - **Meaningful Learning:** Mengaitkan setiap konsep dengan realitas keseharian peserta didik.
-  - **Joyful Learning:** Proses belajar dikemas dalam suasana gembira penuh apresiasi dan senyuman.
-
----
-
-### E. LANGKAH-LANGKAH PEMBELAJARAN BERDIFERENSI
-
-#### Pertemuan 1: Eksplorasi & Pemahaman Konseptual
-
-| Kegiatan | Alokasi Waktu |
-|---|---|
-| **1. KEGIATAN PENDAHULUAN**<br>- Guru membuka dengan salam santun dan doa bersama.<br>- Presensi dan ice breaking penyemangat suasana belajar.<br>- Apersepsi mengaitkan materi sebelumnya dengan ${topikMateri}.<br>- Menyampaikan tujuan pembelajaran dan manfaatnya bagi kehidupan. | 20 Menit |
-| **2. KEGIATAN INTI**<br>**Eksplorasi (Diferensiasi Konten):**<br>- Guru memaparkan stimulus materi melalui tayangan slide/video studi kasus.<br>- Memberikan pertanyaan pemantik yang merangsang daya kritis peserta didik.<br><br>**Identifikasi & Diskusi (Diferensiasi Proses & Produk):**<br>- Peserta didik dibagi dalam kelompok kecil heterogen.<br>- Melakukan penyelidikan mandiri dan diskusi kelompok dengan panduan LKPD.<br>- Presentasi kelompok dan tanggapan dari kelompok lain secara santun.<br><br>**Konfirmasi & Refleksi:**<br>- Guru bersama siswa menyimpulkan poin-poin utama materi. | 50 Menit |
-| **3. KEGIATAN PENUTUP**<br>- Refleksi perasaan belajar (mindful check-in).<br>- Menyampaikan arahan untuk pertemuan berikutnya.<br>- Doa penutup majelis dan salam. | 10 Menit |
-
----
-
-### F. ASESMEN PEMBELAJARAN
-1. **Asesmen Awal (Diagnostik):** Tanya jawab pemantik lisan untuk mengukur pemahaman awal peserta didik.
-2. **Asesmen Proses (Formatif):** Observasi keaktifan diskusi, sikap kerja sama, kesantunan bertutur, serta penugasan LKPD.
-3. **Asesmen Akhir (Sumatif):** Kuis pemahaman konsep dan lembar refleksi diri peserta didik.`;
+### C. PEDOMAN REKAPITULASI & TINDAK LANJUT GURU
+- **Rata-rata Skor 3.25 – 4.00 (Sangat Baik):** Pertahankan praktik baik pembelajaran mendalam dan bagikan pada komunitas belajar/MGMP.
+- **Rata-rata Skor 2.50 – 3.24 (Baik):** Optimalkan variasi media interaktif dan penguatan diskusi kelompok.
+- **Rata-rata Skor < 2.50 (Perlu Peningkatan):** Lakukan penyesuaian metode mengajar, pendekatan empatik, dan kecepatan penyampaian materi.`;
   }
 
   // Fallback for CP (Capaian Pembelajaran)
   if (docType === 'cp') {
     const cpContent = capaianPembelajaranTeks && capaianPembelajaranTeks.trim().length > 15
       ? capaianPembelajaranTeks.trim()
-      : `Pada akhir Fase ${fase} (Kelas ${kelas}), peserta didik MA NU 01 Banyuputih Batang memiliki kemampuan bernalar kritis, mandiri, dan kreatif dalam menguasai kompetensi mata pelajaran ${mapel}. Peserta didik mampu memadukan sains modern dengan khazanah keilmuan Islam berhaluan Ahlussunnah wal Jama'ah An-Nahdliyah serta menginternalisasikan nilai-nilai kasih sayang (rahmah) dan adab mulia.`;
+      : `Pada akhir Fase ${fase} (Kelas ${kelas}), peserta didik MA NU 01 Banyuputih Batang memiliki kemampuan bernalar kritis, mandiri, dan kreatif dalam menguasai kompetensi mata pelajaran ${mapel}. Peserta didik mampu memadukan sains modern dengan khazanah keilmuan Islam berhaluan Ahlussunnah wal Jama'ah An-Nahdliyah serta menginternalisasikan nilai-nilai Panca Cinta KBC (${kbcPillars.join(', ')}).`;
 
-    return `# ANALISIS CAPAIAN PEMBELAJARAN (CP) ELEMEN
+    return `# ANALISIS CAPAIAN PEMBELAJARAN (CP) & PEMETAAN INSERSI KBC
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
-*Berdasarkan Panduan Pembelajaran dan Asesmen Kemendikdasmen & Kemenag RI (Kurikulum Merdeka)*
+*Berdasarkan KMA 1503/2025 & Kepdirjen Pendis 6077/2025 (Kurikulum Berbasis Cinta)*
 
 ---
 
-### A. DESKRIPSI CAPAIAN PEMBELAJARAN (CP) FASE ${fase}
+### A. NASKAH CAPAIAN PEMBELAJARAN (CP) FASE ${fase} — ${mapel.toUpperCase()}
 ${cpContent}
+${instruksiKhusus ? `\n> **Catatan / Instruksi Khusus Analisis CP :** ${instruksiKhusus}` : ''}
 
 ---
 
-### B. TABEL RINCIAN ELEMEN CAPAIAN PEMBELAJARAN (CP)
-| No | Elemen CP | Kalimat Capaian Pembelajaran Elemen | Kompetensi Utama | Ruang Lingkup Materi Esensial |
+### B. TABEL BEDAH ELEMEN CAPAIAN PEMBELAJARAN & KOMPETENSI TARGET
+| No | Elemen CP | Kompetensi Inti (Kata Kerja Operasional) | Materi Esensial (${topikMateri}) | Integrasi 8 Dimensi Profil Lulusan & Panca Cinta KBC |
 |:---:|:---|:---|:---|:---|
-| 1 | **Pemahaman Konseptual** | Peserta didik memahami dan menganalisis hakikat konsep dasar ${mapel}. | Menganalisis, Mengidentifikasi, Membedakan | Landasan fundamental dan kaidah dasar ${mapel} |
-| 2 | **Keterampilan Proses** | Peserta didik menerapkan prinsip pemecahan masalah pada studi kasus nyata di lingkungan sekitar. | Menerapkan, Menyelesaikan, Merancang | Studi kasus aplikatif dan penalaran logis |
+| 1 | **Pemahaman Konseptual** | Memahami, Mengidentifikasi, Menguraikan, Menganalisis | Konsep dasar, dalil/prinsip, dan klasifikasi pada materi **${topikMateri}** | Keimanan & Ketakwaan, Penalaran Kritis — **${kbcPillars[0] || 'Cinta Ilmu'}** |
+| 2 | **Keterampilan Proses & Aplikasi** | Menerapkan, Memecahkan masalah, Merancang, Mengomunikasikan | Studi kasus kontekstual dan penerapan praktis **${topikMateri}** di madrasah/masyarakat | Kolaborasi, Kreativitas, Komunikasi — **${kbcPillars[1] || 'Cinta Diri & Sesama'}** |
 
 ---
 
-### C. INTEGRASI NILAI KHAS MADRASAH & KURIKULUM BERBASIS CINTA (KBC)
-1. **Tawassuth (Moderat):** Menumbuhkan pemahaman materi yang seimbang, tidak ekstrim, serta menghargai tradisi keilmuan.
-2. **Tasamuh (Toleran):** Mengedepankan sikap saling menghormati pendapat dalam berdiskusi kelompok.
-3. **Rahmah (Kasih Sayang):** Menginternalisasikan empati sosial dan adab mulia thalabul ilmi di lingkungan madrasah.`;
+### C. PEMETAAN MATERI INSERSI KURIKULUM BERBASIS CINTA (KBC)
+${kbcInsersiTableMarkdown}
+
+---
+
+### D. INTEGRASI NILAI KHAS MADRASAH (ASWAJA AN-NAHDLIYAH)
+1. **Tawassuth (Moderat) & Tawazun (Seimbang):** Memadukan penguasaan rasionalitas ilmu pengetahuan dengan keluhuran adab spiritual.
+2. **Tasamuh (Toleran) & Rahmah (Kasih Sayang):** Menghadirkan proses pembelajaran yang menghargai keberagaman potensi peserta didik.`;
   }
 
   // Fallback for ATP (Alur Tujuan Pembelajaran)
   if (docType === 'atp') {
-    return `# ALUR TUJUAN PEMBELAJARAN (ATP) KURIKULUM MERDEKA
+    return `# ALUR TUJUAN PEMBELAJARAN (ATP) KURIKULUM MERDEKA & KBC
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
-*Berdasarkan Panduan Pembelajaran dan Asesmen Kemendikdasmen & Kemenag RI (Kurikulum Merdeka)*
+*Berdasarkan KMA 1503/2025 & Kepdirjen Pendis 6077/2025 (Kurikulum Berbasis Cinta)*
 
 ---
 
-### A. TABEL ALUR TUJUAN PEMBELAJARAN (ATP) LENGKAP
-
-| Alur | Kode TP | Rumusan Tujuan Pembelajaran (TP) | Alokasi Waktu (JP) | Indikator Ketercapaian (IKTP) | Rencana Asesmen | Dimensi Profil Lulusan / P5RA & KBC |
-|:---:|:---:|:---|:---:|:---|:---:|:---|
-| **1** | **TP 10.1** | Mengidentifikasi dan menjelaskan konsep fundamental ${mapel} secara mendalam | 16 JP | • Menyebutkan definisi & ruang lingkup materi<br>• Menjelaskan dalil/prinsip dasar yang relevan | **Formatif:** Tanya jawab lisan & kuis pemantik<br>**Sumatif:** Tes tertulis (pilihan ganda CBT) | Beriman, Bertakwa, Penalaran Kritis, Berkeadaban (*Ta'addub*) |
-| **2** | **TP 10.2** | Mengaitkan konsep materi dengan fenomena sosial dan nilai etika Islam | 18 JP | • Menganalisis keterkaitan teori dengan realitas<br>• Menilai masalah dengan etika Aswaja | **Formatif:** Diskusi kelompok & resume bacaan<br>**Sumatif:** Penugasan analisis artikel/kasus | Gotong Royong, Toleransi (*Tasamuh*), Kasih Sayang (*Rahmah*) |
-| **3** | **TP 10.3** | Memecahkan persoalan kontekstual melalui penalaran kritis dan prosedural | 22 JP | • Merumuskan hipotesis/langkah pemecahan | **Formatif:** Observasi kinerja problem solving<br>**Sumatif:** Asesmen Sumatif Tengah Semester (ASTS) | Mandiri, Penalaran Kritis, Keteladanan (*Qudwah*) |
-| **4** | **TP 10.4** | Menginternalisasikan nilai kasih sayang, kolaborasi, dan kemanfaatan sosial | 16 JP | • Bekerja sama harmonis dalam kelompok | **Formatif:** Penilaian antarteman & jurnal refleksi<br>**Sumatif:** Asesmen Sumatif Akhir Semester (ASESGA) | Kreatif, Komunikatif, Dinamis & Inovatif (*Tathawwur wa Ibtikar*) |
-| | | **TOTAL ALOKASI WAKTU FASE** | **${alokasiWaktu || '72 JP'}** | | | |
+### A. IDENTITAS & ACUAN CAPAIAN PEMBELAJARAN
+- **Mata Pelajaran :** ${mapel}
+- **Fase / Kelas / Semester :** Fase ${fase} / Kelas ${kelas} / Semester ${semester}
+- **Total Alokasi Waktu :** ${alokasiWaktu || '72 JP'}
+- **Pilar Panca Cinta KBC :** ${kbcPillars.join(', ')}
+${capaianPembelajaranTeks ? `- **Ringkasan CP Acuan :** ${capaianPembelajaranTeks}` : ''}
+${instruksiKhusus ? `- **Instruksi Khusus Penyusunan ATP :** ${instruksiKhusus}` : ''}
 
 ---
 
-### B. RASIONAL PENYUSUNAN ALUR TUJUAN PEMBELAJARAN
-1. **Prinsip Progresi Konsep:** Alur disusun secara berjenjang dari penguasaan konsep fundamental (konkret), menuju analisis relasional, hingga pemecahan masalah tingkat tinggi (HOTS dan aplikasi nyata).
-2. **Pendekatan Deep Learning:**
-   - *Mindful Learning:* Melatih fokus dan kesadaran penuh dalam memahami hakikat ilmu sebagai amanah ilahi.
-   - *Meaningful Learning:* Menghubungkan setiap materi dengan kebermanfaatan hidup di dunia dan akhirat.
-   - *Joyful Learning:* Pembelajaran dirancang interaktif, kolaboratif, dan membahagiakan tanpa intimidasi.`;
+### B. MATRIKS ALUR TUJUAN PEMBELAJARAN (ATP) TERINTEGRASI KBC
+
+| Alur | Kode TP | Rumusan Tujuan Pembelajaran (TP) | Alokasi Waktu (JP) | Indikator Ketercapaian (IKTP) | Rencana Asesmen | 8 Dimensi Profil Lulusan & Insersi Panca Cinta KBC |
+|:---:|:---:|:---|:---:|:---|:---|:---|
+| **1** | **TP.1** | Mengidentifikasi dan menjelaskan konsep fundamental **${topikMateri}** pada mata pelajaran ${mapel} secara mendalam | 16 JP | • Menjelaskan definisi & ruang lingkup materi<br>• Menguraikan dalil/prinsip dasar yang relevan | **Diagnostik:** Tanya jawab awal<br>**Formatif:** Kuis & diskusi LKPD | Keimanan & Ketakwaan, Penalaran Kritis<br>**KBC:** *${kbcPillars[0] || 'Cinta Allah & Rasul-Nya'}* |
+| **2** | **TP.2** | Menganalisis keterkaitan konsep **${topikMateri}** dengan fenomena sosial dan kehidupan sehari-hari | 18 JP | • Menganalisis hubungan teori dengan realitas<br>• Menilai studi kasus dengan adab keilmuan | **Formatif:** Telaah studi kasus<br>**Sikap:** Jurnal anekdotal adab KBC | Kolaborasi, Kewargaan (Moderasi)<br>**KBC:** *${kbcPillars[1] || 'Cinta Ilmu & Cinta Sesama'}* |
+| **3** | **TP.3** | Memecahkan persoalan kontekstual pada materi ${mapel} melalui penalaran kritis dan prosedural | 22 JP | • Merumuskan langkah pemecahan masalah<br>• Menyajikan argumen logis berbasis bukti | **Formatif:** Unjuk kerja problem solving<br>**Sumatif:** ASTS | Kemandirian, Penalaran Kritis<br>**KBC:** *${kbcPillars[2] || 'Cinta Lingkungan'}* |
+| **4** | **TP.4** | Merancang karya aplikatif dan menginternalisasikan nilai kasih sayang serta kemanfaatan sosial | 16 JP | • Menyusun produk/laporan proyek kelompok<br>• Mempresentasikan karya dengan santun | **Formatif:** Penilaian produk & antarteman<br>**Sumatif:** ASAS / ASAT | Kreativitas, Komunikasi (*Ta'addub*)<br>**KBC:** *${kbcPillars.join(', ')}* |
+| | | **TOTAL ALOKASI WAKTU** | **${alokasiWaktu || '72 JP'}** | | | |
+
+---
+
+### C. TABEL MATERI INSERSI PANCA CINTA KBC
+${kbcInsersiTableMarkdown}`;
   }
 
-  // Default fallback (e.g. for compatibility)
-  return `# DOKUMEN ADMINISTRASI GURU
+  // Default fallback
+  return `# DOKUMEN ADMINISTRASI GURU BERBASIS KBC
 ## MA NU 01 BANYUPUTIH BATANG — TAHUN PELAJARAN ${tahunPelajaran}
-Dokumen ini disusun untuk mata pelajaran ${mapel} kelas ${kelas}.`;
+Dokumen ini disusun untuk mata pelajaran ${mapel} kelas ${kelas} dengan penguatan nilai Panca Cinta: ${kbcPillars.join(', ')}.`;
 }
 
 // Ensure all unhandled /api/* routes return JSON, NEVER HTML!
