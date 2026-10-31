@@ -1,4 +1,5 @@
 import { User, ExamPackage, GeneratedAdminDoc, LoginLog, MadrasahIdentity } from '../types';
+import { fetchApiJson } from '../utils/apiClient';
 
 export interface StorageData {
   users: User[];
@@ -13,15 +14,11 @@ const API_BASE = '/api/v1/storage';
 
 export async function fetchServerData(): Promise<StorageData | null> {
   try {
-    const res = await fetch(API_BASE, {
+    const data = await fetchApiJson<StorageData>(API_BASE, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
     });
-    if (res.ok && (res.headers.get('content-type') || '').includes('application/json')) {
-      const data = await res.json();
-      if (data && data.users) {
-        return data as StorageData;
-      }
+    if (data && Array.isArray(data.users)) {
+      return data;
     }
   } catch (err) {
     console.warn('Gagal memuat data dari server database, menggunakan data lokal / cache:', err);
@@ -31,12 +28,11 @@ export async function fetchServerData(): Promise<StorageData | null> {
 
 export async function syncToServer(data: Partial<StorageData>): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/sync`, {
+    const res = await fetchApiJson(`${API_BASE}/sync`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.ok;
+    return Boolean(res && res.success !== false);
   } catch (err) {
     console.warn('Gagal sinkronisasi data ke server database:', err);
     return false;

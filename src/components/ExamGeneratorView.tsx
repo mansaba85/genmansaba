@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { MathText, isArabicText } from '../utils/katexHelper';
 import { exportExamToDocx } from '../utils/docxExport';
+import { fetchApiJson } from '../utils/apiClient';
 import { KopMadrasah } from './KopMadrasah';
 import {
   formatExamToCbtText,
@@ -206,9 +207,8 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     try {
       const cleanText = q.text.replace(/Q:\d+\)/gi, '').replace(/\[IMG\].*?\[\/IMG\]/gi, '').replace(/<[^>]*>/g, '').trim().slice(0, 150);
       const promptToUse = customPrompt || q.imagePrompt || `Diagram edukasi kurikulum merdeka untuk ${formData.mapel || 'asesmen'}: ${cleanText}`;
-      const res = await fetch('/api/v1/soal/generate-image', {
+      const data = await fetchApiJson('/api/v1/soal/generate-image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: promptToUse,
           questionText: q.text,
@@ -216,12 +216,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
           style: imageStyle,
         }),
       });
-      const ct = res.headers.get('content-type') || '';
-      if (!ct.includes('application/json')) {
-        const text = await res.text();
-        throw new Error(`Respons server non-JSON (${res.status}): ${text.slice(0, 100)}`);
-      }
-      const data = await res.json();
       const finalUrl = data.proxyUrl || data.imageUrl || data.svgFallback;
       if (data.success && finalUrl) {
         const updated = questions.map((item) =>
@@ -247,9 +241,8 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     setImageError(null);
     try {
       const promptToUse = customPrompt || imagePrompt || activeQ.imagePrompt || activeQ.text;
-      const res = await fetch('/api/v1/soal/generate-image', {
+      const data = await fetchApiJson('/api/v1/soal/generate-image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: promptToUse,
           questionText: activeQ.text,
@@ -257,16 +250,9 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
           style: imageStyle,
         }),
       });
-      const ct = res.headers.get('content-type') || '';
-      if (!ct.includes('application/json')) {
-        const text = await res.text();
-        throw new Error(`Respons server non-JSON (${res.status}): ${text.slice(0, 100)}`);
-      }
-      const data = await res.json();
       const finalUrl = data.proxyUrl || data.imageUrl || data.svgFallback;
       if (data.success && finalUrl) {
         setPreviewImageUrl(finalUrl);
-        // Automatically save to question directly so teacher doesn't have to click another button
         const updated = questions.map((q) =>
           q.id === activeQ.id ? { ...q, imageUrl: finalUrl, imagePrompt: promptToUse } : q
         );
@@ -332,9 +318,8 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     setIsGeneratingImage(true);
     setImageError(null);
     try {
-      const res = await fetch('/api/v1/soal/generate-image', {
+      const data = await fetchApiJson('/api/v1/soal/generate-image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: newQuestionData.imagePrompt || newQuestionData.text,
           questionText: newQuestionData.text,
@@ -342,12 +327,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
           style: imageStyle,
         }),
       });
-      const ct = res.headers.get('content-type') || '';
-      if (!ct.includes('application/json')) {
-        const text = await res.text();
-        throw new Error(`Respons server non-JSON (${res.status}): ${text.slice(0, 100)}`);
-      }
-      const data = await res.json();
       const finalUrl = data.proxyUrl || data.imageUrl || data.svgFallback;
       if (data.success && finalUrl) {
         setNewQuestionData((prev) => ({
@@ -422,9 +401,8 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     setIsGeneratingImage(true);
     setImageError(null);
     try {
-      const res = await fetch('/api/v1/soal/generate-image', {
+      const data = await fetchApiJson('/api/v1/soal/generate-image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: editingQuestion.imagePrompt || editingQuestion.text,
           questionText: editingQuestion.text,
@@ -432,12 +410,6 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
           style: imageStyle,
         }),
       });
-      const ct = res.headers.get('content-type') || '';
-      if (!ct.includes('application/json')) {
-        const text = await res.text();
-        throw new Error(`Respons server non-JSON (${res.status}): ${text.slice(0, 100)}`);
-      }
-      const data = await res.json();
       const finalUrl = data.proxyUrl || data.imageUrl || data.svgFallback;
       if (data.success && finalUrl) {
         setEditingQuestion((prev) =>
@@ -451,8 +423,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
         );
         setStatusMessage('Gambar diagram soal berhasil diperbarui!');
       }
-    } catch (e: any) {
-      console.error(e);
+    } catch {
       setStatusMessage('Gagal memperbarui diagram soal.');
     } finally {
       setIsGeneratingImage(false);
@@ -464,21 +435,14 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     if (!cbtImagePrompt.trim()) return;
     setIsGeneratingImage(true);
     try {
-      const res = await fetch('/api/v1/soal/generate-image', {
+      const data = await fetchApiJson('/api/v1/soal/generate-image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: cbtImagePrompt,
           mapel: formData.mapel,
           style: imageStyle,
         }),
       });
-      const ct = res.headers.get('content-type') || '';
-      if (!ct.includes('application/json')) {
-        const text = await res.text();
-        throw new Error(`Respons server non-JSON (${res.status}): ${text.slice(0, 100)}`);
-      }
-      const data = await res.json();
       const finalImg = data.proxyUrl || data.imageUrl || data.svgFallback;
       if (data.success && finalImg) {
         const imgTag = `\n[IMG]${finalImg}[/IMG]\n`;
@@ -487,8 +451,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
         setCbtImagePrompt('');
         setStatusMessage('Tag gambar [IMG]...[/IMG] berhasil disisipkan ke kotak teks CBT.');
       }
-    } catch (e: any) {
-      console.error(e);
+    } catch {
       setStatusMessage('Gagal menyisipkan gambar diagram.');
     } finally {
       setIsGeneratingImage(false);
@@ -611,9 +574,8 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
     }, 1800);
 
     try {
-      const response = await fetch('/api/v1/soal/generate', {
+      const data = await fetchApiJson('/api/v1/soal/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           autoGenerateImages,
@@ -621,15 +583,7 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
         }),
       });
 
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        const text = await response.text();
-        throw new Error(`Respons server non-JSON (${response.status}): ${text.slice(0, 100)}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.questions) {
+      if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
         setQuestions(data.questions);
         const formatted = formatExamToCbtText(formData, data.questions);
         setCbtText(formatted);
@@ -658,11 +612,14 @@ export const ExamGeneratorView: React.FC<ExamGeneratorViewProps> = ({
           setStatusMessage(`✨ Berhasil menghasilkan ${data.questions.length} butir soal (${data.source || 'AI'})`);
         }
       } else {
-        throw new Error(data.error || 'Gagal menghasilkan soal');
+        setIsFallbackMode(true);
+        setFallbackReason(data.error || 'Sesi koneksi proxy sedang disegarkan. Silakan klik Generate sekali lagi.');
+        setStatusMessage(`⚠️ ${data.error || 'Koneksi sedang disegarkan, silakan coba lagi.'}`);
       }
     } catch (err: any) {
-      console.error(err);
-      setStatusMessage(`Catatan: Terjadi kesalahan koneksi (${err?.message || 'Error'}).`);
+      setIsFallbackMode(true);
+      setFallbackReason(err?.message || 'Koneksi ke server sedang disegarkan.');
+      setStatusMessage(`Catatan: Terjadi kendala jaringan (${err?.message || 'Error'}).`);
     } finally {
       clearInterval(intervalId);
       setIsGenerating(false);

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AdminDocConfig, AdminDocType, GeneratedAdminDoc, User, MadrasahIdentity } from '../types';
 import { exportAdminDocToDocx } from '../utils/docxExport';
+import { fetchApiJson } from '../utils/apiClient';
 import { AdminMarkdownRenderer } from './AdminMarkdownRenderer';
 import { KopMadrasah } from './KopMadrasah';
 import { MADRASAH_IDENTITY } from '../data/mockAndPresets';
@@ -309,21 +310,14 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
     setIsGenerating(true);
     setGenerationError(null);
     try {
-      const response = await fetch('/api/v1/admin/generate-document', {
+      const data = await fetchApiJson('/api/v1/admin/generate-document', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(activeConfig),
       });
 
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        const text = await response.text();
-        throw new Error(`Server tidak mengembalikan format JSON (${response.status}): ${text.slice(0, 100)}`);
-      }
-
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || `Gagal menyusun dokumen administrasi (${response.status})`);
+      if (!data.success) {
+        setGenerationError(data.error || 'Gagal menyusun dokumen administrasi. Silakan coba lagi.');
+        return;
       }
 
       if (data.markdown) {
@@ -347,7 +341,6 @@ Peserta didik mampu menginternalisasikan nilai tasamuh (toleransi) dan tawassuth
         onSaveDocument(newDoc);
       }
     } catch (err: any) {
-      console.error('Document generation error:', err);
       setGenerationError(err?.message || 'Gagal menghasilkan dokumen administrasi. Silakan periksa kembali konfigurasi.');
     } finally {
       setIsGenerating(false);

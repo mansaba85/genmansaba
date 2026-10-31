@@ -905,7 +905,7 @@ app.all('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
     tipMessage = `Model "${modelTested}" tidak dapat diakses (status ${lastStatus}). Tersedia ${discoveredModels.length} model lain di gateway 9router Anda.`;
   }
 
-  return res.status(lastStatus >= 400 && lastStatus < 600 ? lastStatus : 500).json({
+  return res.status(200).json({
     connected: false,
     endpoint: uniqueEndpoints[0],
     model: modelTested,
@@ -918,20 +918,21 @@ app.all('/api/v1/ninerouter/test', async (req: Request, res: Response) => {
   });
 });
 
-// Generator Soal API Endpoint (with Batching, User-Agent, and Transparent Fallback Metadata)
-app.post(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], async (req: Request, res: Response) => {
+// Generator Soal API Endpoint (with Parallel Wave Batching, User-Agent, and Transparent Fallback Metadata)
+app.all(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], async (req: Request, res: Response) => {
   try {
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
     const {
-      mapel,
-      kelas,
-      semester,
-      tahunPelajaran,
-      jenisUjian,
-      bahasa,
-      capaianPembelajaran,
-      selectedTypes,
-      difficultyProportion,
-    } = req.body;
+      mapel = 'Bahasa Indonesia',
+      kelas = '10',
+      semester = 'Ganjil',
+      tahunPelajaran = '2025/2026',
+      jenisUjian = 'ASESGA',
+      bahasa = 'indonesia',
+      capaianPembelajaran = '',
+      selectedTypes = { single_choice: 10, multiple_choice: 2, short_answer: 1, ordering: 0, matching: 0, essay: 2 },
+      autoGenerateImages = false,
+    } = body;
 
     // 1. Calculate requested counts per question type
     const sCount = Math.max(0, parseInt(selectedTypes?.single_choice ?? 0, 10));
@@ -943,8 +944,9 @@ app.post(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], asy
 
     const totalRequested = sCount + mCount + shCount + oCount + matCount + eCount;
 
-    // 2. Prepare batches (max 5-6 questions per batch to avoid token truncation & timeouts)
+    // 2. Prepare batches (max 6-8 questions per batch to avoid token truncation & timeouts)
     interface BatchItem {
+      batchIndex: number;
       startNum: number;
       types: Record<string, number>;
       total: number;
@@ -953,11 +955,12 @@ app.post(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], asy
     const batches: BatchItem[] = [];
     let currentNum = 1;
 
-    const queueType = (typeKey: string, count: number, maxChunk = 6) => {
+    const queueType = (typeKey: string, count: number, maxChunk = 7) => {
       let remaining = count;
       while (remaining > 0) {
         const chunk = Math.min(remaining, maxChunk);
         batches.push({
+          batchIndex: batches.length,
           startNum: currentNum,
           types: { [typeKey]: chunk },
           total: chunk,
@@ -967,7 +970,7 @@ app.post(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], asy
       }
     };
 
-    queueType('single_choice', sCount || (totalRequested === 0 ? 15 : 0), 6);
+    queueType('single_choice', sCount || (totalRequested === 0 ? 15 : 0), 8);
     queueType('multiple_choice', mCount, 5);
     queueType('short_answer', shCount, 5);
     if (oCount > 0 || matCount > 0) {
@@ -975,24 +978,23 @@ app.post(['/api/v1/soal/generate', '/api/v1/ninerouter/generate-questions'], asy
       if (oCount > 0) combinedTypes.ordering = oCount;
       if (matCount > 0) combinedTypes.matching = matCount;
       batches.push({
+        batchIndex: batches.length,
         startNum: currentNum,
         types: combinedTypes,
         total: oCount + matCount,
       });
       currentNum += oCount + matCount;
     }
-    queueType('essay', eCount, 4);
+    queueType('essay', eCount, 5);
 
-    // 3. Execute batches via Unified AI
+    // 3. Execute batches in parallel waves of up to 3 at a time so 25-50 questions finish quickly
     let primaryModelUsed = '';
-    const allAiQuestions: any[] = [];
+    const batchResults: Map<number, any[]> = new Map();
     let batchFailed = false;
     let failureDetail = '';
 
-    for (let bIdx = 0; bIdx < batches.length; bIdx++) {
-      const b = batches[bIdx];
+    const runSingleBatch = async (b: BatchItem) => {
       const endNum = b.startNum + b.total - 1;
-
       const typesList = Object.entries(b.types)
         .map(([t, count]) => {
           if (t === 'single_choice') return `- Pilihan Ganda Tunggal (single_choice): ${count} butir (Opsi A s.d E, kunci RIGHT:A / RIGHT:B / RIGHT:C / RIGHT:D / RIGHT:E)`;
@@ -1015,14 +1017,14 @@ INFORMASI UJIAN:
 CAPAIAN PEMBELAJARAN (CP) / MATERI TARGET (WAJIB DIBEDAH TUNTAS):
 "${capaianPembelajaran || 'Standar Capaian Pembelajaran Kurikulum Merdeka ' + mapel}"
 
-TUGAS KHUSUS BATCH KE-${bIdx + 1} DARI TOTAL ${batches.length} BATCH:
+TUGAS KHUSUS BATCH KE-${b.batchIndex + 1} DARI TOTAL ${batches.length} BATCH:
 Hasilkan soal nomor #${b.startNum} sampai #${endNum} (total ${b.total} butir) dengan alokasi tipe:
 ${typesList}
 
 ATURAN WAJIB:
 1. Soal HARUS menguji konsep keilmuan riil sesuai poin Capaian Pembelajaran. DILARANG membuat pertanyaan meta-pedagogi seperti "Dalam materi X, pemahaman mendalam berfokus pada...".
 2. Khusus Mata Pelajaran Bahasa Jawa / Bahasa Inggris / Bahasa Arab: Gunakan 100% bahasa asli mata pelajaran tersebut!
-3. Cantumkan imagePrompt ringkas 1 kalimat jika soal memerlukan diagram, grafik, atau ilustrasi ilmiah (opsional).
+3. Kosongkan imagePrompt ("") kecuali jika soal benar-benar membutuhkan diagram skematik ilmiah.
 
 Format keluaran WAJIB MURNI JSON valid tanpa markdown codeblock dengan struktur:
 {
@@ -1037,7 +1039,7 @@ Format keluaran WAJIB MURNI JSON valid tanpa markdown codeblock dengan struktur:
       "difficulty": "sedang",
       "kompetensiTarget": "Sub-materi/indikator spesifik dari CP yang diuji",
       "explanation": "Pembahasan ringkas 1-2 kalimat",
-      "imagePrompt": "Deskripsi singkat jika butuh diagram/grafik",
+      "imagePrompt": "",
       "options": [{"key": "A", "text": "opsi A"}, {"key": "B", "text": "opsi B"}, {"key": "C", "text": "opsi C"}, {"key": "D", "text": "opsi D"}, {"key": "E", "text": "opsi E"}],
       "rawRightAnswer": "RIGHT:A"
     }
@@ -1051,9 +1053,7 @@ Format keluaran WAJIB MURNI JSON valid tanpa markdown codeblock dengan struktur:
       });
 
       if (!genResult || !genResult.text) {
-        batchFailed = true;
-        failureDetail = lastAiGatewayDiagnostic || 'Gateway AI tidak merespons atau menolak request';
-        break;
+        return { ok: false, reason: lastAiGatewayDiagnostic || 'Gateway AI tidak merespons atau menolak request' };
       }
 
       const parsed = parseJsonFromAiResponse(genResult.text);
@@ -1064,35 +1064,67 @@ Format keluaran WAJIB MURNI JSON valid tanpa markdown codeblock dengan struktur:
         : [];
 
       if (rawList.length === 0) {
-        batchFailed = true;
-        failureDetail = 'Respons AI tidak dapat diparse sebagai daftar soal JSON yang valid';
-        break;
+        return { ok: false, reason: 'Respons AI tidak dapat diparse sebagai daftar soal JSON yang valid' };
       }
 
       if (!primaryModelUsed) {
         primaryModelUsed = genResult.modelUsed;
       }
 
-      rawList.forEach((q: any, idx: number) => {
+      const numbered = rawList.map((q: any, idx: number) => {
         const qNum = b.startNum + idx;
-        q.number = qNum;
-        q.id = `q-${qNum}`;
-        allAiQuestions.push(q);
+        return {
+          ...q,
+          number: qNum,
+          id: `q-${qNum}`,
+        };
       });
+
+      return { ok: true, questions: numbered };
+    };
+
+    const WAVE_SIZE = 3;
+    for (let i = 0; i < batches.length; i += WAVE_SIZE) {
+      const wave = batches.slice(i, i + WAVE_SIZE);
+      const waveOutcomes = await Promise.all(wave.map((b) => runSingleBatch(b)));
+
+      for (let wIdx = 0; wIdx < waveOutcomes.length; wIdx++) {
+        const outcome = waveOutcomes[wIdx];
+        if (!outcome.ok || !outcome.questions) {
+          batchFailed = true;
+          failureDetail = outcome.reason || 'Koneksi AI terputus pada saat memproses batch soal';
+          break;
+        }
+        batchResults.set(wave[wIdx].batchIndex, outcome.questions);
+      }
+
+      if (batchFailed) break;
+    }
+
+    const allAiQuestions: any[] = [];
+    for (let i = 0; i < batches.length; i++) {
+      const qList = batchResults.get(i);
+      if (qList) allAiQuestions.push(...qList);
     }
 
     if (!batchFailed && allAiQuestions.length > 0) {
-      // Auto-attach educational diagram URL if AI suggested an imagePrompt for stimulus questions
       const enrichedQuestions = allAiQuestions.map((q: any) => {
-        if (q.imagePrompt && typeof q.imagePrompt === 'string' && q.imagePrompt.trim() && !q.imageUrl) {
-          const cleanP = `Educational high school textbook diagram for ${mapel || 'exam'}: ${q.imagePrompt.trim()}`;
+        const rawPrompt = typeof q.imagePrompt === 'string' ? q.imagePrompt.trim() : '';
+        const isDummyPrompt =
+          !rawPrompt ||
+          /^(tidak diperlukan|tidak ada|none|null|-|kosong|opsional)$/i.test(rawPrompt);
+
+        if (isDummyPrompt) {
+          delete q.imagePrompt;
+        } else if (autoGenerateImages && !q.imageUrl) {
+          const cleanP = `Educational high school textbook diagram for ${mapel || 'exam'}: ${rawPrompt}`;
           const seed = Math.floor(Math.random() * 900000) + 100000;
           q.imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanP)}?width=768&height=512&nologo=true&seed=${seed}`;
         }
         return q;
       });
 
-      return res.json({
+      return res.status(200).json({
         success: true,
         isFallback: false,
         source: primaryModelUsed || '9router AI',
@@ -1111,7 +1143,7 @@ Format keluaran WAJIB MURNI JSON valid tanpa markdown codeblock dengan struktur:
       capaianPembelajaran
     );
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       isFallback: true,
       source: 'Hermes Emergency Template Engine (Bukan AI)',
@@ -1119,7 +1151,11 @@ Format keluaran WAJIB MURNI JSON valid tanpa markdown codeblock dengan struktur:
       questions: fallbackQuestions,
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(200).json({
+      success: false,
+      isFallback: true,
+      error: error?.message || 'Terjadi kesalahan internal saat memproses soal.',
+    });
   }
 });
 

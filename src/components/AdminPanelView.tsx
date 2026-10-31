@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, LoginLog, MadrasahIdentity, AdminSubTab, SystemBackupData, ExamPackage, GeneratedAdminDoc } from '../types';
 import { LogoMadrasahSvg } from './KopMadrasah';
+import { fetchApiJson } from '../utils/apiClient';
 import {
   ShieldCheck,
   Server,
@@ -655,6 +656,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     connected?: boolean;
     endpoint?: string;
     model?: string;
+    statusCode?: number;
     latencyMs?: number;
     responseSample?: string;
     discoveredModels?: string[];
@@ -667,27 +669,22 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     setIsTesting9Router(true);
     setTest9RouterResult(null);
     try {
-      const res = await fetch('/api/v1/ninerouter/test', {
+      const data = await fetchApiJson('/api/v1/ninerouter/test', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-      const ct = res.headers.get('content-type') || '';
-      if (!ct.includes('application/json')) {
-        const text = await res.text();
-        const isHtmlFallback = text.trim().toLowerCase().startsWith('<!doctype html') || text.includes('<html');
-        if (isHtmlFallback) {
-          throw new Error(
-            `Server mengembalikan halaman HTML (index.html), bukan JSON API. Artinya container/server yang sedang Anda akses masih menjalankan build versi lama (sebelum endpoint /api/v1/ninerouter/test ada) atau berjalan sebagai static server tanpa backend Express (dist/server.cjs). Solusi di Portainer/Docker: lakukan Rebuild / Pull ulang container (docker compose up -d --build).`
-          );
-        }
-        throw new Error(`Respons server non-JSON (${res.status}): ${text.slice(0, 120)}`);
-      }
-      const data = await res.json();
-      setTest9RouterResult(data);
+      setTest9RouterResult({
+        connected: Boolean(data.connected),
+        endpoint: data.endpoint,
+        model: data.model,
+        statusCode: data.statusCode,
+        latencyMs: data.latencyMs,
+        responseSample: data.responseSample,
+        discoveredModels: data.discoveredModels,
+        message: data.message || (data.connected ? 'Terhubung ke 9router.' : 'Koneksi belum berhasil.'),
+        tip: data.tip || data.error,
+        errorRaw: data.errorRaw,
+      });
     } catch (err: any) {
       setTest9RouterResult({
         connected: false,
